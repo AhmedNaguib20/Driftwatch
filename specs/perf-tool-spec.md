@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 12 — 2026-08-18
+> Version 13 — 2026-08-18 — M1 COMPLETE (commit 517de82, 100 tests)
 
 ---
 
@@ -232,7 +232,10 @@ a week. Three mitigations, in increasing strength:
    alone is not enough. **No reported delta may span a time gap** — see §5.1 fifth instance.
 3. **Instruction counting (Layer 3).** Eliminates the problem entirely for CPU-bound work.
 
-Anything below a ~2% delta is treated as noise and not reported.
+Anything below a ~2% delta is treated as noise and not reported. **Additionally: a 100ms absolute
+quantum under the floor** (M1 step 5) — a 15ms build spreads 43% run-to-run; wall clocks cannot
+resolve sub-100ms deltas regardless of percentage. Code constant like `BUILD_SAMPLES`; only bites
+on builds under ~5s.
 
 ### 5.1 Protocol symmetry — the general law
 

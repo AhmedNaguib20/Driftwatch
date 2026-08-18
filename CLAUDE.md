@@ -72,7 +72,10 @@ specs/            # design docs — the source of truth
 
 ## Milestones
 
-**M1 — Walking skeleton (current).** See "Definition of done" below.
+**M1 — Walking skeleton — COMPLETE (`517de82`, 100 tests).** Acceptance passed: fresh run and
+cached/screened run both report "no change" on an unchanged tree; a real regression escalates to a
+fresh same-invocation confirm. Timing quantum added: deltas under 100ms absolute are noise
+regardless of percentage.
   - [x] Scaffold, boundary lint rule, Next.js fixture (commit `4adad5a`)
   - [x] Stability of build measurement validated: 1.2% warm / 0.0% cold spread
   - [x] `detect/` — project profile with per-conclusion evidence trail (commit `7358e9c`)
@@ -81,7 +84,9 @@ specs/            # design docs — the source of truth
         crash-safe sweep (commit `1484c20`)
   - [x] `report/` — schema v1, five verdicts, §5.1 refusal, golden-file contract (commit `0f0567d`)
   - [ ] cli/ — plus warm-up sample + confirm-before-report escalation (spec §5.1 fifth instance)
-**M2 — AI analysis.** Triage → deep analysis → cause + confidence + suggested fix in the terminal.
+**M2 — AI analysis (current).** Triage → deep analysis → cause + confidence + suggested fix in the
+terminal. Provider-pluggable (`src/ai/providers/`), DeepSeek first (OpenAI-compatible). Hard rule 6
+applies in full: BYOK env key, `--no-ai` fully offline, docs state exactly what is sent.
 **M3 — GitHub Action adapter.** Self-updating PR comment + non-blocking check.
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.
 **M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.

@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 17 — 2026-08-19 — M2 acceptance: Run A passed, Run B false negative → triage de-gated (§7.1c), prompts v2 pending
+> Version 18 — 2026-08-19 — M2 COMPLETE (eval green under prompts v2, commit a5bad85); M3 next
 
 ---
 
@@ -588,12 +588,15 @@ session: DeepSeek intermittently fences JSON despite json-mode → provider-agno
 extraction (location-only, shape still strict); served model name can differ from requested
 (`deepseek-v4-flash` for `deepseek-chat`) → record the served name and price by it.
 
-### 7.2 Evaluation set — build it early
+### 7.2 Evaluation set — LIVE (`a5bad85`, M2 close)
 
-**The eval set has its first three entries** (from M2 acceptance): Run A (large obvious cause),
-Run B (small isolated cause — the false-negative class), and the deferred "richer variant" (same
-lodash import but with dependenciesChanged signal). Every future prompt change must beat v2 on
-these before shipping.
+`eval/cases/` with three cases + `driftwatch eval` (dev command, live provider, pass/fail per
+expectation + tokens/cost): **run-a** (large obvious cause — PASS 0.7, correctly the two-suspect
+band), **run-b** (4-line lodash import, v1's false negative — **PASS under v2**: named lodash as
+multiplier, 0.9, diff fix confined to the page), **run-c** (lodash + dependenciesChanged — PASS
+0.9). All first attempts; total M2 acceptance spend ~$0.03. The a5bad85 numbers are the v2
+reference point: every future prompt change must beat them here before shipping. Cases captured
+under schema 1.1 + warm-up protocol.
 
 Before comparing providers by feel, assemble ~20 real regressions with known causes (harvest them
 via Git History Replay, §10). Then provider choice becomes a measurement: *which model identified

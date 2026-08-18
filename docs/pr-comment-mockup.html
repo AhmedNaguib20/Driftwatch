@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PR Comment — Mockup</title>
+<style>
+  :root{
+    --canvas:#0d1117;
+    --canvas-inset:#010409;
+    --canvas-subtle:#161b22;
+    --border:#30363d;
+    --border-muted:#21262d;
+    --fg:#e6edf3;
+    --fg-muted:#8b949e;
+    --accent:#2f81f7;
+    --success:#3fb950;
+    --danger:#f85149;
+    --attention:#d29922;
+    --success-emphasis:#238636;
+    --danger-subtle:rgba(248,81,73,.15);
+    --success-subtle:rgba(63,185,80,.15);
+    --attention-subtle:rgba(210,153,34,.15);
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--canvas-inset);
+    color:var(--fg);
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.5;
+    padding:32px 16px 64px;
+  }
+  .page{max-width:920px;margin:0 auto}
+
+  .caption{
+    font-size:13px;
+    color:var(--fg-muted);
+    margin:0 0 10px;
+    padding-inline-start:2px;
+    letter-spacing:.01em;
+  }
+  .caption b{color:var(--fg);font-weight:600}
+  .spacer{height:36px}
+
+  /* ---------- GitHub frame ---------- */
+  .gh{direction:ltr;text-align:left}
+
+  .timeline{position:relative}
+
+  .comment{
+    border:1px solid var(--border);
+    border-radius:6px;
+    background:var(--canvas);
+    overflow:hidden;
+  }
+  .comment-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--canvas-subtle);
+    border-bottom:1px solid var(--border);
+    padding:8px 16px;
+    font-size:12px;
+    color:var(--fg-muted);
+    flex-wrap:wrap;
+  }
+  .avatar{
+    width:24px;height:24px;border-radius:50%;
+    background:#1f6feb;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .avatar svg{width:14px;height:14px;display:block}
+  .author{color:var(--fg);font-weight:600;font-size:13px}
+  .badge-bot{
+    border:1px solid var(--border);
+    border-radius:2em;
+    padding:0 6px;
+    font-size:11px;
+    line-height:18px;
+    color:var(--fg-muted);
+  }
+  .head-spacer{margin-left:auto;font-size:11px}
+
+  .comment-body{padding:16px}
+
+  /* verdict */
+  .verdict{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:12px 14px;
+    border:1px solid rgba(210,153,34,.4);
+    background:var(--attention-subtle);
+    border-radius:6px;
+    margin-bottom:16px;
+  }
+  .verdict .dot{font-size:16px;line-height:1.4}
+  .verdict h3{
+    margin:0 0 2px;font-size:15px;font-weight:600;color:var(--fg);
+  }
+  .verdict p{margin:0;color:var(--fg-muted);font-size:13px}
+  .verdict code{font-family:var(--mono);font-size:12px;background:rgba(110,118,129,.4);padding:1px 5px;border-radius:6px}
+
+  /* table */
+  .table-wrap{overflow-x:auto;margin-bottom:20px;border:1px solid var(--border);border-radius:6px}
+  table{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}
+  th{
+    text-align:left;font-weight:600;font-size:12px;
+    padding:8px 14px;background:var(--canvas-subtle);
+    border-bottom:1px solid var(--border);
+    color:var(--fg);
+    white-space:nowrap;
+  }
+  td{padding:9px 14px;border-bottom:1px solid var(--border-muted);white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  td.num{font-family:var(--mono);font-size:12px;color:var(--fg-muted)}
+  td.metric{color:var(--fg)}
+  .delta{font-family:var(--mono);font-size:12px;font-weight:600;border-radius:6px;padding:2px 7px;display:inline-block}
+  .delta.up{color:var(--danger);background:var(--danger-subtle)}
+  .delta.warn{color:var(--attention);background:var(--attention-subtle)}
+  .delta.down{color:var(--success);background:var(--success-subtle)}
+  .delta.flat{color:var(--fg-muted);background:rgba(110,118,129,.2)}
+
+  /* section heading */
+  h4.sec{
+    font-size:14px;font-weight:600;margin:0 0 8px;
+    padding-bottom:6px;border-bottom:1px solid var(--border-muted);
+    display:flex;align-items:center;gap:8px;
+  }
+  .confidence{
+    margin-left:auto;font-weight:500;font-size:11px;color:var(--fg-muted);
+    display:flex;align-items:center;gap:6px;
+  }
+  .meter{width:52px;height:5px;border-radius:3px;background:rgba(110,118,129,.35);overflow:hidden}
+  .meter span{display:block;height:100%;width:87%;background:var(--attention)}
+
+  p.body{margin:0 0 12px;color:var(--fg);font-size:13.5px}
+  p.body code, li code{font-family:var(--mono);font-size:12px;background:rgba(110,118,129,.4);padding:1px 5px;border-radius:6px}
+  .muted{color:var(--fg-muted)}
+
+  /* code / diff */
+  pre{
+    margin:0 0 16px;
+    background:var(--canvas-subtle);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:12px 0;
+    overflow-x:auto;
+    font-family:var(--mono);
+    font-size:12px;
+    line-height:1.6;
+  }
+  pre .ln{display:block;padding:0 14px;white-space:pre}
+  pre .add{background:rgba(46,160,67,.18);color:#7ee787}
+  pre .del{background:rgba(248,81,73,.15);color:#ffa198}
+  pre .ctx{color:var(--fg-muted)}
+  .filename{
+    font-family:var(--mono);font-size:11px;color:var(--fg-muted);
+    background:var(--canvas-subtle);border:1px solid var(--border);border-bottom:0;
+    border-radius:6px 6px 0 0;padding:6px 14px;display:block;
+  }
+  .filename + pre{border-radius:0 0 6px 6px;margin-top:0}
+
+  /* details */
+  details{
+    border:1px solid var(--border);border-radius:6px;
+    margin-bottom:8px;background:var(--canvas-subtle);
+  }
+  details summary{
+    cursor:pointer;padding:9px 14px;font-size:13px;font-weight:500;
+    list-style:none;display:flex;align-items:center;gap:8px;user-select:none;
+  }
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{
+    content:"›";display:inline-block;transition:transform .15s ease;
+    color:var(--fg-muted);font-size:15px;line-height:1;
+  }
+  details[open] summary::before{transform:rotate(90deg)}
+  details summary:hover{color:var(--accent)}
+  .details-body{padding:2px 14px 14px 32px;font-size:13px;color:var(--fg-muted)}
+  .details-body ul{margin:0;padding-left:18px}
+  .details-body li{margin-bottom:4px}
+
+  .comment-foot{
+    margin-top:18px;padding-top:12px;border-top:1px solid var(--border-muted);
+    font-size:12px;color:var(--fg-muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+  }
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .sep{opacity:.5}
+
+  /* ---------- checks box ---------- */
+  .merge-box{border:1px solid var(--border);border-radius:6px;background:var(--canvas);overflow:hidden}
+  .check-row{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 16px;border-bottom:1px solid var(--border-muted);font-size:13px;
+  }
+  .check-row:last-child{border-bottom:0}
+  .check-icon{width:16px;height:16px;flex-shrink:0}
+  .check-name{font-weight:600;color:var(--fg)}
+  .check-desc{color:var(--fg-muted);font-size:12px}
+  .check-link{margin-left:auto;font-size:12px}
+  .merge-head{
+    display:flex;gap:12px;align-items:flex-start;
+    padding:14px 16px;border-bottom:1px solid var(--border);background:var(--canvas-subtle);
+  }
+  .merge-head .icon{
+    width:26px;height:26px;border-radius:50%;background:var(--attention);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    color:#0d1117;font-weight:700;font-size:15px;line-height:1;
+  }
+  .merge-head strong{display:block;font-size:15px;margin-bottom:1px}
+  .merge-head span{color:var(--fg-muted);font-size:12.5px}
+
+  @media (max-width:600px){
+    body{padding:20px 10px 48px}
+    .comment-body{padding:12px}
+    .head-spacer{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    details summary::before{transition:none}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <p class="caption">١ — <b>تعليق البوت على الـ PR</b> — ده السطح الأساسي، المطور بيشوفه من غير ما يسيب مكانه</p>
+
+  <div class="gh">
+  <div class="comment">
+    <div class="comment-head">
+      <div class="avatar">
+        <svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+          <path d="M2 11a6 6 0 1 1 12 0"/>
+          <path d="M8 11 11 6.5"/>
+        </svg>
+      </div>
+      <span class="author">perfbot</span>
+      <span class="badge-bot">bot</span>
+      <span>commented 2 minutes ago</span>
+      <span class="head-spacer">edited · updates in place on every push</span>
+    </div>
+
+    <div class="comment-body">
+
+      <div class="verdict">
+        <span class="dot">⚠️</span>
+        <div>
+          <h3>Performance regression detected</h3>
+          <p>First Load JS is up <strong>28.9%</strong> against baseline <code>main@a3f9c21</code>. Threshold is 5%.</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Metric</th><th>Base</th><th>This PR</th><th>Change</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="metric">First Load JS</td>
+              <td class="num">187 KB</td>
+              <td class="num">241 KB</td>
+              <td><span class="delta up">+28.9%</span></td>
+            </tr>
+            <tr>
+              <td class="metric">Bundle size (total)</td>
+              <td class="num">2.74 MB</td>
+              <td class="num">3.08 MB</td>
+              <td><span class="delta up">+12.4%</span></td>
+            </tr>
+            <tr>
+              <td class="metric">Build time</td>
+              <td class="num">42.1s</td>
+              <td class="num">44.8s</td>
+              <td><span class="delta warn">+6.4%</span></td>
+            </tr>
+            <tr>
+              <td class="metric">Test suite</td>
+              <td class="num">1m 12s</td>
+              <td class="num">1m 11s</td>
+              <td><span class="delta down">−1.4%</span></td>
+            </tr>
+            <tr>
+              <td class="metric">Lighthouse (perf)</td>
+              <td class="num">94</td>
+              <td class="num">94</td>
+              <td><span class="delta flat">no change</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4 class="sec">
+        Likely cause
+        <span class="confidence">confidence 87% <span class="meter"><span></span></span></span>
+      </h4>
+      <p class="body">
+        <code>src/utils/formatters.ts</code> imports lodash as a default export. Webpack can't tree-shake
+        it, so the whole library ships — about 71 KB gzipped. The file is imported by
+        <code>app/layout.tsx</code>, which puts it in the shared chunk on every route.
+      </p>
+
+      <h4 class="sec">Suggested fix</h4>
+      <code class="filename">src/utils/formatters.ts</code>
+<pre><span class="ln del">- import _ from 'lodash';</span><span class="ln add">+ import debounce from 'lodash/debounce';</span><span class="ln add">+ import groupBy from 'lodash/groupBy';</span><span class="ln ctx">  </span><span class="ln del">- export const search = _.debounce(fn, 300);</span><span class="ln add">+ export const search = debounce(fn, 300);</span></pre>
+      <p class="body muted" style="font-size:12.5px;margin-top:-6px">
+        Only <code>debounce</code> and <code>groupBy</code> are used in this file. Expected saving: ~66 KB
+        gzipped, which puts First Load JS back to roughly 190 KB.
+      </p>
+
+      <details>
+        <summary>Why 87% and not higher</summary>
+        <div class="details-body">
+          <ul>
+            <li>The import was added in this PR (commit <code>7c1e02f</code>) — strong signal.</li>
+            <li>Size delta closely matches lodash's known footprint.</li>
+            <li>Two other files changed in this PR could contribute a smaller share; not isolated separately.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>All metrics (12)</summary>
+        <div class="details-body">Per-route bundle breakdown, memory during build, cold and warm build times, install time.</div>
+      </details>
+
+      <details>
+        <summary>How this was measured</summary>
+        <div class="details-body">
+          3 runs per commit, median reported. Same runner class as baseline. Runs below 2% delta are
+          treated as noise and not reported.
+        </div>
+      </details>
+
+      <div class="comment-foot">
+        <span>Baseline <code style="font-family:var(--mono)">main@a3f9c21</code></span>
+        <span class="sep">·</span>
+        <a href="#">View trend</a>
+        <span class="sep">·</span>
+        <a href="#">Open fix PR</a>
+        <span class="sep">·</span>
+        <a href="#">Adjust threshold</a>
+      </div>
+
+    </div>
+  </div>
+  </div>
+
+  <div class="spacer"></div>
+
+  <p class="caption">٢ — <b>الـ CI check</b> — نفس النتيجة كـ status، والفريق يقدر يمنع الـ merge بيها</p>
+
+  <div class="gh">
+  <div class="merge-box">
+    <div class="merge-head">
+      <div class="icon">!</div>
+      <div>
+        <strong>Some checks need attention</strong>
+        <span>1 failing check. Merging is blocked by branch protection.</span>
+      </div>
+    </div>
+
+    <div class="check-row">
+      <svg class="check-icon" viewBox="0 0 16 16" fill="#f85149"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm3.5 5.56L10.44 4.5 8 6.94 5.56 4.5 4.5 5.56 6.94 8 4.5 10.44l1.06 1.06L8 9.06l2.44 2.44 1.06-1.06L9.06 8Z"/></svg>
+      <span class="check-name">perf / regression-check</span>
+      <span class="check-desc">— First Load JS +28.9% (threshold 5%)</span>
+      <a href="#" class="check-link">Details</a>
+    </div>
+
+    <div class="check-row">
+      <svg class="check-icon" viewBox="0 0 16 16" fill="#3fb950"><path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16Zm3.78-9.72a.75.75 0 0 0-1.06-1.06L6.75 9.19 5.28 7.72a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0Z"/></svg>
+      <span class="check-name">build</span>
+      <span class="check-desc">— Successful in 44s</span>
+      <a href="#" class="check-link">Details</a>
+    </div>
+
+    <div class="check-row">
+      <svg class="check-icon" viewBox="0 0 16 16" fill="#3fb950"><path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16Zm3.78-9.72a.75.75 0 0 0-1.06-1.06L6.75 9.19 5.28 7.72a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0Z"/></svg>
+      <span class="check-name">test</span>
+      <span class="check-desc">— Successful in 1m 11s</span>
+      <a href="#" class="check-link">Details</a>
+    </div>
+  </div>
+  </div>
+
+</div>
+</body>
+</html>

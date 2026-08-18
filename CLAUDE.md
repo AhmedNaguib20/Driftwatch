@@ -84,7 +84,7 @@ regardless of percentage.
         crash-safe sweep (commit `1484c20`)
   - [x] `report/` — schema v1, five verdicts, §5.1 refusal, golden-file contract (commit `0f0567d`)
   - [ ] cli/ — plus warm-up sample + confirm-before-report escalation (spec §5.1 fifth instance)
-**M2 — AI analysis (current).** Triage → deep analysis → cause + confidence + suggested fix in the
+**M2 — AI analysis — COMPLETE (eval green, `a5bad85`).** Triage → deep analysis → cause + confidence + suggested fix in the
 terminal. Provider-pluggable (`src/ai/providers/`), DeepSeek first (OpenAI-compatible). Hard rule 6
 applies in full: BYOK env key, `--no-ai` fully offline, docs state exactly what is sent.
   - [x] providers/ — transport-level `chat()` interface, one OpenAI-format client for
@@ -99,8 +99,11 @@ applies in full: BYOK env key, `--no-ai` fully offline, docs state exactly what 
   - [x] live acceptance: Run A PASSED; Run B FALSE NEGATIVE → structural fix decided (spec §7.1c):
         triage is a suspect-ranker, never a gate — confirmed regressions always reach deep; small
         diffs (<~50 lines) ride inline in triage; magnitude rule: imports are multipliers.
-  - [ ] prompts v2 + de-gated pipeline → re-run acceptance (B must identify lodash to close M2)
-**M3 — GitHub Action adapter.** Self-updating PR comment + non-blocking check.
+  - [x] prompts v2 + de-gated pipeline (`5232516`) + eval set live (`a5bad85`) — all three cases
+        PASS, run-b names lodash at 0.9 with the fix confined to the page. v2 is the eval baseline.
+**M3 — GitHub Action adapter (current).** Self-updating PR comment + non-blocking check, rendering
+the same result JSON. Adapter consumes `--json` output only — the core/adapter boundary is already
+lint-enforced; keep it that way.
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.
 **M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.
 

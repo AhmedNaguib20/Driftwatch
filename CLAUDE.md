@@ -18,9 +18,13 @@ This file is the short version — the rules that must hold in every session.
 3. **Never report a number we didn't measure.** No estimates presented as measurements. If a metric
    failed to collect, say so — don't omit it silently.
 4. **Deltas under 2% are noise.** Don't report them.
-5. **Nothing leaves the machine except AI analysis**, and only with the user's own key. `--no-ai`
+5. **Protocol symmetry.** Both sides of a comparison must be measured under an identical, recorded
+   protocol; where they can't be identical, force both to the state achievable on both. Clear the
+   build cache on both sides (`build time (cold)`). Refuse to report a delta across mismatched
+   protocols — flag it instead. See spec §5.1.
+6. **Nothing leaves the machine except AI analysis**, and only with the user's own key. `--no-ai`
    must produce a fully offline run.
-6. **The CLI is the product.** CI is one consumer of it. Every capability must work locally first.
+7. **The CLI is the product.** CI is one consumer of it. Every capability must work locally first.
 
 ---
 
@@ -63,6 +67,9 @@ specs/            # design docs — the source of truth
 ## Milestones
 
 **M1 — Walking skeleton (current).** See "Definition of done" below.
+  - [x] Scaffold, boundary lint rule, Next.js fixture (commit `4adad5a`)
+  - [x] Stability of build measurement validated: 1.2% warm / 0.0% cold spread
+  - [ ] detect/ → measure/ → baseline/ → report/ → cli/
 **M2 — AI analysis.** Triage → deep analysis → cause + confidence + suggested fix in the terminal.
 **M3 — GitHub Action adapter.** Self-updating PR comment + non-blocking check.
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.

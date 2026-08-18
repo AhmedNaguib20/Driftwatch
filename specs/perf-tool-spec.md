@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 7 — 2026-08-18
+> Version 8 — 2026-08-18
 
 ---
 
@@ -224,6 +224,56 @@ a week. Three mitigations, in increasing strength:
 3. **Instruction counting (Layer 3).** Eliminates the problem entirely for CPU-bound work.
 
 Anything below a ~2% delta is treated as noise and not reported.
+
+### 5.1 Protocol symmetry — the general law
+
+**Both sides of a comparison must be measured under an identical, explicitly recorded protocol.
+Where the two sides cannot be made identical, the protocol is forced to the state that *is*
+achievable on both.**
+
+Run-to-run jitter (§5) is only half the noise problem. The other half is **asymmetry**: two sides
+measured under different conditions produce a large, perfectly repeatable, completely fake delta.
+Jitter is visible and noisy; asymmetry is invisible and looks like a real finding. It is the more
+dangerous of the two.
+
+Every result must record *how* each side was collected, and the tool must refuse to report a delta
+when the two protocols don't match — flag it instead.
+
+#### First instance: build cache (DECIDED — measured 2026-08-18)
+
+Measured on the M1 Next.js fixture, 5 runs:
+
+| Mode | Times | Spread |
+|---|---|---|
+| Warm (`.next` kept) | 6.81s, 6.80s, 6.88s | 1.2% |
+| Cold (`.next` removed) | 8.75s, 8.75s | 0.0% |
+| **Warm vs cold** | | **22% apart** |
+
+Each mode is stable well inside the 2% floor — **M1's core assumption holds.** But a fresh
+`git worktree` baseline can never be warm, while the working tree usually is. Comparing as-is
+reports a 22% regression on identical code.
+
+**Decision: clear the build cache on both sides before every measured build.** It is the only state
+achievable on both. Costs ~2s.
+
+Two things this buys beyond symmetry:
+- Cold builds are the **more sensitive** instrument — a warm build hides cached work, so a
+  regression in already-compiled code wouldn't surface at all.
+- The number must be **labelled `build time (cold)`** in output. It is a comparison instrument, not
+  the build time the developer experiences daily. Presenting it as the latter is its own kind of
+  lying.
+
+#### Second instance: `node_modules` (decide at M1 step 3)
+
+A worktree has no `node_modules`, and install time is far noisier than build time. Proposed rule —
+**let the lockfile decide**:
+
+- **Lockfile identical between base and current** → dependencies are not what changed. Reuse the
+  existing `node_modules` in the worktree (copy or link), skip install entirely, measure build only.
+- **Lockfile differs** → dependencies *are* part of the change and must be measured. Fresh install
+  on both sides, and flag "dependencies changed" in the result so the AI stage knows.
+
+Install time stays a **separate metric**, never folded into build time.
 
 **DECIDED — runs inside the user's own CI.** Instruction counting removes machine variance without
 dedicated hardware, so the accuracy argument for owning infrastructure no longer holds. Cheaper for

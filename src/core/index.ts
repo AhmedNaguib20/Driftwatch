@@ -7,4 +7,4 @@
  * Populated as M1 lands: detect → measure → baseline → report.
  */
 
-export {}
+export * from './detect/index.js'

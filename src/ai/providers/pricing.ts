@@ -7,8 +7,13 @@ import type { TokenUsage } from './types.js'
  * Pricing is vendor detail and stays inside providers/ (spec §7.1).
  */
 const USD_PER_MILLION: Record<string, { input: number; output: number }> = {
-  'deepseek:deepseek-chat': { input: 0.27, output: 1.1 },
-  'deepseek:deepseek-reasoner': { input: 0.55, output: 2.19 },
+  // DeepSeek bills time-of-day rates (off-peak is half); these are PEAK cache-miss rates — the
+  // upper bound, so the estimate can only overstate. Source: api-docs.deepseek.com, 2026-08-19.
+  'deepseek:deepseek-v4-flash': { input: 0.44, output: 1.32 },
+  'deepseek:deepseek-v4-pro': { input: 1.32, output: 3.96 },
+  // Alias ids, in case the API reports the alias rather than the served model.
+  'deepseek:deepseek-chat': { input: 0.44, output: 1.32 },
+  'deepseek:deepseek-reasoner': { input: 1.32, output: 3.96 },
   'openai:gpt-4o-mini': { input: 0.15, output: 0.6 },
 }
 

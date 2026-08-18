@@ -28,6 +28,7 @@ export async function runAnalysis(
   result: ResultJson,
   diffData: Omit<ContextInput, 'result'>,
   provider: Provider,
+  progress: (message: string) => void = () => {},
 ): Promise<Analysis> {
   if (result.verdict !== 'regression') {
     return { outcome: 'skipped', reason: 'analysis runs only on a regression verdict (spec §7)' }
@@ -66,6 +67,9 @@ export async function runAnalysis(
   }
 
   const suspects = triage.result.value.suspects
+  progress(
+    `triage: plausible — suspects: ${suspects.map((s) => s.path).join(', ') || '(none named)'}; running deep analysis…`,
+  )
   const deepContext = assembleDeepContext(
     input,
     suspects.map((s) => s.path),

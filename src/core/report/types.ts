@@ -1,3 +1,4 @@
+import type { AnalysisReport } from './analysis.js'
 import type { Evidence, Framework, MetricId, PackageManager } from '../detect/types.js'
 import type { LockfileStatus } from '../baseline/lockfile-compare.js'
 import type { MetricResult, SideMeasurement } from '../measure/types.js'
@@ -13,8 +14,15 @@ import type { MetricResult, SideMeasurement } from '../measure/types.js'
 
 export const RESULT_SCHEMA_VERSION = 1
 
+/**
+ * Minor: additive changes only — new fields, new optional blocks. A 1.0 consumer reading a 1.1
+ * result must keep working; anything that would break one bumps the major instead.
+ */
+export const RESULT_SCHEMA_MINOR = 1
+
 export interface ResultJson {
   readonly schemaVersion: typeof RESULT_SCHEMA_VERSION
+  readonly schemaMinorVersion: typeof RESULT_SCHEMA_MINOR
   readonly driftwatchVersion: string
   readonly createdAt: string
   readonly project: ProjectReport
@@ -24,6 +32,11 @@ export interface ResultJson {
   readonly comparison: Comparison
   /** ok | regression | inconclusive — the one-word answer every consumer leads with. */
   readonly verdict: RunVerdict
+  /**
+   * Present when a consumer ran the analysis stage (the CLI always attaches it, including the
+   * disabled/no_key outcomes). Absent only when a caller used core directly without analysis.
+   */
+  readonly analysis?: AnalysisReport
   /** Run-level warnings that belong to no single side (config problems, plan warnings). */
   readonly warnings: readonly string[]
 }
@@ -32,6 +45,7 @@ export type RunVerdict = 'ok' | 'regression' | 'inconclusive'
 
 export interface ProjectReport {
   readonly root: string
+  readonly gitRoot: string | null
   readonly pathInRepo: string | null
   readonly framework: Framework
   readonly frameworkVersion: string | null
@@ -44,6 +58,9 @@ export interface ProjectReport {
 }
 
 export interface ConfigReport {
+  /** AI provider/model from perf.yml — recorded so a result names what would analyse it. */
+  readonly provider: string
+  readonly model: string
   readonly thresholdPercent: number
   readonly noiseFloorPercent: number
   readonly base: string

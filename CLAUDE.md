@@ -93,7 +93,10 @@ applies in full: BYOK env key, `--no-ai` fully offline, docs state exactly what 
         analyse shapes and all prompts live in `analyse/` — that is what enforces §7.1.
   - [x] analyse/ context assembly — deterministic, budgeted, secret-withholding, manifest
         (`b7f155e`)
-  - [ ] two-stage flow (prompts live here; versioned) → surfacing
+  - [x] two-stage flow — versioned prompts (`prompts-v1.md`), calibration + magnitude arithmetic,
+        fix rules enforced in code, every exit honest (`3ba3ff0`)
+  - [ ] surfacing: terminal + --json (schema minor bump) + --no-ai proof + first-run UX → live
+        acceptance (needs DRIFTWATCH_API_KEY)
 **M3 — GitHub Action adapter.** Self-updating PR comment + non-blocking check.
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.
 **M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.

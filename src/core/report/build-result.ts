@@ -6,8 +6,9 @@ import type { ProjectProfile } from '../detect/types.js'
 import type { SideMeasurement } from '../measure/types.js'
 import { compareMetrics } from './compare-metrics.js'
 import { protocolMismatches } from './protocol-match.js'
+import type { AnalysisReport } from './analysis.js'
 import type { Comparison, MeasurementPath, MetricComparison, ResultJson, RunVerdict } from './types.js'
-import { RESULT_SCHEMA_VERSION } from './types.js'
+import { RESULT_SCHEMA_MINOR, RESULT_SCHEMA_VERSION } from './types.js'
 
 /** Assembles the result JSON from the run's parts. Pure — clock injected for golden tests. */
 export interface BuildResultInput {
@@ -30,10 +31,12 @@ export function buildResult(input: BuildResultInput): ResultJson {
 
   return {
     schemaVersion: RESULT_SCHEMA_VERSION,
+    schemaMinorVersion: RESULT_SCHEMA_MINOR,
     driftwatchVersion: DRIFTWATCH_VERSION,
     createdAt: now().toISOString(),
     project: {
       root: profile.projectRoot,
+      gitRoot: profile.gitRoot,
       pathInRepo: profile.pathInRepo,
       framework: profile.framework,
       frameworkVersion: profile.frameworkVersion,
@@ -44,6 +47,8 @@ export function buildResult(input: BuildResultInput): ResultJson {
       warnings: profile.warnings,
     },
     config: {
+      provider: config.provider,
+      model: config.model,
       thresholdPercent: config.thresholdPercent,
       noiseFloorPercent: config.noiseFloorPercent,
       base: config.base,
@@ -65,6 +70,11 @@ export function buildResult(input: BuildResultInput): ResultJson {
     verdict: runVerdict(comparison, config),
     warnings: [...config.warnings, ...(plan.available ? plan.warnings : [])],
   }
+}
+
+/** Attaches the analysis block — the only way an analysis enters the contract. */
+export function attachAnalysis(result: ResultJson, analysis: AnalysisReport): ResultJson {
+  return { ...result, analysis }
 }
 
 function buildComparison(input: BuildResultInput): Comparison {

@@ -16,8 +16,9 @@ program
   .option('--base <ref>', 'git ref to compare against (default: base from perf.yml, else main)')
   .option('--json', 'print the schema-v1 result JSON to stdout instead of the table', false)
   .option('--no-cache', 'ignore the baseline cache for this run (results are still written)')
+  .option('--no-ai', 'skip AI analysis entirely — fully offline run (also: DRIFTWATCH_NO_AI=1)')
   .option('--cwd <dir>', 'project directory', process.cwd())
-  .action(async (flags: { base?: string; json: boolean; cache: boolean; cwd: string }) => {
+  .action(async (flags: { base?: string; json: boolean; cache: boolean; ai: boolean; cwd: string }) => {
     await runCommand(flags)
   })
 

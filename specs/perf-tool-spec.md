@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 15 — 2026-08-19 — M1 complete; M2: providers + context assembly done, two-stage flow next
+> Version 16 — 2026-08-19 — M1 complete; M2: providers + context + two-stage flow done, surfacing next
 
 ---
 
@@ -532,6 +532,26 @@ This makes provider-swapping a **day-one architectural requirement**, not a late
   brings their own key and picks the provider, this is their call — but the default in `perf.yml`
   should be chosen with that in mind at launch, and the docs must state plainly what gets sent
   where.
+
+### 7.1b Two-stage flow (M2 step 3 — DONE, `3ba3ff0`)
+
+- **Prompts are versioned artifacts**: `PROMPT_VERSION` rides in every stage's stats; golden file
+  `prompts-v1.md` (rendered in full with real context) — version bumps produce a new file alongside
+  the old, so §7.2 eval comparability starts here.
+- Triage is told: *"this diff does not explain it" is a valuable answer, not a failure* — never
+  invent a suspect; judge plausibility against the delta's **size**; the measurement itself is
+  trustworthy (cold, same machine, median), so noise can't be lazily blamed unless the raw samples
+  show it.
+- Deep bakes in the calibration rubric, the magnitude check with **stated arithmetic** required in
+  the evidence, dual citation (measurement + code), and the trust principle verbatim: overstating
+  confidence is the worst failure mode; when in doubt, the lower band.
+- **Fix rules enforced in code, not model obedience**: `enforceFixRules()` downgrades any diff
+  below 0.8 confidence, or touching files the model wasn't shown, to prose — content preserved,
+  downgrade named.
+- Every exit honest: non-regression → skipped (guard); triage-no → inconclusive with the model's
+  stopReason; provider error → skipped naming stage+reason; the measurement verdict never changes.
+- Privacy **asserted by test**: the mock provider records every request; triage requests contain
+  zero patch content.
 
 ### 7.2 Evaluation set — build it early
 

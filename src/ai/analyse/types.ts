@@ -32,28 +32,11 @@ export interface LockfileSummary {
   readonly unparsed: string | null
 }
 
-/** Why a file's patch content is or is not in the context. */
-export type FileDisposition = 'full' | 'truncated' | 'diffstat-only' | 'withheld' | 'binary'
+// Manifest shapes are contract types owned by core/report/analysis.ts — the result JSON is the
+// contract, so its owner defines them; this module produces values of those types.
+import type { ContextManifest } from '../../core/index.js'
 
-export interface ManifestEntry {
-  readonly path: string
-  readonly disposition: FileDisposition
-  readonly insertions: number
-  readonly deletions: number
-  readonly reason: string | null
-}
-
-/**
- * Exactly what was sent — per file. This lands in the result JSON: "docs state exactly what is
- * sent" (spec §7.1) is honoured per-run by the tool itself, not by prose.
- */
-export interface ContextManifest {
-  readonly files: readonly ManifestEntry[]
-  readonly lockfiles: readonly string[]
-  readonly estimatedTokens: number
-  readonly budgetTokens: number
-  readonly truncated: boolean
-}
+export type { ContextManifest, FileDisposition, ManifestEntry } from '../../core/index.js'
 
 export interface AssembledContext {
   readonly text: string

@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "schemaMinorVersion": 1,
+  "driftwatchVersion": "<driftwatch-version>",
+  "createdAt": "2026-08-19T12:00:00.000Z",
+  "project": {
+    "root": "/repo/app",
+    "gitRoot": "/repo",
+    "pathInRepo": "app",
+    "framework": "nextjs",
+    "frameworkVersion": "15.1.3",
+    "packageManager": "npm",
+    "lockfile": "package-lock.json",
+    "routes": [
+      "/",
+      "/about",
+      "/blog/[slug]"
+    ],
+    "evidence": [
+      {
+        "fact": "framework: nextjs",
+        "source": "package.json",
+        "detail": "depends on next@15.1.3"
+      },
+      {
+        "fact": "base: main @ c0ffee000000",
+        "source": "git"
+      }
+    ],
+    "warnings": [
+      "a project-level warning, verbatim"
+    ]
+  },
+  "config": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "thresholdPercent": 5,
+    "noiseFloorPercent": 2,
+    "base": "main",
+    "sourcePath": "/repo/app/perf.yml"
+  },
+  "base": {
+    "available": true,
+    "ref": "main",
+    "sha": "c0ffee0000000000000000000000000000000000",
+    "fromCache": true,
+    "measuredAt": "2026-08-19T09:00:00.000Z",
+    "metrics": [
+      {
+        "id": "install_time",
+        "status": "skipped",
+        "label": "install time",
+        "reason": "dependencies unchanged between sides — provided by clone, install not measured"
+      },
+      {
+        "id": "build_time",
+        "status": "measured",
+        "value": 8724,
+        "unit": "ms",
+        "label": "build time (cold)",
+        "collectedBy": "median of 3 cold builds, wall clock around `npm run build` in a worktree",
+        "samples": 3,
+        "sampleValues": [
+          11143,
+          8629,
+          8724
+        ]
+      },
+      {
+        "id": "bundle_size",
+        "status": "measured",
+        "value": 2305491,
+        "unit": "bytes",
+        "label": "bundle size",
+        "collectedBy": "sum of file sizes in .next (113 files), excluding internal caches and diagnostics",
+        "samples": 1
+      }
+    ],
+    "protocol": {
+      "version": 1,
+      "workspace": "worktree",
+      "cacheState": "cold",
+      "nodeModules": "cloned",
+      "gitMetadata": "absent",
+      "nodeVersion": "v20.20.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "buildCommand": "npm run build",
+      "buildSamples": 3,
+      "warmupSamples": 1,
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      }
+    },
+    "warnings": [],
+    "elapsedMs": 31900
+  },
+  "current": {
+    "workingTree": true,
+    "metrics": [
+      {
+        "id": "install_time",
+        "status": "skipped",
+        "label": "install time",
+        "reason": "dependencies unchanged between sides — provided by clone, install not measured"
+      },
+      {
+        "id": "build_time",
+        "status": "measured",
+        "value": 9350,
+        "unit": "ms",
+        "label": "build time (cold)",
+        "collectedBy": "median of 3 cold builds, wall clock around `npm run build` in a copy",
+        "samples": 3,
+        "sampleValues": [
+          11810,
+          9350,
+          9349
+        ]
+      },
+      {
+        "id": "bundle_size",
+        "status": "measured",
+        "value": 2305487,
+        "unit": "bytes",
+        "label": "bundle size",
+        "collectedBy": "sum of file sizes in .next (113 files), excluding internal caches and diagnostics",
+        "samples": 1
+      }
+    ],
+    "protocol": {
+      "version": 1,
+      "workspace": "copy",
+      "cacheState": "cold",
+      "nodeModules": "cloned",
+      "gitMetadata": "absent",
+      "nodeVersion": "v20.20.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "buildCommand": "npm run build",
+      "buildSamples": 3,
+      "warmupSamples": 1,
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      }
+    },
+    "warnings": [],
+    "elapsedMs": 33100
+  },
+  "comparison": {
+    "measurementPath": "fresh",
+    "dependenciesChanged": false,
+    "lockfileStatus": "identical",
+    "protocolsMatch": true,
+    "protocolMismatches": [],
+    "metrics": [
+      {
+        "id": "install_time",
+        "label": "install time",
+        "unit": null,
+        "base": null,
+        "current": null,
+        "delta": null,
+        "verdict": "skipped",
+        "exceedsThreshold": false,
+        "reason": "base: dependencies unchanged between sides — provided by clone, install not measured | current: dependencies unchanged between sides — provided by clone, install not measured"
+      },
+      {
+        "id": "build_time",
+        "label": "build time (cold)",
+        "unit": "ms",
+        "base": 8724,
+        "current": 9350,
+        "delta": {
+          "absolute": 626,
+          "percent": 7.18
+        },
+        "verdict": "regressed",
+        "exceedsThreshold": true,
+        "reason": null
+      },
+      {
+        "id": "bundle_size",
+        "label": "bundle size",
+        "unit": "bytes",
+        "base": 2305491,
+        "current": 2305487,
+        "delta": null,
+        "verdict": "no_change",
+        "exceedsThreshold": false,
+        "reason": "delta is under the 2% noise floor"
+      }
+    ]
+  },
+  "verdict": "regression",
+  "warnings": [],
+  "analysis": {
+    "outcome": "analysed",
+    "cause": "lib/posts.ts adds a 300-entry archive consumed by generateStaticParams, adding ~300 statically generated pages to the build.",
+    "confidence": 0.9,
+    "evidence": [
+      "build time (cold) regressed 8724ms → 9350ms (+626ms, +7.18%); samples [11143, 8629, 8724] vs [11810, 9350, 9349]",
+      "lib/posts.ts (+25/-1) introduces the archive array that /blog/[slug] statically generates"
+    ],
+    "fix": {
+      "kind": "diff",
+      "content": "--- a/lib/posts.ts\n+++ b/lib/posts.ts\n@@ -1 +1 @@\n-const ARCHIVE_SIZE = 300\n+const ARCHIVE_SIZE = 30\n"
+    },
+    "suspects": [
+      {
+        "path": "lib/posts.ts",
+        "reason": "adds 300 generated pages"
+      }
+    ],
+    "stages": {
+      "triage": {
+        "provider": "deepseek",
+        "model": "deepseek-chat",
+        "tokens": {
+          "input": 1200,
+          "output": 90
+        },
+        "durationMs": 3100,
+        "promptVersion": 1,
+        "retried": false
+      },
+      "deep": {
+        "provider": "deepseek",
+        "model": "deepseek-chat",
+        "tokens": {
+          "input": 5400,
+          "output": 420
+        },
+        "durationMs": 12800,
+        "promptVersion": 1,
+        "retried": false
+      }
+    },
+    "context": {
+      "triage": {
+        "files": [
+          {
+            "path": "lib/posts.ts",
+            "disposition": "diffstat-only",
+            "insertions": 25,
+            "deletions": 1,
+            "reason": "triage sends the diffstat only"
+          }
+        ],
+        "lockfiles": [],
+        "estimatedTokens": 350,
+        "budgetTokens": 4000,
+        "truncated": false
+      },
+      "deep": {
+        "files": [
+          {
+            "path": "lib/posts.ts",
+            "disposition": "full",
+            "insertions": 25,
+            "deletions": 1,
+            "reason": null
+          }
+        ],
+        "lockfiles": [],
+        "estimatedTokens": 900,
+        "budgetTokens": 24000,
+        "truncated": false
+      }
+    }
+  }
+}

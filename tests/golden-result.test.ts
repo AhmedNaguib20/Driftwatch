@@ -2,8 +2,9 @@ import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import { DRIFTWATCH_VERSION, buildResult } from '../src/core/index.js'
+import { DRIFTWATCH_VERSION, attachAnalysis, buildResult } from '../src/core/index.js'
 import type {
+  AnalysisReport,
   BaselinePlan,
   BaseSideResult,
   MeasurementProtocol,
@@ -25,6 +26,7 @@ import type {
  */
 
 const GOLDEN = path.join(import.meta.dirname, 'golden', 'result-v1.json')
+const GOLDEN_11 = path.join(import.meta.dirname, 'golden', 'result-v1.1.json')
 
 function protocol(overrides: Partial<MeasurementProtocol> = {}): MeasurementProtocol {
   return {
@@ -166,16 +168,42 @@ const base: BaseSideResult = {
   cachePath: null,
 }
 
+const GOLDEN_ANALYSIS: AnalysisReport = {
+  outcome: 'analysed',
+  cause: 'lib/posts.ts adds a 300-entry archive consumed by generateStaticParams, adding ~300 statically generated pages to the build.',
+  confidence: 0.9,
+  evidence: [
+    'build time (cold) regressed 8724ms → 9350ms (+626ms, +7.18%); samples [11143, 8629, 8724] vs [11810, 9350, 9349]',
+    'lib/posts.ts (+25/-1) introduces the archive array that /blog/[slug] statically generates',
+  ],
+  fix: {
+    kind: 'diff',
+    content: '--- a/lib/posts.ts\n+++ b/lib/posts.ts\n@@ -1 +1 @@\n-const ARCHIVE_SIZE = 300\n+const ARCHIVE_SIZE = 30\n',
+  },
+  suspects: [{ path: 'lib/posts.ts', reason: 'adds 300 generated pages' }],
+  stages: {
+    triage: { provider: 'deepseek', model: 'deepseek-chat', tokens: { input: 1200, output: 90 }, durationMs: 3100, promptVersion: 1, retried: false },
+    deep: { provider: 'deepseek', model: 'deepseek-chat', tokens: { input: 5400, output: 420 }, durationMs: 12800, promptVersion: 1, retried: false },
+  },
+  context: {
+    triage: { files: [{ path: 'lib/posts.ts', disposition: 'diffstat-only', insertions: 25, deletions: 1, reason: 'triage sends the diffstat only' }], lockfiles: [], estimatedTokens: 350, budgetTokens: 4000, truncated: false },
+    deep: { files: [{ path: 'lib/posts.ts', disposition: 'full', insertions: 25, deletions: 1, reason: null }], lockfiles: [], estimatedTokens: 900, budgetTokens: 24000, truncated: false },
+  },
+}
+
 describe('result JSON contract (schema v1)', () => {
-  it('matches the golden file byte for byte', async () => {
-    const result = buildResult({
-      profile,
-      config,
-      plan,
-      base,
-      current: currentSide,
-      now: () => new Date('2026-08-19T12:00:00.000Z'),
-    })
+  it('matches the 1.1 golden file byte for byte', async () => {
+    const result = attachAnalysis(
+      buildResult({
+        profile,
+        config,
+        plan,
+        base,
+        current: currentSide,
+        now: () => new Date('2026-08-19T12:00:00.000Z'),
+      }),
+      GOLDEN_ANALYSIS,
+    )
 
     // driftwatchVersion tracks the package; pin it in the golden via substitution so a version
     // bump alone does not count as a contract change.
@@ -185,11 +213,36 @@ describe('result JSON contract (schema v1)', () => {
     )
 
     if (process.env.UPDATE_GOLDEN === '1') {
-      await writeFile(GOLDEN, rendered + '\n', 'utf8')
+      await writeFile(GOLDEN_11, rendered + '\n', 'utf8')
     }
 
-    const golden = await readFile(GOLDEN, 'utf8')
-    expect(rendered + '\n').toBe(golden)
+    expect(rendered + '\n').toBe(await readFile(GOLDEN_11, 'utf8'))
+  })
+
+  it('1.1 is a strict superset of 1.0 — every 1.0 field survives with its value', async () => {
+    // The 1.0 golden is frozen history: it is never regenerated. A 1.0 consumer must be able to
+    // read a 1.1 result, so every leaf present in 1.0 must exist unchanged in 1.1.
+    const v10 = JSON.parse(await readFile(GOLDEN, 'utf8'))
+    const v11 = JSON.parse(await readFile(GOLDEN_11, 'utf8'))
+
+    const missing: string[] = []
+    function compare(a: unknown, b: unknown, at: string): void {
+      if (typeof a !== 'object' || a === null) {
+        if (JSON.stringify(a) !== JSON.stringify(b)) missing.push(`${at}: ${JSON.stringify(a)} → ${JSON.stringify(b)}`)
+        return
+      }
+      if (Array.isArray(a)) {
+        const bArr = b as unknown[]
+        a.forEach((item, i) => compare(item, bArr?.[i], `${at}[${i}]`))
+        return
+      }
+      for (const [key, value] of Object.entries(a)) {
+        compare(value, (b as Record<string, unknown>)?.[key], `${at}.${key}`)
+      }
+    }
+    compare(v10, v11, '$')
+
+    expect(missing).toEqual([])
   })
 
   it('the deterministic scenario exercises the interesting rows', async () => {

@@ -1,4 +1,9 @@
 export { assembleDeepContext, assembleTriageContext } from './assemble.js'
+export { runAnalysis } from './run-analysis.js'
+export type { Analysis, AnalysisFix, StageStats } from './analysis-types.js'
+export { DEEP_SYSTEM, PROMPT_VERSION, TRIAGE_SYSTEM, deepUser, triageUser } from './prompts.js'
+export { validateDeep, validateTriage } from './schemas.js'
+export type { DeepOutput, TriageOutput } from './schemas.js'
 export type { ContextInput } from './assemble.js'
 export {
   DEEP_BUDGET_TOKENS,

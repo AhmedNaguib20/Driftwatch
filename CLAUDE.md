@@ -91,7 +91,9 @@ applies in full: BYOK env key, `--no-ai` fully offline, docs state exactly what 
         deepseek+openai, key hygiene tested, strict-JSON with one corrective retry (`b02b12a`).
         Design note: the provider boundary is a JSON-completion transport; the semantic
         analyse shapes and all prompts live in `analyse/` — that is what enforces §7.1.
-  - [ ] analyse/ context assembly → two-stage flow → surfacing
+  - [x] analyse/ context assembly — deterministic, budgeted, secret-withholding, manifest
+        (`b7f155e`)
+  - [ ] two-stage flow (prompts live here; versioned) → surfacing
 **M3 — GitHub Action adapter.** Self-updating PR comment + non-blocking check.
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.
 **M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.

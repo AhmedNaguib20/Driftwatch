@@ -1,0 +1,227 @@
+import { readFile, writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import { describe, expect, it } from 'vitest'
+
+import {
+  DEEP_SYSTEM,
+  PROMPT_VERSION,
+  TRIAGE_SYSTEM,
+  deepUser,
+  runAnalysis,
+  triageUser,
+  assembleTriageContext,
+  assembleDeepContext,
+} from '../src/ai/analyse/index.js'
+import type { ContextInput, DiffFile } from '../src/ai/analyse/index.js'
+import { ProviderError } from '../src/ai/providers/index.js'
+import type { ChatRequest, ChatResponse, Provider } from '../src/ai/providers/index.js'
+import type { ResultJson } from '../src/core/index.js'
+
+async function regressionResult(): Promise<ResultJson> {
+  const raw = await readFile(path.join(import.meta.dirname, 'golden', 'result-v1.json'), 'utf8')
+  return JSON.parse(raw.replaceAll('<driftwatch-version>', '0.2.0')) as ResultJson
+}
+
+function file(overrides: Partial<DiffFile> & { path: string }): DiffFile {
+  return {
+    insertions: 20,
+    deletions: 2,
+    binary: false,
+    untracked: false,
+    patch: `diff --git a/${overrides.path} b/${overrides.path}\n+changed\n`,
+    ...overrides,
+  }
+}
+
+const DIFF_DATA = {
+  diff: [
+    file({ path: 'lib/posts.ts', insertions: 25 }),
+    file({ path: 'app/blog/page.tsx', insertions: 12 }),
+  ],
+  lockfileSummaries: [],
+}
+
+/** Scripted provider: pops responses in order; records every request it saw. */
+function scriptedProvider(script: (string | ProviderError)[]): Provider & { requests: ChatRequest[] } {
+  const requests: ChatRequest[] = []
+  return {
+    name: 'mock',
+    model: 'mock-model',
+    requests,
+    async chat(request: ChatRequest): Promise<ChatResponse> {
+      requests.push(request)
+      const next = script.shift()
+      if (next === undefined) throw new Error('scripted provider ran out of responses')
+      if (next instanceof ProviderError) throw next
+      return { text: next, tokens: { input: 500, output: 60 }, model: 'mock-model' }
+    },
+  }
+}
+
+const TRIAGE_OK = JSON.stringify({
+  plausible: true,
+  suspects: [{ path: 'lib/posts.ts', reason: 'adds 300 generated pages' }],
+})
+
+const DEEP_OK = JSON.stringify({
+  cause: 'The archive import generates 300 additional static pages at build time.',
+  confidence: 0.9,
+  evidence: [
+    'build time (cold) regressed from 8724ms to 9350ms (+626ms)',
+    'lib/posts.ts adds a 300-entry archive array consumed by generateStaticParams',
+  ],
+  fix: {
+    kind: 'diff',
+    content: '--- a/lib/posts.ts\n+++ b/lib/posts.ts\n@@ -1 +1 @@\n-const N = 300\n+const N = 30\n',
+  },
+})
+
+describe('runAnalysis — two-stage flow', () => {
+  it('happy path: triage gates deep, both stages accounted', async () => {
+    const provider = scriptedProvider([TRIAGE_OK, DEEP_OK])
+    const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    expect(analysis.outcome).toBe('analysed')
+    if (analysis.outcome !== 'analysed') return
+    expect(analysis.cause).toMatch(/300 additional static pages/)
+    expect(analysis.confidence).toBe(0.9)
+    expect(analysis.fix.kind).toBe('diff')
+    expect(analysis.suspects[0]!.path).toBe('lib/posts.ts')
+    for (const stage of [analysis.stages.triage, analysis.stages.deep]) {
+      expect(stage.provider).toBe('mock')
+      expect(stage.tokens).toEqual({ input: 500, output: 60 })
+      expect(stage.promptVersion).toBe(PROMPT_VERSION)
+      expect(stage.durationMs).toBeGreaterThanOrEqual(0)
+    }
+    // Deep context manifest recorded — the per-run record of what was sent.
+    expect(analysis.context.deep.files.length).toBeGreaterThan(0)
+  })
+
+  it('triage requests carry no patch content; deep requests carry the suspect patch', async () => {
+    const provider = scriptedProvider([TRIAGE_OK, DEEP_OK])
+    await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    expect(provider.requests[0]!.user).not.toContain('+changed')
+    expect(provider.requests[1]!.user).toContain('+changed')
+    expect(provider.requests[1]!.user).toContain('Triage named these suspects')
+  })
+
+  it('plausible: false → inconclusive with the model reason, deep never called', async () => {
+    const provider = scriptedProvider([
+      JSON.stringify({ plausible: false, suspects: [], stopReason: 'the diff touches only documentation; a +7% build delta cannot come from markdown' }),
+    ])
+    const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    expect(analysis.outcome).toBe('inconclusive')
+    if (analysis.outcome !== 'inconclusive') return
+    expect(analysis.stopReason).toMatch(/only documentation/)
+    expect(provider.requests).toHaveLength(1)
+  })
+
+  it('provider error at triage → skipped with the typed reason', async () => {
+    const provider = scriptedProvider([new ProviderError('auth', 'deepseek rejected the API key (HTTP 401)')])
+    const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    expect(analysis.outcome).toBe('skipped')
+    if (analysis.outcome !== 'skipped') return
+    expect(analysis.reason).toMatch(/triage failed: auth: deepseek rejected/)
+  })
+
+  it('provider error at deep → skipped, names the stage', async () => {
+    const provider = scriptedProvider([TRIAGE_OK, new ProviderError('timeout', 'mock did not respond within 180000ms')])
+    const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    expect(analysis.outcome).toBe('skipped')
+    if (analysis.outcome !== 'skipped') return
+    expect(analysis.reason).toMatch(/deep analysis failed: timeout/)
+  })
+
+  it('malformed then corrected: analysis succeeds, retry visible in the stage stats', async () => {
+    const provider = scriptedProvider(['this is not json', TRIAGE_OK, DEEP_OK])
+    const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    expect(analysis.outcome).toBe('analysed')
+    if (analysis.outcome !== 'analysed') return
+    expect(analysis.stages.triage.retried).toBe(true)
+    expect(analysis.stages.triage.tokens.input).toBe(1000) // both attempts counted
+  })
+
+  it('malformed twice → skipped honestly', async () => {
+    const provider = scriptedProvider(['nope', 'still nope'])
+    const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    expect(analysis.outcome).toBe('skipped')
+    if (analysis.outcome !== 'skipped') return
+    expect(analysis.reason).toMatch(/invalid JSON twice/)
+  })
+
+  it('never runs on a non-regression verdict', async () => {
+    const result = { ...(await regressionResult()), verdict: 'ok' as const }
+    const provider = scriptedProvider([])
+    const analysis = await runAnalysis(result, DIFF_DATA, provider)
+
+    expect(analysis.outcome).toBe('skipped')
+    expect(provider.requests).toHaveLength(0)
+  })
+
+  it('downgrades a diff fix below the confidence bar to prose, preserving content', async () => {
+    const provider = scriptedProvider([
+      TRIAGE_OK,
+      JSON.stringify({
+        cause: 'probably the archive',
+        confidence: 0.55,
+        evidence: ['build time regressed +626ms'],
+        fix: { kind: 'diff', content: '--- a/lib/posts.ts\n+++ b/lib/posts.ts\n@@ -1 +1 @@\n-a\n+b\n' },
+      }),
+    ])
+    const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    if (analysis.outcome !== 'analysed') throw new Error('expected analysed')
+    expect(analysis.fix.kind).toBe('prose')
+    expect(analysis.fix.note).toMatch(/below the 0.8 bar/)
+    expect(analysis.fix.content).toContain('+++ b/lib/posts.ts')
+  })
+
+  it('downgrades a diff that touches files the model was never shown', async () => {
+    const provider = scriptedProvider([
+      TRIAGE_OK,
+      JSON.stringify({
+        cause: 'the archive',
+        confidence: 0.95,
+        evidence: ['build time regressed +626ms'],
+        fix: { kind: 'diff', content: '--- a/next.config.mjs\n+++ b/next.config.mjs\n@@ -1 +1 @@\n-a\n+b\n' },
+      }),
+    ])
+    const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    if (analysis.outcome !== 'analysed') throw new Error('expected analysed')
+    expect(analysis.fix.kind).toBe('prose')
+    expect(analysis.fix.note).toMatch(/files not shown.*next\.config\.mjs/)
+  })
+})
+
+describe('golden prompts — the prompts are documentation', () => {
+  const GOLDEN = path.join(import.meta.dirname, 'golden', 'prompts-v1.md')
+
+  it('rendered prompts match the golden file', async () => {
+    const input: ContextInput = { result: await regressionResult(), ...DIFF_DATA }
+    const triageCtx = assembleTriageContext(input)
+    const deepCtx = assembleDeepContext(input, ['lib/posts.ts'])
+
+    const rendered = [
+      `# Driftwatch prompts — version ${PROMPT_VERSION}`,
+      '## Triage system',
+      TRIAGE_SYSTEM,
+      '## Triage user (with golden-result context)',
+      triageUser(triageCtx.text),
+      '## Deep system',
+      DEEP_SYSTEM,
+      '## Deep user (with golden-result context)',
+      deepUser(deepCtx.text, ['lib/posts.ts']),
+      '',
+    ].join('\n\n')
+
+    if (process.env.UPDATE_GOLDEN === '1') await writeFile(GOLDEN, rendered, 'utf8')
+    expect(rendered).toBe(await readFile(GOLDEN, 'utf8'))
+  })
+})

@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 14 — 2026-08-19 — M1 complete; M2 in progress (providers done, analyse/ underway)
+> Version 15 — 2026-08-19 — M1 complete; M2: providers + context assembly done, two-stage flow next
 
 ---
 
@@ -484,7 +484,7 @@ attempts so cost stays honest. Typed failures (`auth`/`http`/`network`/`timeout`
 degrade to `analysis: skipped` with reason — the verdict itself never depends on a provider being
 reachable.
 
-### 7.1a Context assembly (M2 step 2 — in progress)
+### 7.1a Context assembly (M2 step 2 — DONE, `b7f155e`)
 
 - Diff is base SHA → **working tree** (uncommitted included — that is what was measured); binaries
   excluded by content.
@@ -497,8 +497,17 @@ reachable.
   "content withheld".
 - **contextManifest** recorded per run: what went in full, summarized, withheld, truncated, token
   estimate. This is how "docs state exactly what is sent" is honoured — the tool shows it per-run.
-- Two pure functions: `assembleTriageContext()` (compact) and `assembleDeepContext(suspects)`
-  (triage-named suspects get budget priority).
+- Two pure functions: `assembleTriageContext()` (compact, **zero patch content** — its manifest
+  marks everything `diffstat-only`, because the manifest states what was *sent*, not what was
+  eligible) and `assembleDeepContext(suspects)` (triage-named suspects pre-empt the budget).
+- *Implemented judgment calls:* budgets triage 4K / deep 24K / 8K per file, minimum useful slice
+  500 tokens (below that a fragment is noise — omit and say so); chars/4 counts labelled
+  **estimates** everywhere, measured counts come from the provider (rule 3 applied to tokens); no
+  absolute paths in any context (they leak usernames); `.npmrc` counts as a secret (carries auth
+  tokens); untracked-not-ignored files synthesized as new-file patches so the diff matches the
+  measured file set; sampleValues shown raw with "medians are reported; judge the spread yourself".
+- The golden files (`context-triage.md`, `context-deep.md`) double as the privacy documentation of
+  exactly what a run sends.
 
 **Development starts on DeepSeek** (free/cheap while iterating on prompts, and the key is already in
 hand). Building hundreds of test analyses on a paid provider while the prompts are still bad is

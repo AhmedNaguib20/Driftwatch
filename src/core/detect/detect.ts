@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { realpath } from 'node:fs/promises'
 import type { Command, Evidence, MetricId, ProjectProfile } from './types.js'
 import { exists, readPackageJson } from './fs-probe.js'
 import type { PackageJson } from './fs-probe.js'
@@ -25,7 +26,10 @@ export async function detectProject(options: DetectOptions = {}): Promise<Projec
   const evidence: Evidence[] = []
   const warnings: string[] = []
 
-  const projectRoot = (await findProjectRoot(startDir)) ?? startDir
+  // Realpath, not the spelled path: git reports symlink-resolved paths (macOS /var vs
+  // /private/var), and pathInRepo is computed against git's answer. A mismatch here once produced
+  // a pathInRepo full of ../.. that ESCAPED the baseline worktree — resolve before comparing.
+  const projectRoot = await realpath((await findProjectRoot(startDir)) ?? startDir)
   const pkg = await readPackageJson(projectRoot)
 
   if (pkg) {

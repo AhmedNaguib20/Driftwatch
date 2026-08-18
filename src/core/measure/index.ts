@@ -1,10 +1,12 @@
 export { measureWorkingTree, measureWorkspace } from './measure.js'
-export type { ProgressReporter } from './measure.js'
-export { createWorkingTreeWorkspace } from './workspace.js'
-export type { Workspace } from './workspace.js'
+export type { MeasureOptions, ProgressReporter } from './measure.js'
+export { cloneDirectory, createWorkingTreeWorkspace, gitReadingWarnings } from './workspace.js'
+export type { Workspace, WorkspaceOptions } from './workspace.js'
 export {
   BUILD_SAMPLES,
   BUILD_TIMEOUT_MS,
+  INSTALL_TIMEOUT_MS,
+  collectInstallTime,
   MEASUREMENT_ENV,
   buildProtocol,
   collectBuildTime,

@@ -222,6 +222,7 @@ describe('bundle weighing', () => {
     await writeFileIn(ws.dir, '.next/static/app.js', 'x'.repeat(1000))
     await writeFileIn(ws.dir, '.next/server/page.js', 'y'.repeat(500))
     await writeFileIn(ws.dir, '.next/cache/webpack/huge.pack', 'z'.repeat(50_000))
+    await writeFileIn(ws.dir, '.next/trace', 't'.repeat(9_000)) // diagnostics, not output
 
     const metric = await collectBundleSize(profile, ws, true)
 

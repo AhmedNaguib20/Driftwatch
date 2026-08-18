@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 9 — 2026-08-18
+> Version 10 — 2026-08-18
 
 ---
 
@@ -219,7 +219,13 @@ seconds.
 Shared CI runners vary 20–30% run to run on identical code. False alarms would kill the tool within
 a week. Three mitigations, in increasing strength:
 
-1. **Multiple runs, take the median.** Simple, necessary, not sufficient alone.
+1. **Multiple runs, take the median. (IMPLEMENTED — median of 3, decided at M1 step 2.)**
+   Single samples spread 2.25–4.5% on the fixture — a lone sample cannot stay inside the 2% floor.
+   The first build after a fresh `node_modules` clone is systematically ~25% slower (cold OS page
+   cache); the median discards that warm-up identically on both sides. Raw samples ride in the
+   result (`sampleValues`) so consumers can see the spread. `BUILD_SAMPLES = 3` is a code constant,
+   not config — like the noise floor, it is a property of the instrument, not a preference.
+   Cost: ~35s per side instead of ~13s.
 2. **Measure baseline and PR in the same job on the same machine.** Cancels most machine variance.
 3. **Instruction counting (Layer 3).** Eliminates the problem entirely for CPU-bound work.
 
@@ -296,13 +302,24 @@ a state the tool created).
 - Some tooling reads `.git` (release detection, version stamping). Detect that case and handle it
   explicitly rather than silently producing different behaviour on the copy.
 
+#### Third instance: the baseline cache (decide at M1 step 3)
+
+Base-side results are cached keyed by commit SHA — but a cached number is only reusable if it was
+measured **under the same protocol**. A base measured last month on Node 20 compared against today's
+current side on Node 22 is a protocol mismatch wearing a cache hit as a disguise.
+
+**Rule: the cache key is `(commit SHA, protocol hash)`** — the protocol hash covering node version,
+platform/arch, sample count, cache/install state, and the measuring tool's own version. A protocol
+change silently invalidates old entries; stale entries are re-measured, never compared against.
+
 #### Second instance: `node_modules` (decide at M1 step 3)
 
 A worktree has no `node_modules`, and install time is far noisier than build time. Proposed rule —
 **let the lockfile decide**:
 
-- **Lockfile identical between base and current** → dependencies are not what changed. Reuse the
-  existing `node_modules` in the worktree (copy or link), skip install entirely, measure build only.
+- **Lockfile identical between base and current** → dependencies are not what changed. Clone the
+  existing `node_modules` into the worktree (copy-on-write where available — never symlink: builds
+  write caches through a symlink into the real tree), skip install entirely, measure build only.
 - **Lockfile differs** → dependencies *are* part of the change and must be measured. Fresh install
   on both sides, and flag "dependencies changed" in the result so the AI stage knows.
 

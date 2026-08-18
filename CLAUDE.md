@@ -61,9 +61,6 @@ specs/            # design docs — the source of truth
 - Result JSON is the contract between core and every consumer. Version it from day one.
 - Every measurement records: value, unit, how it was collected, and a confidence/noise flag.
 - Errors never abort a run. A failed metric is marked `skipped` with a reason; the rest continue.
-- **Every conclusion carries evidence** — the file or observation it came from. This is a principle,
-  not a feature: the AI stage will cite this trail, and "say how you know" is hard rule 3 applied
-  one level up. Detection set the pattern; measurement and analysis follow it.
 - Config file is `perf.yml` at repo root, fully optional — sensible defaults without it.
 
 ---
@@ -74,7 +71,8 @@ specs/            # design docs — the source of truth
   - [x] Scaffold, boundary lint rule, Next.js fixture (commit `4adad5a`)
   - [x] Stability of build measurement validated: 1.2% warm / 0.0% cold spread
   - [x] `detect/` — project profile with per-conclusion evidence trail (commit `7358e9c`)
-  - [ ] measure/ → baseline/ → report/ → cli/
+  - [x] `measure/` — temp-copy workspace, median of 3, protocol recorded (commit `9955fdd`)
+  - [ ] baseline/ → report/ → cli/
 **M2 — AI analysis.** Triage → deep analysis → cause + confidence + suggested fix in the terminal.
 **M3 — GitHub Action adapter.** Self-updating PR comment + non-blocking check.
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.
@@ -90,8 +88,9 @@ Do not start a milestone before the previous one's definition of done is met.
 
 1. Detects the stack and writes a `perf.yml` if absent.
 2. Measures **build time** and **bundle size** for the working tree.
-3. Checks out the base commit (default: `main`) into a `git worktree`, measures it the same way,
-   caches the result keyed by commit SHA.
+3. Checks out the base commit (default: `main`) into a `git worktree`, measures it **through the
+   same measurement path as the working tree**, caches the result keyed by (commit SHA, protocol
+   hash) — a protocol change invalidates the cache.
 4. Prints a terminal table: metric, base, current, delta — deltas under 2% shown as "no change".
 5. Exits 0 always (warn-only; `block_merge` is not implemented yet).
 6. `--json` prints the result JSON instead.

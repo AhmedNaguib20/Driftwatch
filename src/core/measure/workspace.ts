@@ -31,11 +31,44 @@ export interface Workspace {
   cleanup(): Promise<void>
 }
 
-export async function createWorkingTreeWorkspace(profile: ProjectProfile): Promise<Workspace> {
-  const root = await mkdtemp(path.join(tmpdir(), 'driftwatch-current-'))
+export interface WorkspaceOptions {
+  /**
+   * How the workspace gets dependencies. 'clone' (default) copies the existing node_modules in;
+   * 'install' leaves it absent so a timed, frozen install runs during measurement — the lockfile
+   * rule (spec §5.1) picks per comparison, identically for both sides.
+   */
+  readonly dependencies?: 'clone' | 'install'
+}
+
+/**
+ * Both sides' project directories must have byte-identical path LENGTHS, so the copy mirrors the
+ * worktree's layout: `<tmp>/driftwatch-curr-XXXXXX/tree/<pathInRepo>` against the baseline's
+ * `<tmp>/driftwatch-base-XXXXXX/tree/<pathInRepo>` — same-length prefixes, same suffix.
+ *
+ * Why: Next.js bakes absolute paths into build output (`.nft.json` dependency traces, ~70KB in the
+ * fixture), so output byte size varies with path length. Different-length temp paths were measured
+ * costing a systematic 1.3% bundle-size gap on identical code — a §5.1 asymmetry: perfectly
+ * repeatable and completely fake.
+ */
+export async function createWorkingTreeWorkspace(
+  profile: ProjectProfile,
+  options: WorkspaceOptions = {},
+): Promise<Workspace> {
+  const root = await mkdtemp(path.join(tmpdir(), 'driftwatch-curr-'))
   const warnings: string[] = []
 
   try {
+    const pathInRepo = profile.pathInRepo ?? '.'
+    const projectDir =
+      pathInRepo === '.' ? path.join(root, 'tree') : path.join(root, 'tree', pathInRepo)
+
+    const escape = path.relative(path.join(root, 'tree'), path.resolve(projectDir))
+    if (escape.startsWith('..') || path.isAbsolute(escape)) {
+      throw new Error(
+        `refusing to create workspace: project path "${pathInRepo}" resolves outside the temp dir`,
+      )
+    }
+
     const excluded = new Set(
       [...profile.buildOutputDirs, ...profile.cacheDirs, 'node_modules', '.git'].map((p) =>
         path.normalize(p),
@@ -43,9 +76,15 @@ export async function createWorkingTreeWorkspace(profile: ProjectProfile): Promi
     )
 
     const listed = await listFiles(profile, excluded)
-    const copied = await copyFiles(profile.projectRoot, root, listed.files)
+    const copied = await copyFiles(profile.projectRoot, projectDir, listed.files)
 
-    const nodeModules = await provideNodeModules(profile.projectRoot, root)
+    const nodeModules =
+      options.dependencies === 'install'
+        ? 'absent'
+        : await cloneDirectory(
+            path.join(profile.projectRoot, 'node_modules'),
+            path.join(projectDir, 'node_modules'),
+          )
     if (nodeModules === 'copied') {
       warnings.push(
         'node_modules was copied file-by-file (copy-on-write clone unavailable on this filesystem) — first run may be slow.',
@@ -55,7 +94,7 @@ export async function createWorkingTreeWorkspace(profile: ProjectProfile): Promi
     warnings.push(...(await gitReadingWarnings(profile)))
 
     return {
-      dir: root,
+      dir: projectDir,
       kind: 'copy',
       nodeModules,
       copiedBy: listed.method,
@@ -161,19 +200,17 @@ async function copyFiles(
 }
 
 /**
- * Provides dependencies to the workspace without letting the build write back into the real tree.
+ * Provides dependencies to a workspace without letting the build write back into the real tree.
  *
  * A symlink would be fast but poisonous: builds write into `node_modules/.cache`, which through a
  * link would mutate the user's directory (rule 2). On APFS, `cp -c` clones copy-on-write — near
- * instant and fully isolated. Elsewhere we pay for a real copy and say so.
+ * instant and fully isolated. Elsewhere we pay for a real copy and say so. Shared by the
+ * working-tree copy and the baseline worktree, so both sides get dependencies the same way.
  */
-async function provideNodeModules(
-  projectRoot: string,
-  workspaceRoot: string,
+export async function cloneDirectory(
+  source: string,
+  target: string,
 ): Promise<NodeModulesState> {
-  const source = path.join(projectRoot, 'node_modules')
-  const target = path.join(workspaceRoot, 'node_modules')
-
   try {
     if (!(await stat(source)).isDirectory()) return 'absent'
   } catch {
@@ -197,8 +234,9 @@ async function provideNodeModules(
  * The workspace has no `.git` (deliberately, on both sides — protocol field `gitMetadata`).
  * Tooling that stamps versions from git will behave differently there, and per spec §5.1 that must
  * be surfaced, not silently swallowed. Detection is heuristic: we warn on the obvious signals.
+ * Exported so the baseline worktree runs the same check on the base side.
  */
-async function gitReadingWarnings(profile: ProjectProfile): Promise<string[]> {
+export async function gitReadingWarnings(profile: ProjectProfile): Promise<string[]> {
   const suspects: string[] = []
 
   const pkgRaw = await readText(path.join(profile.projectRoot, 'package.json'))

@@ -9,3 +9,4 @@
 
 export * from './detect/index.js'
 export * from './measure/index.js'
+export * from './baseline/index.js'

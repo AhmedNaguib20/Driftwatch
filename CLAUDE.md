@@ -12,9 +12,10 @@ This file is the short version — the rules that must hold in every session.
 
 1. **Core knows nothing about GitHub, CI, or any platform.** `src/core/**` must never import from
    `src/adapters/**`. Core takes input, returns JSON. Enforced by lint rule.
-2. **Never touch the user's working directory.** No `git stash`, no checkout of their branch, no
-   writing outside `.perf/`. Baseline builds happen in a `git worktree` in a temp dir. Losing
-   someone's uncommitted work ends the product.
+2. **Never touch the user's working directory. No exceptions.** No `git stash`, no checkout of their
+   branch, no deleting generated dirs, no writing outside `.perf/`. **Both** sides of a comparison
+   are measured in temp copies — the base via `git worktree`, the current tree via a filtered copy.
+   The rule is absolute because one exception becomes many.
 3. **Never report a number we didn't measure.** No estimates presented as measurements. If a metric
    failed to collect, say so — don't omit it silently.
 4. **Deltas under 2% are noise.** Don't report them.
@@ -60,6 +61,9 @@ specs/            # design docs — the source of truth
 - Result JSON is the contract between core and every consumer. Version it from day one.
 - Every measurement records: value, unit, how it was collected, and a confidence/noise flag.
 - Errors never abort a run. A failed metric is marked `skipped` with a reason; the rest continue.
+- **Every conclusion carries evidence** — the file or observation it came from. This is a principle,
+  not a feature: the AI stage will cite this trail, and "say how you know" is hard rule 3 applied
+  one level up. Detection set the pattern; measurement and analysis follow it.
 - Config file is `perf.yml` at repo root, fully optional — sensible defaults without it.
 
 ---
@@ -69,7 +73,8 @@ specs/            # design docs — the source of truth
 **M1 — Walking skeleton (current).** See "Definition of done" below.
   - [x] Scaffold, boundary lint rule, Next.js fixture (commit `4adad5a`)
   - [x] Stability of build measurement validated: 1.2% warm / 0.0% cold spread
-  - [ ] detect/ → measure/ → baseline/ → report/ → cli/
+  - [x] `detect/` — project profile with per-conclusion evidence trail (commit `7358e9c`)
+  - [ ] measure/ → baseline/ → report/ → cli/
 **M2 — AI analysis.** Triage → deep analysis → cause + confidence + suggested fix in the terminal.
 **M3 — GitHub Action adapter.** Self-updating PR comment + non-blocking check.
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.

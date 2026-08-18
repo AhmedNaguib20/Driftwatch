@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 8 — 2026-08-18
+> Version 9 — 2026-08-18
 
 ---
 
@@ -262,6 +262,39 @@ Two things this buys beyond symmetry:
 - The number must be **labelled `build time (cold)`** in output. It is a comparison instrument, not
   the build time the developer experiences daily. Presenting it as the latter is its own kind of
   lying.
+
+#### How symmetry is achieved: measure both sides in temp copies (DECIDED)
+
+Forcing a cold build on the working tree appears to require deleting the user's `.next` — putting
+hard rule 5 in direct conflict with hard rule 2 (never touch the working directory).
+
+**Resolution: don't measure the working tree in place. Copy it to a temp dir and measure the copy,
+exactly as the baseline worktree is measured.**
+
+Rejected alternatives: deleting `.next` in place (fast, but carves an exception into rule 2 —
+once the tool may modify the working directory *under some conditions*, that principle is gone);
+moving it aside and restoring (preserves the cache, but a crash mid-run leaves the user's project in
+a state the tool created).
+
+*Why the expensive option wins:*
+
+- **Symmetry becomes structural, not disciplinary.** Both sides are temp copies built the same way,
+  so protocol equality holds by construction. Per §5.1, asymmetry is the *invisible* failure mode —
+  "we'll revisit if we see the two sides behave differently" is not a viable detection strategy,
+  because you won't see it.
+- **Rule 2 stays absolute.** A rule with no exceptions is enforceable; a rule with one exception
+  accumulates more.
+- **It closes asymmetries beyond the cache** — stray editor artifacts, local untracked files, build
+  tools that bake in absolute paths.
+- **The cost is small.** Excluding `node_modules`, `.next`, and `.git`, a source tree copy is
+  typically under a second against an 8s cold build.
+
+*Implementation requirements:*
+- The copy must faithfully represent uncommitted state — including untracked-but-not-ignored files.
+  `git archive` alone is insufficient.
+- Apply the `node_modules` rule below to the copy, same as to the worktree.
+- Some tooling reads `.git` (release detection, version stamping). Detect that case and handle it
+  explicitly rather than silently producing different behaviour on the copy.
 
 #### Second instance: `node_modules` (decide at M1 step 3)
 

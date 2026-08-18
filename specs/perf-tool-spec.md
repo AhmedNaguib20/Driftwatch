@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 11 — 2026-08-18
+> Version 12 — 2026-08-18
 
 ---
 
@@ -226,7 +226,10 @@ a week. Three mitigations, in increasing strength:
    result (`sampleValues`) so consumers can see the spread. `BUILD_SAMPLES = 3` is a code constant,
    not config — like the noise floor, it is a property of the instrument, not a preference.
    Cost: ~35s per side instead of ~13s.
-2. **Measure baseline and PR in the same job on the same machine.** Cancels most machine variance.
+2. **Measure baseline and PR in the same job on the same machine — and in the same invocation.**
+   Cancels most machine variance. Same-invocation pairs measure consistently under 1% apart; the
+   same machine drifts several percent over an hour (thermals, background load), so "same machine"
+   alone is not enough. **No reported delta may span a time gap** — see §5.1 fifth instance.
 3. **Instruction counting (Layer 3).** Eliminates the problem entirely for CPU-bound work.
 
 Anything below a ~2% delta is treated as noise and not reported.
@@ -343,6 +346,29 @@ run-dependent timing. Two consequences on temp-copy measurement:
   diagnostics (`trace`) are excluded from weighing as diagnostics-not-output.
 
 This is a general phenomenon, not a Next.js quirk — expect it in every ecosystem adapter.
+
+#### Fifth instance: temporal drift — the cache is a screening tool (DECIDED — M1 step 4)
+
+Found running the unchanged fixture twice: fresh-vs-fresh was clean, but fresh-current vs
+**cached** base reported −4% to −8% build deltas. Two causes: the OS warm-up occasionally bleeds
+into sample 2 (contaminating the median), and the machine itself drifts ~4% over an evening. A
+cached base is measured at a different time — the **temporal** version of the asymmetry §5.1 kills.
+
+**Decision (A + C):**
+
+- **A — warm-up sample.** One discarded build before the 3 measured samples, both sides. A
+  contaminated median is an estimator bug, full stop. Cost ~+9s/side.
+- **C — confirm-before-report.** Cached-base comparison is a **fast screening path only**. If every
+  metric is under the floor → report "no change" (the common case, stays fast). If any metric
+  crosses the floor → re-measure **both sides fresh in the same invocation** and report only the
+  confirmed result. A suspected regression pays ~70s for a temporally-local comparison; a confirmed
+  delta never spans a time gap. The fresh base measurement replaces the cache entry.
+
+Rejected: widening the floor for cached comparisons — honest but blunts the instrument; a real 4%
+regression becomes invisible whenever the cache is warm.
+
+Bundle size is immune to all of this (byte counts don't drift); the escalation applies to
+time-based metrics only.
 
 #### Cache integrity rules (M1 step 3)
 

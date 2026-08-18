@@ -38,6 +38,7 @@ function protocol(overrides: Partial<MeasurementProtocol> = {}): MeasurementProt
     arch: 'arm64',
     buildCommand: 'npm run build',
     buildSamples: 3,
+    warmupSamples: 1,
     env: { NEXT_TELEMETRY_DISABLED: '1' },
     ...overrides,
   }

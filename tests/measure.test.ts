@@ -168,7 +168,7 @@ describe('collectors: honest failure modes', () => {
     expect(outcome.succeeded).toBe(false)
     expect(outcome.metric.status).toBe('skipped')
     if (outcome.metric.status === 'skipped') {
-      expect(outcome.metric.reason).toMatch(/sample 1\/3 exited with code 3/)
+      expect(outcome.metric.reason).toMatch(/warm-up build exited with code 3/)
       expect(outcome.metric.reason).toMatch(/boom: module not found/)
     }
   })

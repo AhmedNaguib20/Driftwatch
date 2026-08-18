@@ -6,7 +6,7 @@ import type { ProjectProfile } from '../detect/types.js'
 import type { SideMeasurement } from '../measure/types.js'
 import { compareMetrics } from './compare-metrics.js'
 import { protocolMismatches } from './protocol-match.js'
-import type { Comparison, MetricComparison, ResultJson, RunVerdict } from './types.js'
+import type { Comparison, MeasurementPath, MetricComparison, ResultJson, RunVerdict } from './types.js'
 import { RESULT_SCHEMA_VERSION } from './types.js'
 
 /** Assembles the result JSON from the run's parts. Pure — clock injected for golden tests. */
@@ -17,6 +17,8 @@ export interface BuildResultInput {
   /** Null when the plan was unavailable. */
   readonly base: BaseSideResult | null
   readonly current: SideMeasurement
+  /** Defaults to 'fresh' — see MeasurementPath. */
+  readonly measurementPath?: MeasurementPath
   readonly now?: () => Date
 }
 
@@ -68,8 +70,11 @@ export function buildResult(input: BuildResultInput): ResultJson {
 function buildComparison(input: BuildResultInput): Comparison {
   const { plan, base, current, config } = input
 
+  const measurementPath = input.measurementPath ?? 'fresh'
+
   if (!plan.available || !base) {
     return {
+      measurementPath,
       dependenciesChanged: null,
       lockfileStatus: plan.available ? plan.lockfileStatus : null,
       protocolsMatch: false,
@@ -90,6 +95,7 @@ function buildComparison(input: BuildResultInput): Comparison {
   const mismatches = protocolMismatches(base.side.protocol, current.protocol)
 
   return {
+    measurementPath,
     dependenciesChanged: plan.dependenciesChanged,
     lockfileStatus: plan.lockfileStatus,
     protocolsMatch: mismatches.length === 0,

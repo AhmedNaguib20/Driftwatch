@@ -2,7 +2,7 @@ import path from 'node:path'
 import { detectProject } from '../detect/detect.js'
 import type { ProjectProfile } from '../detect/types.js'
 import { exists } from '../detect/fs-probe.js'
-import { BUILD_SAMPLES, MEASUREMENT_ENV } from '../measure/protocol.js'
+import { BUILD_SAMPLES, MEASUREMENT_ENV, WARMUP_SAMPLES } from '../measure/protocol.js'
 import { measureWorkspace } from '../measure/measure.js'
 import type { ProgressReporter } from '../measure/measure.js'
 import type { MeasurementProtocol, SideMeasurement } from '../measure/types.js'
@@ -123,6 +123,7 @@ export function predictProtocol(plan: BaselinePlan): MeasurementProtocol {
     arch: process.arch,
     buildCommand: null, // not part of the hash — the SHA fixes it
     buildSamples: BUILD_SAMPLES,
+    warmupSamples: WARMUP_SAMPLES,
     env: MEASUREMENT_ENV,
   }
 }

@@ -25,6 +25,7 @@ export function protocolMismatches(
     ['arch', (p) => p.arch],
     ['buildCommand', (p) => p.buildCommand ?? '(none)'],
     ['buildSamples', (p) => String(p.buildSamples)],
+    ['warmupSamples', (p) => String(p.warmupSamples)],
     ['env', (p) => formatEnv(p.env)],
   ]
 

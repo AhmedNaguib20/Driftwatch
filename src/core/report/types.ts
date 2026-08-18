@@ -74,7 +74,17 @@ export interface SideUnavailable {
   readonly reason: string
 }
 
+/**
+ * How the reported comparison came to be (§5.1 fifth instance):
+ *  - 'fresh': both sides measured in this invocation — temporally local by construction.
+ *  - 'screened': base from cache, every metric under the floor — safe to report as-is.
+ *  - 'confirmed': the cached screening crossed the floor, so both sides were re-measured fresh
+ *    in this invocation and THIS result is that re-measurement. No time-spanning delta exists.
+ */
+export type MeasurementPath = 'fresh' | 'screened' | 'confirmed'
+
 export interface Comparison {
+  readonly measurementPath: MeasurementPath
   /** Surfaced here so no consumer digs through sides to learn deps changed (spec §5.1). */
   readonly dependenciesChanged: boolean | null
   readonly lockfileStatus: LockfileStatus | null

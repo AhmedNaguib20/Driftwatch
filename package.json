@@ -1,6 +1,6 @@
 {
   "name": "driftwatch",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Measures code performance on every push, compares against a baseline, and explains regressions.",
   "type": "module",
   "license": "MIT",

@@ -22,6 +22,14 @@ export const INSTALL_TIMEOUT_MS = 15 * 60 * 1000
 export const BUILD_SAMPLES = 3
 
 /**
+ * Discarded builds before the measured samples (§5.1 fifth instance). The first build after a
+ * fresh node_modules clone reads through a cold OS page cache and runs ~25% slow; when that
+ * warm-up bled into sample 2, the median SELECTED the contaminated sample. Paying one throwaway
+ * build (~9s/side) makes the measured samples all steady-state.
+ */
+export const WARMUP_SAMPLES = 1
+
+/**
  * Environment added on top of the inherited one, identically on both sides, and recorded in the
  * protocol. Telemetry is disabled because it phones home (rule 6) and adds network jitter to the
  * timed window.
@@ -45,6 +53,7 @@ export function buildProtocol(
     arch: process.arch,
     buildCommand: profile.commands.build ? formatCommand(profile.commands.build) : null,
     buildSamples: BUILD_SAMPLES,
+    warmupSamples: WARMUP_SAMPLES,
     env: MEASUREMENT_ENV,
   }
 }

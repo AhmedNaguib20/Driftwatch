@@ -14,6 +14,14 @@ import type { MetricComparison, MetricVerdict } from './types.js'
 /** Every M1 metric is a cost: more milliseconds, more bytes — higher is worse. */
 const METRIC_ORDER: readonly MetricId[] = ['install_time', 'build_time', 'bundle_size']
 
+/**
+ * Absolute resolution of wall-clock timing. Process spawn alone jitters 5-10ms and a package
+ * manager adds tens more (measured: a 15ms script spreads 43% run to run), so a time delta under
+ * this quantum is unresolvable regardless of what it is as a percentage. Only bites when 2% of
+ * the build is under 100ms — i.e. builds shorter than ~5s; the percent floor governs real builds.
+ */
+const MIN_TIME_DELTA_MS = 100
+
 export interface CompareOptions {
   readonly noiseFloorPercent: number
   readonly thresholdPercent: number
@@ -97,6 +105,16 @@ function compareOne(
       verdict: 'no_change',
       exceedsThreshold: false,
       reason: `delta is under the ${options.noiseFloorPercent}% noise floor`,
+    }
+  }
+
+  if (shell.unit === 'ms' && Math.abs(absolute) < MIN_TIME_DELTA_MS) {
+    return {
+      ...shell,
+      delta: null,
+      verdict: 'no_change',
+      exceedsThreshold: false,
+      reason: `time delta is under the ${MIN_TIME_DELTA_MS}ms timing resolution`,
     }
   }
 

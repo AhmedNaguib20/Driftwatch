@@ -30,6 +30,8 @@ export interface MeasurementProtocol {
   readonly buildCommand: string | null
   /** Timed build runs per side; the reported value is their median (§5 mitigation 1). */
   readonly buildSamples: number
+  /** Discarded warm-up builds before the measured samples (§5.1 fifth instance). */
+  readonly warmupSamples: number
   /** Environment driftwatch added on top of the inherited environment. */
   readonly env: Readonly<Record<string, string>>
 }

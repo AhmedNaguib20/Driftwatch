@@ -25,6 +25,7 @@ function protocol(overrides: Partial<MeasurementProtocol> = {}): MeasurementProt
     arch: 'arm64',
     buildCommand: 'npm run build',
     buildSamples: 3,
+    warmupSamples: 1,
     env: { NEXT_TELEMETRY_DISABLED: '1' },
     ...overrides,
   }
@@ -295,5 +296,26 @@ describe('run verdict', () => {
     const facts = r.project.evidence.map((e) => e.fact)
     expect(facts).toContain('framework: nextjs')
     expect(facts).toContain('base: main @ c0ffee000000')
+  })
+})
+
+describe('timing resolution quantum', () => {
+  it('treats a big percentage on a tiny duration as unresolvable, not a regression', () => {
+    const [m] = compareMetrics(
+      [measured('build_time', 150, 'ms', 'b')],
+      [measured('build_time', 190, 'ms', 'b')], // +26.7%, but only 40ms
+      OPTS,
+    )
+    expect(m!.verdict).toBe('no_change')
+    expect(m!.reason).toMatch(/timing resolution/)
+  })
+
+  it('does not apply the quantum to bytes', () => {
+    const [m] = compareMetrics(
+      [measured('bundle_size', 1000, 'bytes', 's')],
+      [measured('bundle_size', 1090, 'bytes', 's')], // +9%, 90 "units"
+      OPTS,
+    )
+    expect(m!.verdict).toBe('regressed')
   })
 })

@@ -1,7 +1,7 @@
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import type { ProjectProfile } from '../detect/types.js'
-import { BUILD_SAMPLES, BUILD_TIMEOUT_MS, MEASUREMENT_ENV, median } from './protocol.js'
+import { BUILD_SAMPLES, BUILD_TIMEOUT_MS, MEASUREMENT_ENV, WARMUP_SAMPLES, median } from './protocol.js'
 import { formatCommand, runCommand } from './run-command.js'
 import type { MetricResult } from './types.js'
 import type { Workspace } from './workspace.js'
@@ -40,14 +40,16 @@ export async function collectBuildTime(
 
   const samples: number[] = []
 
-  for (let i = 1; i <= BUILD_SAMPLES; i += 1) {
+  // Warm-up runs first: timed like any sample, then thrown away (see WARMUP_SAMPLES).
+  for (let i = 1 - WARMUP_SAMPLES; i <= BUILD_SAMPLES; i += 1) {
+    const isWarmup = i < 1
     // Re-chill before every sample: clearing makes "cold" a guarantee of this function rather
     // than a property of how the workspace happened to be made.
     for (const dir of [...profile.cacheDirs, ...profile.buildOutputDirs]) {
       await rm(path.join(workspace.dir, dir), { recursive: true, force: true })
     }
 
-    progress(`build sample ${i}/${BUILD_SAMPLES}…`)
+    progress(isWarmup ? 'warm-up build (discarded)…' : `build sample ${i}/${BUILD_SAMPLES}…`)
     const outcome = await runCommand(profile.commands.build, {
       cwd: workspace.dir,
       env: MEASUREMENT_ENV,
@@ -63,13 +65,13 @@ export async function collectBuildTime(
           status: 'skipped',
           label,
           reason:
-            `build sample ${i}/${BUILD_SAMPLES} exited with ${outcome.exitCode === null ? 'no code (failed to start or killed)' : `code ${outcome.exitCode}`}` +
+            `${isWarmup ? 'warm-up build' : `build sample ${i}/${BUILD_SAMPLES}`} exited with ${outcome.exitCode === null ? 'no code (failed to start or killed)' : `code ${outcome.exitCode}`}` +
             (tail ? `; last output:\n${tail}` : ''),
         },
       }
     }
 
-    samples.push(Math.round(outcome.durationMs))
+    if (!isWarmup) samples.push(Math.round(outcome.durationMs))
   }
 
   return {
@@ -80,7 +82,7 @@ export async function collectBuildTime(
       value: median(samples),
       unit: 'ms',
       label,
-      collectedBy: `median of ${BUILD_SAMPLES} cold builds, wall clock around \`${formatCommand(profile.commands.build)}\` in a ${workspace.kind}`,
+      collectedBy: `median of ${BUILD_SAMPLES} cold builds after ${WARMUP_SAMPLES} discarded warm-up, wall clock around \`${formatCommand(profile.commands.build)}\` in a ${workspace.kind}`,
       samples: BUILD_SAMPLES,
       sampleValues: samples,
     },

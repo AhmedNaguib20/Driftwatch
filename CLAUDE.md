@@ -79,7 +79,8 @@ specs/            # design docs — the source of truth
   - [x] `measure/` — temp-copy workspace, median of 3, protocol recorded (commit `9955fdd`)
   - [x] `baseline/` — worktree via same measure path, lockfile rule, (SHA, protocol) cache,
         crash-safe sweep (commit `1484c20`)
-  - [ ] report/ → cli/
+  - [x] `report/` — schema v1, five verdicts, §5.1 refusal, golden-file contract (commit `0f0567d`)
+  - [ ] cli/ — plus warm-up sample + confirm-before-report escalation (spec §5.1 fifth instance)
 **M2 — AI analysis.** Triage → deep analysis → cause + confidence + suggested fix in the terminal.
 **M3 — GitHub Action adapter.** Self-updating PR comment + non-blocking check.
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.
@@ -103,7 +104,11 @@ Do not start a milestone before the previous one's definition of done is met.
 6. `--json` prints the result JSON instead.
 
 **No AI in M1.** The point of this milestone is proving the measurement is stable enough to build
-on: run it twice on an unchanged tree and the reported delta must be "no change" every time.
+on. Acceptance: run it twice on an unchanged tree and the reported delta must be "no change" every
+time — **including the second run, where the base comes from cache**. Time-based deltas are never
+reported across a time gap: a cached-base comparison that crosses the floor escalates to a fresh
+same-invocation re-measure of both sides and reports only the confirmed result (spec §5.1, fifth
+instance).
 
 ## Why M1 is first
 

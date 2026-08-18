@@ -47,6 +47,7 @@ export function protocolHashInput(protocol: MeasurementProtocol): Record<string,
     platform: protocol.platform,
     arch: protocol.arch,
     buildSamples: protocol.buildSamples,
+    warmupSamples: protocol.warmupSamples,
     env: protocol.env,
   }
 }

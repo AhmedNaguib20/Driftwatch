@@ -8,6 +8,7 @@ export {
   BUILD_TIMEOUT_MS,
   INSTALL_TIMEOUT_MS,
   MEASUREMENT_ENV,
+  WARMUP_SAMPLES,
   buildProtocol,
   median,
 } from './protocol.js'

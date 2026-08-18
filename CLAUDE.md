@@ -104,6 +104,13 @@ applies in full: BYOK env key, `--no-ai` fully offline, docs state exactly what 
 **M3 — GitHub Action adapter (current).** Self-updating PR comment + non-blocking check, rendering
 the same result JSON. Adapter consumes `--json` output only — the core/adapter boundary is already
 lint-enforced; keep it that way.
+  - [x] renderer — pure fn over schema 1.1, five goldens as contract, honest-omission rules
+        (`76a8723`)
+  - [ ] API client (upsert + check) → action entry → live PR proof
+  - [x] markdown renderer (`76a8723`) — five goldens are the adapter contract; pipe-escaping in
+        table cells; "why not higher" renders only held facts (omitted over padded — fabricated
+        uncertainty is rule 3 in reverse); dead links omitted until their features exist.
+  - [ ] GitHub API client (upsert + check) → action entry → live PR proof
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.
 **M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.
 

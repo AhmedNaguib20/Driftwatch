@@ -34,6 +34,30 @@ export function renderComment(result: ResultJson): string {
   return lines.join('\n')
 }
 
+/** The check run's markdown: verdict + table only — visible even where the comment cannot post. */
+export function renderCheckSummary(result: ResultJson): string {
+  return [...verdictBanner(result), '', ...comparisonTable(result)].join('\n')
+}
+
+/** One line for the check title / commit status description. */
+export function renderCheckTitle(result: ResultJson): string {
+  switch (result.verdict) {
+    case 'regression': {
+      const worst = result.comparison.metrics
+        .filter((m) => m.verdict === 'regressed' && m.exceedsThreshold)
+        .map((m) => `${m.label} ${formatPercent(m.delta!.percent)}`)
+        .join(', ')
+      return `${worst} (threshold ${result.config.thresholdPercent}%)`
+    }
+    case 'ok':
+      return 'no significant performance change'
+    case 'inconclusive':
+      return !result.base.available
+        ? `inconclusive: ${result.base.reason}`
+        : 'inconclusive: a key metric could not be compared'
+  }
+}
+
 function verdictBanner(result: ResultJson): string[] {
   const baseline = result.base.available
     ? `\`${result.config.base}@${result.base.sha.slice(0, 7)}\``

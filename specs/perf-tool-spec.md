@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 18 — 2026-08-19 — M2 COMPLETE (eval green under prompts v2, commit a5bad85); M3 next
+> Version 19 — 2026-08-19 — M2 complete; M3 in progress (renderer done, API client next)
 
 ---
 
@@ -406,10 +406,22 @@ Structure:
 - AI root cause with a visible confidence level, and a collapsed section explaining **why not
   higher** — stating what we could not isolate
 - suggested fix as a ready diff, with expected saving in numbers
-- heavy detail inside collapsed `<details>` blocks
+- heavy detail inside collapsed `<details>` blocks — including "what was sent to the AI provider"
+  (the contextManifest as reader-facing accounting)
+- the "why not higher" block renders **only facts we hold** (remaining suspects, truncation,
+  downgrades) and is omitted entirely when there is nothing honest to say — boilerplate uncertainty
+  is fabrication in reverse
 - footer: baseline commit, trend link, open-fix-PR link, adjust-threshold link
 
 Mockup built: `pr-comment-mockup.html`.
+
+*Implemented (M3 step 1, `76a8723`):* pure renderer over schema 1.1; five golden files are the
+adapter's contract. Judgment calls recorded: **"Why N% and not higher" renders only facts we hold**
+(remaining ranked suspects, truncated context, downgraded fixes) and is omitted at ≥0.9 or when
+empty — boilerplate uncertainty would be rule 3 in reverse; mockup links to unbuilt features
+(trend, open-fix-PR) omitted rather than dead; `|` in skip reasons escaped (markdown-table
+explosion bug caught by golding); fork-PR no-key line renders the measurement as standing on its
+own; marker `<!-- driftwatch:comment -->` leads every rendering for upsert targeting.
 
 ### 6.2 CI check
 

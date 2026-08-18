@@ -1,1 +1,7 @@
-export { COMMENT_MARKER, renderComment } from './render-comment.js'
+export { COMMENT_MARKER, renderCheckSummary, renderCheckTitle, renderComment } from './render-comment.js'
+export { GithubError, createGithubClient } from './api-client.js'
+export type { GithubClient, GithubClientOptions, GithubErrorKind } from './api-client.js'
+export { upsertComment } from './comments.js'
+export { conclusionFor, publishCheck } from './checks.js'
+export { publishResult } from './publish.js'
+export type { PublishContext, PublishOutcome } from './publish.js'

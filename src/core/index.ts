@@ -10,3 +10,6 @@
 export * from './detect/index.js'
 export * from './measure/index.js'
 export * from './baseline/index.js'
+export * from './report/index.js'
+export { runDriftwatch } from './run.js'
+export type { RunOptions as DriftwatchRunOptions } from './run.js'

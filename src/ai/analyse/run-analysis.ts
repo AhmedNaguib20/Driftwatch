@@ -57,18 +57,13 @@ export async function runAnalysis(
   }
 
   const triageStats = stats(provider, triage)
-  if (!triage.result.value.plausible) {
-    return {
-      outcome: 'inconclusive',
-      stopReason: triage.result.value.stopReason ?? 'triage found no plausible link to this diff',
-      stages: { triage: triageStats },
-      context: { triage: triageContext.manifest },
-    }
-  }
 
+  // v2: triage never stops the pipeline — measurement proved the regression is real (§7.1c);
+  // triage only ranks suspects and offers hypotheses that deep weighs.
   const suspects = triage.result.value.suspects
+  const hints = triage.result.value.outOfDiffHints ?? []
   progress(
-    `triage: plausible — suspects: ${suspects.map((s) => s.path).join(', ') || '(none named)'}; running deep analysis…`,
+    `triage: suspects: ${suspects.map((s) => s.path).join(', ') || '(none named)'}${hints.length > 0 ? ` (+${hints.length} out-of-diff hint(s))` : ''}; running deep analysis…`,
   )
   const deepContext = assembleDeepContext(
     input,
@@ -85,6 +80,7 @@ export async function runAnalysis(
           user: deepUser(
             deepContext.text,
             suspects.map((s) => s.path),
+            hints,
           ),
           maxOutputTokens: DEEP_MAX_OUTPUT,
           temperature: 0,
@@ -98,6 +94,17 @@ export async function runAnalysis(
   }
 
   const value = deep.result.value
+
+  // Deep — with the full patches in hand — is the only stage allowed to conclude this.
+  if (!value.explainsRegression) {
+    return {
+      outcome: 'inconclusive',
+      stopReason: value.cause,
+      stages: { triage: triageStats, deep: stats(provider, deep) },
+      context: { triage: triageContext.manifest, deep: deepContext.manifest },
+    }
+  }
+
   return {
     outcome: 'analysed',
     cause: value.cause,

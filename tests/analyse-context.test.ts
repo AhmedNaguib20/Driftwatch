@@ -152,14 +152,19 @@ describe('context assembly', () => {
     }
   }
 
-  it('triage context carries diffstat and numbers but zero patch content', async () => {
+  it('triage context: diffstat + numbers, small patches inlined, secrets still never', async () => {
     const { text, manifest } = assembleTriageContext(await input())
 
     expect(text).toContain('## Diffstat')
     expect(text).toContain('app/blog/page.tsx: +40/-5')
     expect(text).toContain('[11143, 8629, 8724]') // sampleValues visible
-    expect(text).not.toContain('```diff')
-    expect(text).not.toContain('import Chart')
+    // v2: files under 50 changed lines get their patch inlined at triage (§7.1c).
+    expect(text).toContain('import Chart')
+    expect(text).not.toContain('hunter2') // secrets stay withheld even when tiny
+    expect(text).not.toContain('huge lockfile noise')
+    const byPath = Object.fromEntries(manifest.files.map((f) => [f.path, f.disposition]))
+    expect(byPath['app/blog/page.tsx']).toBe('full')
+    expect(byPath['.env.local']).toBe('withheld')
     expect(manifest.estimatedTokens).toBeLessThan(manifest.budgetTokens)
   })
 

@@ -30,7 +30,12 @@ export function renderAnalysis(
         `  ${pc.yellow('the diff does not explain this regression.')} The model's reason, verbatim:`,
         `  ${pc.italic(`"${analysis.stopReason}"`)}`,
         `  ${pc.dim('Likely places to look instead: dependencies, configuration, build environment.')}`,
-        statsFooter([analysis.stages.triage], estimateCost),
+        statsFooter(
+          analysis.stages.deep
+            ? [analysis.stages.triage, analysis.stages.deep]
+            : [analysis.stages.triage],
+          estimateCost,
+        ),
       ].join('\n')
     case 'analysed':
       return renderAnalysed(analysis, estimateCost)

@@ -8,41 +8,56 @@
  *
  * Provider-agnostic by rule (§7.1): nothing here may reference a vendor, a model name, or a
  * vendor-specific formatting trick. If a prompt only works on one provider, that is a bug.
+ *
+ * v2 (§7.1c, after a live false negative): triage is de-gated — measurement proves realness, AI
+ * only explains, so triage ranks suspects and offers hypotheses but can no longer stop the
+ * pipeline. Deep is the only stage allowed to conclude "the diff does not explain this". The
+ * magnitude rule now names import/dependency/config lines as multipliers, with the lodash case
+ * that produced the false negative as the canonical example.
  */
 
-export const PROMPT_VERSION = 1
+export const PROMPT_VERSION = 2
+
+const MAGNITUDE_RULE = `Magnitude rule: judge a change by what it PULLS IN, not by its line count. \
+Import, dependency, and configuration lines are multipliers — one import can pull an entire \
+library into every bundle that includes it. Example: \`import _ from 'lodash'\` is one line and \
+adds roughly 140KB to every bundle containing that page. A 4-line diff can absolutely explain a \
++6% bundle regression if one of those lines is an import.`
 
 export const TRIAGE_SYSTEM = `You are the triage stage of Driftwatch, a tool that measures build \
-performance in CI and explains regressions. You will receive a measured performance regression \
-(with raw samples and measurement protocols) and a diffstat of every changed file. Patch content \
-is deliberately not included at this stage.
+performance in CI and explains regressions. You will receive a CONFIRMED performance regression \
+(measured cold on both sides, same machine, median of several samples, re-confirmed in the same \
+invocation — the regression is real; realness is not your question) plus a diffstat of every \
+changed file and the full patches of the small ones.
 
-Your one job: decide whether this diff can PLAUSIBLY explain the measured delta, and if so, which \
-files are the suspects.
+Your job: rank the suspect files for the deep-analysis stage, and offer hypotheses. You do not \
+decide whether analysis proceeds — it always does.
 
 Rules:
-- Judge plausibility against the SIZE of the delta, not just its direction. A one-line change \
-rarely explains a 3x regression; a 300-file addition easily can.
-- If the diffstat cannot plausibly explain the measured delta, say "plausible": false and explain \
-why in "stopReason" — the cause may be dependencies, configuration, environment, or something \
-not visible in this diff. A confident "this diff does not explain it" is a valuable answer, not \
-a failure. Never invent a suspect to have something to say.
 - Suspects are ranked most-suspicious first, each with a one-sentence reason tied to the numbers.
-- The measurement itself is trustworthy: both sides were measured cold, same machine, same \
-protocol, median of several samples. Do not blame measurement noise unless the raw samples \
-actually show it.
+- ${MAGNITUDE_RULE}
+- If you believe the cause may lie OUTSIDE this diff (dependencies, configuration, environment), \
+say so in "outOfDiffHints" — these travel to the deep stage as hypotheses to weigh, not \
+conclusions. Offer hints alongside your suspects, never instead of them: rank whatever suspects \
+the diff offers even when your hints feel stronger.
 
 Respond with ONLY a JSON object, no other text:
 {
-  "plausible": boolean,
   "suspects": [{ "path": "repo/relative/path", "reason": "one sentence" }],
-  "stopReason": "required when plausible is false; omit otherwise"
+  "outOfDiffHints": ["optional hypothesis about causes outside the diff"]
 }`
 
 export const DEEP_SYSTEM = `You are the analysis stage of Driftwatch, a tool that measures build \
-performance in CI and explains regressions. You will receive a measured regression (raw samples, \
-protocols, evidence trail) and the patches for the suspect files. Your job: identify the root \
-cause, state your confidence honestly, and suggest a fix.
+performance in CI and explains regressions. You will receive a confirmed regression (raw samples, \
+protocols, evidence trail), the patches for the suspect files, and possibly hypotheses from the \
+triage stage. Your job: identify the root cause, state your confidence honestly, and suggest a fix.
+
+You are the ONLY stage allowed to conclude that the diff does not explain the regression. If, \
+after weighing the patches, you conclude exactly that, say "explainsRegression": false and use \
+"cause" to state what to investigate instead. That is a valuable answer — but reach it only \
+after weighing what the patches pull in, not from line counts.
+
+${MAGNITUDE_RULE}
 
 Confidence calibration — follow this rubric exactly:
 - 0.9 or above: ONLY when a single suspect, a concrete mechanism, and the magnitude of the delta \
@@ -70,20 +85,29 @@ patches you were shown. Unified diff format.
 
 Respond with ONLY a JSON object, no other text:
 {
-  "cause": "one or two sentences naming the root cause",
+  "explainsRegression": true,
+  "cause": "one or two sentences naming the root cause (or, when explainsRegression is false, what to investigate instead)",
   "confidence": 0.0,
   "evidence": ["..."],
   "fix": { "kind": "diff" | "prose", "content": "..." }
 }`
 
 export function triageUser(context: string): string {
-  return `${context}\n\nIs this regression plausibly explained by this diff? Respond with the JSON object only.`
+  return `${context}\n\nRank the suspects for this confirmed regression. Respond with the JSON object only.`
 }
 
-export function deepUser(context: string, suspects: readonly string[]): string {
+export function deepUser(
+  context: string,
+  suspects: readonly string[],
+  hints: readonly string[] = [],
+): string {
   const suspectLine =
     suspects.length > 0
-      ? `Triage named these suspects (most suspicious first): ${suspects.join(', ')}.`
+      ? `Triage ranked these suspects (most suspicious first): ${suspects.join(', ')}.`
       : 'Triage named no specific suspects; weigh every patch shown.'
-  return `${context}\n\n${suspectLine}\nIdentify the root cause. Respond with the JSON object only.`
+  const hintLine =
+    hints.length > 0
+      ? `\nTriage also offered these out-of-diff hypotheses — weigh them, they are not conclusions: ${hints.join(' | ')}`
+      : ''
+  return `${context}\n\n${suspectLine}${hintLine}\nIdentify the root cause. Respond with the JSON object only.`
 }

@@ -95,8 +95,11 @@ applies in full: BYOK env key, `--no-ai` fully offline, docs state exactly what 
         (`b7f155e`)
   - [x] two-stage flow — versioned prompts (`prompts-v1.md`), calibration + magnitude arithmetic,
         fix rules enforced in code, every exit honest (`3ba3ff0`)
-  - [ ] surfacing: terminal + --json (schema minor bump) + --no-ai proof + first-run UX → live
-        acceptance (needs DRIFTWATCH_API_KEY)
+  - [x] surfacing + --no-ai + first-run UX (done; first-run UX verified live)
+  - [x] live acceptance: Run A PASSED; Run B FALSE NEGATIVE → structural fix decided (spec §7.1c):
+        triage is a suspect-ranker, never a gate — confirmed regressions always reach deep; small
+        diffs (<~50 lines) ride inline in triage; magnitude rule: imports are multipliers.
+  - [ ] prompts v2 + de-gated pipeline → re-run acceptance (B must identify lodash to close M2)
 **M3 — GitHub Action adapter.** Self-updating PR comment + non-blocking check.
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.
 **M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.

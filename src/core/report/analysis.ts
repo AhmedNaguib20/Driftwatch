@@ -66,9 +66,10 @@ export type AnalysisReport =
     }
   | {
       readonly outcome: 'inconclusive'
+      /** Deep analysis's own conclusion that the diff does not explain the regression (v2+). */
       readonly stopReason: string
-      readonly stages: { readonly triage: StageStats }
-      readonly context: { readonly triage: ContextManifest }
+      readonly stages: { readonly triage: StageStats; readonly deep?: StageStats }
+      readonly context: { readonly triage: ContextManifest; readonly deep?: ContextManifest }
     }
   | { readonly outcome: 'skipped'; readonly reason: string }
   | { readonly outcome: 'no_key' }

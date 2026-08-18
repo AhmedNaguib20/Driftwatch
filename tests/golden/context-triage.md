@@ -31,4 +31,22 @@ current: copy, cache cold, deps cloned, node v20.20.0 darwin/arm64, build "npm r
 - .env: +1/-0
 - package-lock.json: +40/-3
 
-<!-- manifest: {"files":[{"path":"lib/posts.ts","disposition":"diffstat-only","insertions":25,"deletions":1,"reason":"triage sends the diffstat only"},{"path":"app/blog/page.tsx","disposition":"diffstat-only","insertions":12,"deletions":2,"reason":"triage sends the diffstat only"},{"path":".env","disposition":"withheld","insertions":1,"deletions":0,"reason":"content withheld — matches secret file patterns"},{"path":"package-lock.json","disposition":"diffstat-only","insertions":40,"deletions":3,"reason":"lockfiles travel as package summaries, never raw patches"}],"lockfiles":["package-lock.json"],"estimatedTokens":350,"budgetTokens":4000,"truncated":false} -->
+## Patches of small diffs (unified diff, base → working tree)
+
+### lib/posts.ts (+25/-1)
+```diff
+diff --git a/lib/posts.ts b/lib/posts.ts
+@@ -1,3 +1,10 @@
++const archive = Array.from({ length: 300 })
+
+```
+
+### app/blog/page.tsx (+12/-2, new file)
+```diff
+diff --git a/app/blog/page.tsx b/app/blog/page.tsx
+@@ -0,0 +1,12 @@
++import Chart from "../dashboard/chart"
+
+```
+
+<!-- manifest: {"files":[{"path":"lib/posts.ts","disposition":"full","insertions":25,"deletions":1,"reason":"small diff (< 50 lines) — patch inlined at triage"},{"path":"app/blog/page.tsx","disposition":"full","insertions":12,"deletions":2,"reason":"small diff (< 50 lines) — patch inlined at triage"},{"path":".env","disposition":"withheld","insertions":1,"deletions":0,"reason":"content withheld — matches secret file patterns"},{"path":"package-lock.json","disposition":"diffstat-only","insertions":40,"deletions":3,"reason":"lockfiles travel as package summaries, never raw patches"}],"lockfiles":["package-lock.json"],"estimatedTokens":442,"budgetTokens":8000,"truncated":false} -->

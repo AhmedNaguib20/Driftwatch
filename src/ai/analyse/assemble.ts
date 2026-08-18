@@ -3,6 +3,7 @@ import {
   DEEP_BUDGET_TOKENS,
   MAX_PATCH_TOKENS_PER_FILE,
   MIN_PATCH_TOKENS,
+  SMALL_DIFF_INLINE_LINES,
   TRIAGE_BUDGET_TOKENS,
   estimateTokens,
 } from './budget.js'
@@ -32,26 +33,64 @@ export interface ContextInput {
   readonly lockfileSummaries: readonly LockfileSummary[]
 }
 
-/** Triage sees numbers and shape, not content: diffstat only, no patches. */
+/**
+ * Triage sees numbers, shape, and the patches of SMALL files (< SMALL_DIFF_INLINE_LINES changed
+ * lines). One import line can be a megabyte of bundle — a suspect-ranker that cannot see small
+ * patches is blind to exactly the changes that punch above their line count.
+ */
 export function assembleTriageContext(input: ContextInput): AssembledContext {
-  const sections = [
+  const fixedSections = [
     renderMeasurement(input.result),
     renderLockfileSummaries(input.lockfileSummaries),
     renderDiffstat(input.diff),
   ].filter((s) => s.length > 0)
 
-  // Triage sends no patch content for anyone — the manifest says what was SENT, so every file
-  // is diffstat-only here; withheld/binary annotations still apply for the reader.
-  const files: ManifestEntry[] = input.diff.map((f) => {
+  let spent = fixedSections.reduce((sum, s) => sum + estimateTokens(s), 0)
+  const patchSections: string[] = []
+  const files: ManifestEntry[] = []
+
+  for (const f of input.diff) {
     const fixed = baselineDisposition(f)
-    return {
-      path: f.path,
-      disposition: fixed === 'full' ? 'diffstat-only' : fixed,
-      insertions: f.insertions,
-      deletions: f.deletions,
-      reason: fixed === 'full' ? 'triage sends the diffstat only' : baselineReason(f),
+    if (fixed !== 'full') {
+      files.push({
+        path: f.path,
+        disposition: fixed,
+        insertions: f.insertions,
+        deletions: f.deletions,
+        reason: baselineReason(f),
+      })
+      continue
     }
-  })
+
+    const isSmall = f.insertions + f.deletions < SMALL_DIFF_INLINE_LINES
+    const patchTokens = estimateTokens(f.patch)
+    if (isSmall && spent + patchTokens <= TRIAGE_BUDGET_TOKENS) {
+      patchSections.push(patchSection(f, f.patch, false))
+      spent += patchTokens
+      files.push({
+        path: f.path,
+        disposition: 'full',
+        insertions: f.insertions,
+        deletions: f.deletions,
+        reason: `small diff (< ${SMALL_DIFF_INLINE_LINES} lines) — patch inlined at triage`,
+      })
+    } else {
+      files.push({
+        path: f.path,
+        disposition: 'diffstat-only',
+        insertions: f.insertions,
+        deletions: f.deletions,
+        reason: isSmall
+          ? 'triage budget exhausted'
+          : `triage inlines only small diffs (< ${SMALL_DIFF_INLINE_LINES} lines)`,
+      })
+    }
+  }
+
+  const sections =
+    patchSections.length > 0
+      ? [...fixedSections, '## Patches of small diffs (unified diff, base → working tree)', ...patchSections]
+      : fixedSections
 
   return finalize(sections, files, input, TRIAGE_BUDGET_TOKENS)
 }

@@ -59,11 +59,11 @@ function scriptedProvider(script: (string | ProviderError)[]): Provider & { requ
 }
 
 const TRIAGE_OK = JSON.stringify({
-  plausible: true,
   suspects: [{ path: 'lib/posts.ts', reason: 'adds 300 generated pages' }],
 })
 
 const DEEP_OK = JSON.stringify({
+  explainsRegression: true,
   cause: 'The archive import generates 300 additional static pages at build time.',
   confidence: 0.9,
   evidence: [
@@ -97,25 +97,44 @@ describe('runAnalysis — two-stage flow', () => {
     expect(analysis.context.deep.files.length).toBeGreaterThan(0)
   })
 
-  it('triage requests carry no patch content; deep requests carry the suspect patch', async () => {
+  it('v2: triage inlines small patches but never large ones; deep carries the suspect patch', async () => {
+    const bigPatch = 'diff --git a/big.ts b/big.ts\n' + '+LARGE-FILE-LINE\n'.repeat(80)
+    const diffData = {
+      diff: [
+        ...DIFF_DATA.diff,
+        file({ path: 'big.ts', insertions: 80, deletions: 0, patch: bigPatch }),
+      ],
+      lockfileSummaries: [],
+    }
     const provider = scriptedProvider([TRIAGE_OK, DEEP_OK])
-    await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+    await runAnalysis(await regressionResult(), diffData, provider)
 
-    expect(provider.requests[0]!.user).not.toContain('+changed')
+    expect(provider.requests[0]!.user).toContain('+changed') // small patch inlined at triage
+    expect(provider.requests[0]!.user).not.toContain('LARGE-FILE-LINE') // large one is not
     expect(provider.requests[1]!.user).toContain('+changed')
-    expect(provider.requests[1]!.user).toContain('Triage named these suspects')
+    expect(provider.requests[1]!.user).toContain('Triage ranked these suspects')
   })
 
-  it('plausible: false → inconclusive with the model reason, deep never called', async () => {
+  it('v2: triage never stops the pipeline — deep always runs and is the only stage that may conclude not-explained', async () => {
     const provider = scriptedProvider([
-      JSON.stringify({ plausible: false, suspects: [], stopReason: 'the diff touches only documentation; a +7% build delta cannot come from markdown' }),
+      JSON.stringify({ suspects: [], outOfDiffHints: ['a dependency may have changed outside this diff'] }),
+      JSON.stringify({
+        explainsRegression: false,
+        cause: 'After weighing the patches: the diff touches only documentation; investigate dependency resolution and build environment instead.',
+        confidence: 0.4,
+        evidence: ['build time (cold) regressed 8724ms → 9350ms while no code-bearing file changed'],
+        fix: { kind: 'prose', content: 'Compare lockfiles and CI images between the two builds.' },
+      }),
     ])
     const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
 
+    expect(provider.requests).toHaveLength(2) // deep ALWAYS ran
     expect(analysis.outcome).toBe('inconclusive')
     if (analysis.outcome !== 'inconclusive') return
-    expect(analysis.stopReason).toMatch(/only documentation/)
-    expect(provider.requests).toHaveLength(1)
+    expect(analysis.stopReason).toMatch(/investigate dependency resolution/)
+    expect(analysis.stages.deep).toBeDefined()
+    // The triage hint travelled into the deep request as a hypothesis, labelled as such.
+    expect(provider.requests[1]!.user).toMatch(/out-of-diff hypotheses.*a dependency may have changed/)
   })
 
   it('provider error at triage → skipped with the typed reason', async () => {
@@ -168,6 +187,7 @@ describe('runAnalysis — two-stage flow', () => {
     const provider = scriptedProvider([
       TRIAGE_OK,
       JSON.stringify({
+        explainsRegression: true,
         cause: 'probably the archive',
         confidence: 0.55,
         evidence: ['build time regressed +626ms'],
@@ -186,6 +206,7 @@ describe('runAnalysis — two-stage flow', () => {
     const provider = scriptedProvider([
       TRIAGE_OK,
       JSON.stringify({
+        explainsRegression: true,
         cause: 'the archive',
         confidence: 0.95,
         evidence: ['build time regressed +626ms'],
@@ -201,7 +222,7 @@ describe('runAnalysis — two-stage flow', () => {
 })
 
 describe('golden prompts — the prompts are documentation', () => {
-  const GOLDEN = path.join(import.meta.dirname, 'golden', 'prompts-v1.md')
+  const GOLDEN = path.join(import.meta.dirname, 'golden', `prompts-v${PROMPT_VERSION}.md`)
 
   it('rendered prompts match the golden file', async () => {
     const input: ContextInput = { result: await regressionResult(), ...DIFF_DATA }

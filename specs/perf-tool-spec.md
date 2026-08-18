@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 16 — 2026-08-19 — M1 complete; M2: providers + context + two-stage flow done, surfacing next
+> Version 17 — 2026-08-19 — M2 acceptance: Run A passed, Run B false negative → triage de-gated (§7.1c), prompts v2 pending
 
 ---
 
@@ -457,10 +457,21 @@ Build only when monetizing teams (multi-repo, alerting, permissions), with payin
 **Trigger rule: AI only runs on a detected regression.** Measurement itself is plain scripts, no AI.
 Expect AI to fire on roughly 5–10% of pushes.
 
-### Two-stage routing
+### Two-stage routing (REVISED after M2 acceptance — see §7.1c)
 
-1. **Triage (cheap model — Haiku)** — real regression or CI noise? Which files are suspects?
-2. **Deep analysis — Sonnet (DECIDED).** Only if stage 1 confirms. Input: diff + benchmark deltas +
+The original design gave triage two jobs: noise-gate ("real regression or CI noise?") and
+suspect-naming. **The noise-gate job is dead**: since §5.1's fifth instance, a reported regression
+is already *proven real by measurement* — confirm-before-report escalation, same-invocation, fresh
+both sides. AI must never overrule measurement.
+
+1. **Triage — suspect ranking only, never a gate.** Ranks changed files by likely contribution and
+   flags out-of-diff hypotheses (deps/config/environment) as *hints for deep, not verdicts*. A
+   confirmed regression ALWAYS proceeds to deep analysis.
+2. **Deep analysis** — full patches for top suspects, produces cause + confidence + evidence + fix,
+   and is the only stage allowed to conclude "the diff does not explain this."
+
+Economics still hold: deep on every confirmed regression ≈ $0.006/run on DeepSeek at ~12K input
+tokens, and regressions are 5–10% of pushes. Input: diff + benchmark deltas +
    relevant code (+ profiling data such as a flame graph). Output: root cause, confidence score,
    suggested fix.
 
@@ -553,7 +564,36 @@ This makes provider-swapping a **day-one architectural requirement**, not a late
 - Privacy **asserted by test**: the mock provider records every request; triage requests contain
   zero patch content.
 
+### 7.1c The Run-B false negative — why triage lost its gate (M2 acceptance, 2026-08-19)
+
+Acceptance Run B: a 4-line diff — `import _ from 'lodash'` + one `_.debounce` usage — caused a
+measured, confirmed +6.1% bundle regression (~140KB: textbook full-lodash import). Triage saw only
+the diffstat (`+4/-0`), applied the line-count-as-magnitude heuristic it had been taught ("a
+one-line change rarely explains a 3× regression"), and stopped the pipeline: **honest, mechanically
+correct reasoning from insufficient input — and still wrong**, misdirecting the user toward
+environment-hunting. The failure was structural, not model error: diffstat-only triage is blind to
+exactly the small-isolated-cause class that Run B was designed to test.
+
+Three fixes (prompt/pipeline v2):
+1. **Triage loses the gate** (see revised §7 routing) — measurement proves realness; AI only
+   explains. Triage's stopReason becomes a hint passed into deep's context.
+2. **Small diffs ride inline**: files under ~50 changed lines get their patch in the triage context.
+   Run B's entire diff is 4 lines; the cost is trivial.
+3. **Magnitude rule corrected**: import/dependency lines are *multipliers*, not line-counts — one
+   import can pull in a library. Stated to the model with the lodash example.
+
+Run A passed cleanly (cause correct, suspects ordered, arithmetic stated, 70% confidence
+rubric-correct with two contributing suspects, fix stayed prose). Provider findings from the same
+session: DeepSeek intermittently fences JSON despite json-mode → provider-agnostic tolerant
+extraction (location-only, shape still strict); served model name can differ from requested
+(`deepseek-v4-flash` for `deepseek-chat`) → record the served name and price by it.
+
 ### 7.2 Evaluation set — build it early
+
+**The eval set has its first three entries** (from M2 acceptance): Run A (large obvious cause),
+Run B (small isolated cause — the false-negative class), and the deferred "richer variant" (same
+lodash import but with dependenciesChanged signal). Every future prompt change must beat v2 on
+these before shipping.
 
 Before comparing providers by feel, assemble ~20 real regressions with known causes (harvest them
 via Git History Replay, §10). Then provider choice becomes a measurement: *which model identified

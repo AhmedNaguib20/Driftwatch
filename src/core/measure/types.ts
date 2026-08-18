@@ -32,6 +32,12 @@ export interface MeasurementProtocol {
   readonly buildSamples: number
   /** Discarded warm-up builds before the measured samples (§5.1 fifth instance). */
   readonly warmupSamples: number
+  /**
+   * Labels describing the machine class, from DRIFTWATCH_HOST_LABELS (comma-separated) — a
+   * generic contract: CI adapters set it (runner OS, image), core never knows who did. Part of
+   * the protocol so cross-run comparisons on different runners stay refusable (§5.1).
+   */
+  readonly hostLabels: readonly string[]
   /** Environment driftwatch added on top of the inherited environment. */
   readonly env: Readonly<Record<string, string>>
 }

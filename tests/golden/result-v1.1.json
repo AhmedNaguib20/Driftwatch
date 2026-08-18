@@ -37,6 +37,7 @@
     "thresholdPercent": 5,
     "noiseFloorPercent": 2,
     "base": "main",
+    "block_merge": false,
     "sourcePath": "/repo/app/perf.yml"
   },
   "base": {
@@ -88,6 +89,7 @@
       "buildCommand": "npm run build",
       "buildSamples": 3,
       "warmupSamples": 1,
+      "hostLabels": [],
       "env": {
         "NEXT_TELEMETRY_DISABLED": "1"
       }
@@ -140,6 +142,7 @@
       "buildCommand": "npm run build",
       "buildSamples": 3,
       "warmupSamples": 1,
+      "hostLabels": [],
       "env": {
         "NEXT_TELEMETRY_DISABLED": "1"
       }

@@ -423,6 +423,19 @@ empty — boilerplate uncertainty would be rule 3 in reverse; mockup links to un
 explosion bug caught by golding); fork-PR no-key line renders the measurement as standing on its
 own; marker `<!-- driftwatch:comment -->` leads every rendering for upsert targeting.
 
+#### API client notes (M3 step 2, `73e4830`)
+
+- Rate limits: one retry honouring `Retry-After`, **capped at 30s** — beyond that it's an outage,
+  and hanging the user's CI job to wait out a window is worse than reporting it. Both 429 and
+  GitHub's 403-with-remaining-0 variant detected.
+- Self-heal: multiple marker comments (past bug, race) → update the first, delete the rest, count
+  in warnings.
+- **Commit-status fallback has no neutral state**: warn-only regression maps to `success` with the
+  truth in the description text (`⚠ ... (warn-only)`); `failure` stays reserved for opted-in
+  blocking. Surface choice reported in warnings.
+- `publishResult()` never throws: comment 403 → check-only; check 403 → status fallback; all down →
+  warnings, exit unchanged. **The user's CI run cannot be failed by our publishing.**
+
 ### 6.2 CI check
 
 A status check carrying the same verdict, so teams can block merges on it.

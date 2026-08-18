@@ -98,6 +98,7 @@ function fakeProtocol(overrides: Partial<MeasurementProtocol> = {}): Measurement
     buildCommand: 'npm run build',
     buildSamples: 3,
     warmupSamples: 1,
+    hostLabels: [],
     env: { NEXT_TELEMETRY_DISABLED: '1' },
     ...overrides,
   }

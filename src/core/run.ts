@@ -30,6 +30,8 @@ export interface RunOptions {
   readonly cwd?: string
   /** Overrides the config's base ref (--base). */
   readonly base?: string
+  /** Display name for the base when `base` is a bare SHA (CI: base branch name). */
+  readonly baseLabel?: string
   /** Skip the baseline cache lookup (--no-cache). Results are still written. */
   readonly readCache?: boolean
   readonly progress?: ProgressReporter
@@ -46,7 +48,7 @@ export async function runDriftwatch(options: RunOptions = {}): Promise<ResultJso
   const config = await loadConfig(profile.projectRoot, configFromProfile(profile))
 
   const baseRef = options.base ?? config.base
-  const plan = await planBaseline(profile, baseRef)
+  const plan = await planBaseline(profile, baseRef, options.baseLabel)
   if (!plan.available) progress(`baseline unavailable: ${plan.reason}`)
 
   const first = await measureOnce(profile, config, plan, progress, {

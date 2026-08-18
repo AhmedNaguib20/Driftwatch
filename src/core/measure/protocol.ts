@@ -38,6 +38,15 @@ export const MEASUREMENT_ENV: Readonly<Record<string, string>> = {
   NEXT_TELEMETRY_DISABLED: '1',
 }
 
+/** Comma-separated, trimmed, sorted — label order must never change a protocol hash. */
+export function hostLabelsFromEnv(env: NodeJS.ProcessEnv = process.env): string[] {
+  return (env['DRIFTWATCH_HOST_LABELS'] ?? '')
+    .split(',')
+    .map((label) => label.trim())
+    .filter((label) => label.length > 0)
+    .sort()
+}
+
 export function buildProtocol(
   profile: ProjectProfile,
   workspace: Workspace,
@@ -54,6 +63,7 @@ export function buildProtocol(
     buildCommand: profile.commands.build ? formatCommand(profile.commands.build) : null,
     buildSamples: BUILD_SAMPLES,
     warmupSamples: WARMUP_SAMPLES,
+    hostLabels: hostLabelsFromEnv(),
     env: MEASUREMENT_ENV,
   }
 }

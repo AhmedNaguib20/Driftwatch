@@ -10,6 +10,7 @@ export {
   MEASUREMENT_ENV,
   WARMUP_SAMPLES,
   buildProtocol,
+  hostLabelsFromEnv,
   median,
 } from './protocol.js'
 export { collectBuildTime } from './build.js'

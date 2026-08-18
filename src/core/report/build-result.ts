@@ -51,7 +51,10 @@ export function buildResult(input: BuildResultInput): ResultJson {
       model: config.model,
       thresholdPercent: config.thresholdPercent,
       noiseFloorPercent: config.noiseFloorPercent,
-      base: config.base,
+      // The ref actually compared against — a --base override must not be misreported as
+      // perf.yml's default.
+      base: plan.available ? plan.baseRef : config.base,
+      block_merge: config.block_merge,
       sourcePath: config.sourcePath,
     },
     base:

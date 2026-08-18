@@ -106,7 +106,9 @@ the same result JSON. Adapter consumes `--json` output only — the core/adapter
 lint-enforced; keep it that way.
   - [x] renderer — pure fn over schema 1.1, five goldens as contract, honest-omission rules
         (`76a8723`)
-  - [ ] API client (upsert + check) → action entry → live PR proof
+  - [x] API client — upsert w/ self-heal, checks + status fallback, publishResult never fails the
+        user's CI (`73e4830`)
+  - [ ] action entry + init --github → live PR proof
   - [x] markdown renderer (`76a8723`) — five goldens are the adapter contract; pipe-escaping in
         table cells; "why not higher" renders only held facts (omitted over padded — fabricated
         uncertainty is rule 3 in reverse); dead links omitted until their features exist.

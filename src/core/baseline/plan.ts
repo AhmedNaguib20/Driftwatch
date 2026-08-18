@@ -44,6 +44,8 @@ export interface BaselineUnavailable {
 export async function planBaseline(
   profile: ProjectProfile,
   baseRef: string,
+  /** Display name when baseRef is a bare SHA (CI passes the PR base SHA + the branch name). */
+  baseLabel?: string,
 ): Promise<BaselinePlan | BaselineUnavailable> {
   if (!profile.gitRoot || !profile.pathInRepo) {
     return {
@@ -84,7 +86,7 @@ export async function planBaseline(
 
   return {
     available: true,
-    baseRef,
+    baseRef: baseLabel ?? baseRef,
     baseSha,
     lockfileStatus: lock.status,
     dependenciesChanged:

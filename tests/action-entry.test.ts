@@ -1,0 +1,193 @@
+import { execFile } from 'node:child_process'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { promisify } from 'node:util'
+import { afterEach, describe, expect, it } from 'vitest'
+
+import { exitCodeFor } from '../src/adapters/github/action-entry.js'
+import { parseActionEvent } from '../src/adapters/github/event.js'
+import { preflightBase } from '../src/adapters/github/preflight.js'
+import { renderWorkflow } from '../src/adapters/github/workflow-template.js'
+import { writeGithubWorkflow } from '../src/cli/init-command.js'
+import { detectProject, hostLabelsFromEnv, protocolMismatches } from '../src/core/index.js'
+import type { MeasurementProtocol } from '../src/core/index.js'
+
+const exec = promisify(execFile)
+const temps: string[] = []
+
+async function scratch(): Promise<string> {
+  const dir = await mkdtemp(path.join(tmpdir(), 'driftwatch-action-'))
+  temps.push(dir)
+  return dir
+}
+
+afterEach(async () => {
+  await Promise.all(temps.splice(0).map((d) => rm(d, { recursive: true, force: true })))
+})
+
+const PR_PAYLOAD = JSON.stringify({
+  pull_request: {
+    number: 7,
+    base: { sha: 'b'.repeat(40), ref: 'main' },
+    head: { sha: 'h'.repeat(40) },
+  },
+})
+
+describe('event parsing', () => {
+  it('extracts the PR coordinates from a pull_request event', async () => {
+    const event = await parseActionEvent(
+      {
+        GITHUB_EVENT_NAME: 'pull_request',
+        GITHUB_REPOSITORY: 'ahmed/driftwatch',
+        GITHUB_EVENT_PATH: '/event.json',
+      },
+      async () => PR_PAYLOAD,
+    )
+
+    expect(event).toEqual({
+      kind: 'pull-request',
+      owner: 'ahmed',
+      repo: 'driftwatch',
+      prNumber: 7,
+      baseSha: 'b'.repeat(40),
+      baseRef: 'main',
+      headSha: 'h'.repeat(40),
+    })
+  })
+
+  it('a push event is a clean no-op with a reason, not an error', async () => {
+    const event = await parseActionEvent({ GITHUB_EVENT_NAME: 'push' })
+    expect(event.kind).toBe('not-a-pr')
+    if (event.kind === 'not-a-pr') expect(event.reason).toMatch(/"push".*nothing to do/)
+  })
+
+  it('malformed payload degrades to a reasoned no-op', async () => {
+    const event = await parseActionEvent(
+      {
+        GITHUB_EVENT_NAME: 'pull_request',
+        GITHUB_REPOSITORY: 'a/b',
+        GITHUB_EVENT_PATH: '/event.json',
+      },
+      async () => '{broken',
+    )
+    expect(event.kind).toBe('not-a-pr')
+    if (event.kind === 'not-a-pr') expect(event.reason).toMatch(/could not read the event payload/)
+  })
+
+  it('a payload without a pull_request block is refused with the reason', async () => {
+    const event = await parseActionEvent(
+      {
+        GITHUB_EVENT_NAME: 'pull_request',
+        GITHUB_REPOSITORY: 'a/b',
+        GITHUB_EVENT_PATH: '/event.json',
+      },
+      async () => '{"action": "opened"}',
+    )
+    expect(event.kind).toBe('not-a-pr')
+    if (event.kind === 'not-a-pr') expect(event.reason).toMatch(/no complete pull_request block/)
+  })
+})
+
+describe('base preflight', () => {
+  it('passes when the base commit is present', async () => {
+    const dir = await scratch()
+    await exec('git', ['init', '-q'], { cwd: dir })
+    await exec('git', ['-C', dir, 'config', 'user.email', 't@t'])
+    await exec('git', ['-C', dir, 'config', 'user.name', 't'])
+    await writeFile(path.join(dir, 'a.txt'), 'x')
+    await exec('git', ['-C', dir, 'add', '-A'])
+    await exec('git', ['-C', dir, 'commit', '-q', '-m', 'c'])
+    const sha = (await exec('git', ['-C', dir, 'rev-parse', 'HEAD'])).stdout.trim()
+
+    expect(await preflightBase(dir, sha)).toEqual({ ok: true })
+  })
+
+  it('a missing base fails with the exact fix, not a description', async () => {
+    const dir = await scratch()
+    await exec('git', ['init', '-q'], { cwd: dir })
+
+    const result = await preflightBase(dir, 'f'.repeat(40))
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.fix).toContain('fetch-depth: 0')
+      expect(result.fix).toContain('actions/checkout')
+    }
+  })
+})
+
+describe('exit codes', () => {
+  const config = (block_merge: boolean) =>
+    ({ config: { block_merge } }) as never
+
+  it('exit 0 for every verdict while block_merge is false', () => {
+    for (const verdict of ['ok', 'regression', 'inconclusive'] as const) {
+      expect(exitCodeFor({ verdict, ...config(false) })).toBe(0)
+    }
+  })
+
+  it('exit 1 only for block_merge:true + regression', () => {
+    expect(exitCodeFor({ verdict: 'regression', ...config(true) })).toBe(1)
+    expect(exitCodeFor({ verdict: 'ok', ...config(true) })).toBe(0)
+    expect(exitCodeFor({ verdict: 'inconclusive', ...config(true) })).toBe(0)
+  })
+})
+
+describe('host labels — cross-runner comparisons stay refusable', () => {
+  it('parses, trims, and sorts the generic env contract', () => {
+    expect(hostLabelsFromEnv({ DRIFTWATCH_HOST_LABELS: 'os:Linux, image:ubuntu24, arch:X64' })).toEqual([
+      'arch:X64',
+      'image:ubuntu24',
+      'os:Linux',
+    ])
+    expect(hostLabelsFromEnv({})).toEqual([])
+  })
+
+  it('differing host labels are a protocol mismatch', () => {
+    const base = { hostLabels: ['os:Linux'] } as unknown as MeasurementProtocol
+    const current = { hostLabels: ['os:macOS'] } as unknown as MeasurementProtocol
+    const proto = (p: MeasurementProtocol): MeasurementProtocol =>
+      ({
+        version: 1, workspace: 'worktree', cacheState: 'cold', nodeModules: 'cloned',
+        gitMetadata: 'absent', nodeVersion: 'v20', platform: 'linux', arch: 'x64',
+        buildCommand: 'b', buildSamples: 3, warmupSamples: 1, env: {}, ...p,
+      }) as MeasurementProtocol
+
+    const diffs = protocolMismatches(proto(base), proto(current))
+    expect(diffs).toEqual(['hostLabels: os:Linux (base) vs os:macOS (current)'])
+  })
+})
+
+describe('init --github workflow file', () => {
+  it('matches its golden file', async () => {
+    const rendered = renderWorkflow()
+    const golden = path.join(import.meta.dirname, 'golden', 'workflow-driftwatch.yml')
+    if (process.env.UPDATE_GOLDEN === '1') await writeFile(golden, rendered, 'utf8')
+    expect(rendered).toBe(await readFile(golden, 'utf8'))
+    // The two non-negotiables, asserted independently of the golden:
+    expect(rendered).toContain('fetch-depth: 0')
+    expect(rendered).toContain('cancel-in-progress: true')
+    expect(rendered).not.toMatch(/ghp_|sk-/) // no literal secrets, ever
+  })
+
+  it('writes when absent, refuses when present and different, obeys --force', async () => {
+    const dir = await scratch()
+    await exec('git', ['init', '-q'], { cwd: dir })
+    await writeFile(path.join(dir, 'package.json'), '{}')
+    const profile = await detectProject({ cwd: dir })
+    const target = path.join(dir, '.github', 'workflows', 'driftwatch.yml')
+
+    await writeGithubWorkflow(profile, false)
+    expect(await readFile(target, 'utf8')).toBe(renderWorkflow())
+
+    // Their edit survives a plain re-run…
+    await writeFile(target, 'name: theirs\n', 'utf8')
+    await writeGithubWorkflow(profile, false)
+    expect(await readFile(target, 'utf8')).toBe('name: theirs\n')
+
+    // …and --force overwrites it.
+    await writeGithubWorkflow(profile, true)
+    expect(await readFile(target, 'utf8')).toBe(renderWorkflow())
+  })
+})

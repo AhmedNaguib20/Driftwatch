@@ -63,7 +63,9 @@ export interface ConfigReport {
   readonly model: string
   readonly thresholdPercent: number
   readonly noiseFloorPercent: number
+  /** The base ref actually used for this run (a --base override wins over perf.yml). */
   readonly base: string
+  readonly block_merge: boolean
   readonly sourcePath: string | null
 }
 

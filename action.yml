@@ -1,0 +1,14 @@
+name: 'Driftwatch'
+description: >-
+  Measures build performance on every pull request, compares against the base commit under an
+  identical protocol, and (with an API key) explains confirmed regressions.
+author: 'Driftwatch'
+branding:
+  icon: 'trending-up'
+  color: 'orange'
+
+# No inputs carry secrets. GITHUB_TOKEN and DRIFTWATCH_API_KEY arrive as env from the workflow's
+# secrets block — a secret with an input default would end up in logs and forks.
+runs:
+  using: 'node20'
+  main: 'dist/adapters/github/action-entry.js'

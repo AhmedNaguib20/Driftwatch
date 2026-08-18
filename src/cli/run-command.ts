@@ -21,6 +21,7 @@ const NO_AI_ENV = 'DRIFTWATCH_NO_AI'
 
 export interface RunFlags {
   readonly base?: string
+  readonly baseLabel?: string
   readonly json: boolean
   readonly cache: boolean
   readonly ai: boolean
@@ -36,6 +37,7 @@ export async function runCommand(flags: RunFlags): Promise<void> {
     const measured = await runDriftwatch({
       cwd: flags.cwd,
       base: flags.base,
+      baseLabel: flags.baseLabel,
       readCache: flags.cache,
       progress,
     })

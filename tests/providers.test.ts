@@ -40,7 +40,7 @@ function providerWith(fetchImpl: typeof fetch) {
 
 describe('openai-compatible client', () => {
   it('sends the request in OpenAI shape and reports token usage', async () => {
-    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (url: string | URL, init?: RequestInit) => {
       expect(String(url)).toBe('https://api.test/chat/completions')
       const body = JSON.parse(init!.body as string)
       expect(body.messages).toEqual([
@@ -60,7 +60,7 @@ describe('openai-compatible client', () => {
   })
 
   it('keeps the API key in the auth header and out of the body', async () => {
-    const fetchImpl = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (_url: string | URL, init?: RequestInit) => {
       const headers = init!.headers as Record<string, string>
       expect(headers.authorization).toBe('Bearer sk-test-secret')
       expect(init!.body as string).not.toContain('sk-test-secret')
@@ -82,7 +82,7 @@ describe('openai-compatible client', () => {
 
   it('times out via abort and says how long it waited', async () => {
     const fetchImpl = vi.fn(
-      (_url: RequestInfo | URL, init?: RequestInit) =>
+      (_url: string | URL, init?: RequestInit) =>
         new Promise<Response>((_resolve, reject) => {
           init!.signal!.addEventListener('abort', () => reject(new Error('aborted')))
         }),
@@ -137,7 +137,7 @@ describe('jsonCall — validate + one corrective retry', () => {
 
   it('retries once with the problem named, and sums token usage', async () => {
     let calls = 0
-    const fetchImpl = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (_url: string | URL, init?: RequestInit) => {
       calls += 1
       if (calls === 1) return okPayload('not json at all')
       const body = JSON.parse(init!.body as string)

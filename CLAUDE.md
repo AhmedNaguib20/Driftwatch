@@ -87,6 +87,11 @@ regardless of percentage.
 **M2 — AI analysis (current).** Triage → deep analysis → cause + confidence + suggested fix in the
 terminal. Provider-pluggable (`src/ai/providers/`), DeepSeek first (OpenAI-compatible). Hard rule 6
 applies in full: BYOK env key, `--no-ai` fully offline, docs state exactly what is sent.
+  - [x] providers/ — transport-level `chat()` interface, one OpenAI-format client for
+        deepseek+openai, key hygiene tested, strict-JSON with one corrective retry (`b02b12a`).
+        Design note: the provider boundary is a JSON-completion transport; the semantic
+        analyse shapes and all prompts live in `analyse/` — that is what enforces §7.1.
+  - [ ] analyse/ context assembly → two-stage flow → surfacing
 **M3 — GitHub Action adapter.** Self-updating PR comment + non-blocking check.
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.
 **M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.

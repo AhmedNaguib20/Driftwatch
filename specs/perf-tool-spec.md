@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 13 — 2026-08-18 — M1 COMPLETE (commit 517de82, 100 tests)
+> Version 14 — 2026-08-19 — M1 complete; M2 in progress (providers done, analyse/ underway)
 
 ---
 
@@ -472,6 +472,33 @@ roughly double the cost — not justified yet.
 the choice is theirs. Once real usage data exists, revisit with numbers instead of guesses.
 
 ### 7.1 Provider abstraction — required from day one
+
+**Implemented (M2 step 1, `b02b12a`):** the provider boundary is a JSON-completion *transport* —
+`chat(request) → {text, tokens, model}` — not a semantic `analyse()`. The typed triage/deep shapes
+and all prompts live in `analyse/`, above the boundary. This enforces provider-agnostic prompts
+*structurally*: nothing above the boundary can tell DeepSeek from OpenAI (one OpenAI-format client
+covers both; base URL + model + key differ in a registry). Key from `DRIFTWATCH_API_KEY` env only —
+never config, never disk, never in results. Strict JSON via `response_format` plus one corrective
+retry (the model sees its own rejected output and the named problem); token usage summed across
+attempts so cost stays honest. Typed failures (`auth`/`http`/`network`/`timeout`/`malformed`)
+degrade to `analysis: skipped` with reason — the verdict itself never depends on a provider being
+reachable.
+
+### 7.1a Context assembly (M2 step 2 — in progress)
+
+- Diff is base SHA → **working tree** (uncommitted included — that is what was measured); binaries
+  excluded by content.
+- Token budget as code constants. Priority: metrics + sampleValues + protocols + evidence trail +
+  full diffstat always; then full patches largest-impact-first until spent; lockfile diffs never
+  raw — summarized to added/removed/bumped.
+- **Deterministic assembly**: same inputs → byte-identical context (testable, cacheable).
+- **Secret hygiene (rule 6 extension): measured, never transmitted.** Files matching secret
+  patterns (`.env*`, `*.pem`, `*.key`, credential stores) contribute a diffstat line only, marked
+  "content withheld".
+- **contextManifest** recorded per run: what went in full, summarized, withheld, truncated, token
+  estimate. This is how "docs state exactly what is sent" is honoured — the tool shows it per-run.
+- Two pure functions: `assembleTriageContext()` (compact) and `assembleDeepContext(suspects)`
+  (triage-named suspects get budget priority).
 
 **Development starts on DeepSeek** (free/cheap while iterating on prompts, and the key is already in
 hand). Building hundreds of test analyses on a paid provider while the prompts are still bad is

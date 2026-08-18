@@ -49,7 +49,8 @@ export async function jsonCall<T>(
 
   throw new ProviderError(
     'malformed',
-    `${provider.name} returned invalid JSON twice — last problem: ${secondAttempt.problem}`,
+    `${provider.name} returned invalid JSON twice — last problem: ${secondAttempt.problem}; ` +
+      `last response started: ${JSON.stringify(second.text.slice(0, 200))}`,
   )
 }
 
@@ -57,11 +58,35 @@ function parseAndValidate<T>(
   text: string,
   validate: Validator<T>,
 ): { ok: true; value: T } | { ok: false; problem: string } {
-  let raw: unknown
-  try {
-    raw = JSON.parse(text)
-  } catch {
+  const raw = extractJson(text)
+  if (raw === undefined) {
     return { ok: false, problem: 'the response was not parseable JSON' }
   }
   return validate(raw)
+}
+
+/**
+ * Models intermittently wrap JSON in markdown fences or prose despite json-mode — observed live
+ * on the first M2 acceptance run. Tolerant extraction is provider-agnostic (any model does this):
+ * try the raw text, then a \`\`\`json fence, then the outermost braces. The validator still
+ * applies unchanged to whatever is extracted — tolerance in locating the JSON, never in its shape.
+ */
+function extractJson(text: string): unknown {
+  const candidates = [text]
+
+  const fence = /```(?:json)?\s*([\s\S]*?)```/.exec(text)
+  if (fence?.[1]) candidates.push(fence[1])
+
+  const first = text.indexOf('{')
+  const last = text.lastIndexOf('}')
+  if (first !== -1 && last > first) candidates.push(text.slice(first, last + 1))
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate)
+    } catch {
+      /* next candidate */
+    }
+  }
+  return undefined
 }

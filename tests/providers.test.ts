@@ -175,3 +175,34 @@ describe('key resolution and provider registry', () => {
     expect(() => createProvider({ provider: 'grok', model: 'm', apiKey: 'k' })).toThrow(/deepseek, openai/)
   })
 })
+
+describe('tolerant JSON extraction — location, never shape', () => {
+  type Out = { answer: number }
+  const validate = (raw: unknown) => {
+    const record = raw as { answer?: unknown }
+    return typeof record?.answer === 'number'
+      ? ({ ok: true, value: record as Out } as const)
+      : ({ ok: false, problem: 'missing numeric "answer"' } as const)
+  }
+
+  it('accepts JSON wrapped in a markdown fence', async () => {
+    const fetchImpl = vi.fn(async () => okPayload('```json\n{"answer": 7}\n```')) as unknown as typeof fetch
+    const result = await jsonCall(providerWith(fetchImpl), REQUEST, validate)
+    expect(result.value.answer).toBe(7)
+    expect(result.retried).toBe(false)
+  })
+
+  it('accepts JSON with prose around it', async () => {
+    const fetchImpl = vi.fn(async () => okPayload('Here is my analysis:\n{"answer": 7}\nHope that helps!')) as unknown as typeof fetch
+    const result = await jsonCall(providerWith(fetchImpl), REQUEST, validate)
+    expect(result.value.answer).toBe(7)
+  })
+
+  it('still enforces shape strictly, and the final error shows what was received', async () => {
+    const fetchImpl = vi.fn(async () => okPayload('```json\n{"answer": "wrong type"}\n```')) as unknown as typeof fetch
+    const error = await jsonCall(providerWith(fetchImpl), REQUEST, validate).catch((e: ProviderError) => e)
+    expect((error as ProviderError).kind).toBe('malformed')
+    expect((error as ProviderError).message).toMatch(/missing numeric/)
+    expect((error as ProviderError).message).toMatch(/last response started/)
+  })
+})

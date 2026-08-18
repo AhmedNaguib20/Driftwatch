@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 10 — 2026-08-18
+> Version 11 — 2026-08-18
 
 ---
 
@@ -324,6 +324,36 @@ A worktree has no `node_modules`, and install time is far noisier than build tim
   on both sides, and flag "dependencies changed" in the result so the AI stage knows.
 
 Install time stays a **separate metric**, never folded into build time.
+
+*Implemented notes (M1 step 3):* install is measured as a **single sample** — a repeat install hits
+the package manager's machine-wide cache and measures something else, and clearing that cache is
+off-limits (it belongs to the user, not the tool). The shared-cache caveat rides in `collectedBy`.
+No lockfile at all → `dependenciesChanged: null` — unknown is reported as unknown.
+
+#### Fourth instance: path-embedding build output (DECIDED — found at M1 step 3)
+
+Build tools bake **absolute paths and run diagnostics into their output**: Next.js `.nft.json`
+dependency traces, source maps, `required-server-files.json`, and a ~500KB `.next/trace` of
+run-dependent timing. Two consequences on temp-copy measurement:
+
+- Bundle size differed 1.3% on identical code, perfectly repeatably, because the two sides' temp
+  paths had different lengths. **This is the §5.1 signature: stable, plausible, fake.**
+- Fixes: (a) both sides' temp layouts mirror each other — same-length prefixes, identical suffix
+  (`driftwatch-curr-XXXXXX/tree/<path>` vs `driftwatch-base-XXXXXX/tree/<path>`); (b) run-dependent
+  diagnostics (`trace`) are excluded from weighing as diagnostics-not-output.
+
+This is a general phenomenon, not a Next.js quirk — expect it in every ecosystem adapter.
+
+#### Cache integrity rules (M1 step 3)
+
+- **Failed builds are never cached.** A transient OOM must not become the permanent truth about a
+  SHA.
+- `DRIFTWATCH_VERSION` in the protocol hash is the **methodology version**: released bumps strand
+  stale entries correctly. Within a dev iteration, changing a collector's meaning requires clearing
+  `.perf/` by hand — acceptable for development, but any released change to what a metric means MUST
+  bump the version.
+- `.perf/.gitignore` containing `*` keeps the cache out of version control without touching the
+  user's `.gitignore` (rule 2).
 
 **DECIDED — runs inside the user's own CI.** Instruction counting removes machine variance without
 dedicated hardware, so the accuracy argument for owning infrastructure no longer holds. Cheaper for

@@ -58,7 +58,12 @@ specs/            # design docs — the source of truth
 
 ## Conventions
 
+- **Small, focused files.** One module does one thing; split before a file grows past ~200 lines.
+  Prefer several clear functions over one clever one. Readability beats brevity; no dead code, no
+  speculative abstractions for future milestones.
 - Result JSON is the contract between core and every consumer. Version it from day one.
+- Every detection conclusion carries its evidence (which file, what it said). The AI stage will
+  cite this trail; preserve it through every transformation.
 - Every measurement records: value, unit, how it was collected, and a confidence/noise flag.
 - Errors never abort a run. A failed metric is marked `skipped` with a reason; the rest continue.
 - Config file is `perf.yml` at repo root, fully optional — sensible defaults without it.
@@ -72,7 +77,9 @@ specs/            # design docs — the source of truth
   - [x] Stability of build measurement validated: 1.2% warm / 0.0% cold spread
   - [x] `detect/` — project profile with per-conclusion evidence trail (commit `7358e9c`)
   - [x] `measure/` — temp-copy workspace, median of 3, protocol recorded (commit `9955fdd`)
-  - [ ] baseline/ → report/ → cli/
+  - [x] `baseline/` — worktree via same measure path, lockfile rule, (SHA, protocol) cache,
+        crash-safe sweep (commit `1484c20`)
+  - [ ] report/ → cli/
 **M2 — AI analysis.** Triage → deep analysis → cause + confidence + suggested fix in the terminal.
 **M3 — GitHub Action adapter.** Self-updating PR comment + non-blocking check.
 **M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.

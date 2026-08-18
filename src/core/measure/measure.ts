@@ -1,11 +1,9 @@
 import { performance } from 'node:perf_hooks'
 import type { ProjectProfile } from '../detect/types.js'
-import {
-  buildProtocol,
-  collectBuildTime,
-  collectBundleSize,
-  collectInstallTime,
-} from './collect.js'
+import { collectBuildTime } from './build.js'
+import { collectBundleSize } from './bundle.js'
+import { collectInstallTime } from './install.js'
+import { buildProtocol } from './protocol.js'
 import type { MetricResult, SideMeasurement } from './types.js'
 import { createWorkingTreeWorkspace } from './workspace.js'
 import type { Workspace, WorkspaceOptions } from './workspace.js'

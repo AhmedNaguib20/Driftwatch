@@ -1,7 +1,9 @@
 export { measureBaseSide, predictProtocol } from './baseline.js'
 export type { BaseSideResult, MeasureBaseOptions } from './baseline.js'
 export { planBaseline } from './plan.js'
-export type { BaselinePlan, BaselineUnavailable, LockfileStatus } from './plan.js'
+export type { BaselinePlan, BaselineUnavailable } from './plan.js'
+export { compareLockfiles } from './lockfile-compare.js'
+export type { LockfileComparison, LockfileStatus } from './lockfile-compare.js'
 export { createBaseWorkspace, sweepStaleWorktrees } from './worktree.js'
 export type { BaseWorkspaceOptions } from './worktree.js'
 export {

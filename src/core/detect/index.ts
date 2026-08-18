@@ -9,12 +9,12 @@ export {
   DEFAULT_CONFIG,
   NOISE_FLOOR_PERCENT,
   configFromProfile,
-  loadConfig,
   parsePercent,
-  renderConfig,
-  writeConfigIfAbsent,
-} from './perf-config.js'
-export type { PerfConfig, ResolvedConfig, WriteResult } from './perf-config.js'
+} from './config-schema.js'
+export type { PerfConfig, ResolvedConfig } from './config-schema.js'
+export { renderConfig, writeConfigIfAbsent } from './config-write.js'
+export type { WriteResult } from './config-write.js'
+export { loadConfig } from './config-load.js'
 export type {
   Command,
   Evidence,

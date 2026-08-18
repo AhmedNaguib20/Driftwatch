@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 1,
+  "schemaMinorVersion": 1,
+  "driftwatchVersion": "0.2.0",
+  "createdAt": "2026-08-18T23:30:13.813Z",
+  "project": {
+    "root": "/Users/ahmednaguib/Driftwatch/fixtures/next-app",
+    "gitRoot": "/Users/ahmednaguib/Driftwatch",
+    "pathInRepo": "fixtures/next-app",
+    "framework": "nextjs",
+    "frameworkVersion": "15.1.3",
+    "packageManager": "npm",
+    "lockfile": "package-lock.json",
+    "routes": [
+      "/",
+      "/about",
+      "/blog",
+      "/blog/[slug]",
+      "/dashboard"
+    ],
+    "evidence": [
+      {
+        "fact": "language: javascript",
+        "source": "package.json",
+        "detail": "package \"driftwatch-fixture-next-app\""
+      },
+      {
+        "fact": "git repository: /Users/ahmednaguib/Driftwatch",
+        "source": "git",
+        "detail": "project sits at fixtures/next-app"
+      },
+      {
+        "fact": "package manager: npm",
+        "source": "package-lock.json"
+      },
+      {
+        "fact": "framework: nextjs",
+        "source": "package.json",
+        "detail": "depends on next@15.1.3"
+      },
+      {
+        "fact": "framework: nextjs",
+        "source": "next.config.mjs",
+        "detail": "Next.js config file"
+      },
+      {
+        "fact": "next version: 15.1.3",
+        "source": "node_modules/next/package.json",
+        "detail": "installed version — this is what gets built"
+      },
+      {
+        "fact": "5 route(s) detected",
+        "source": "app",
+        "detail": "app router"
+      },
+      {
+        "fact": "build command: npm run build",
+        "source": "package.json",
+        "detail": "scripts.build = \"next build\""
+      },
+      {
+        "fact": "base: 96c2645 @ 96c2645f294f",
+        "source": "git"
+      },
+      {
+        "fact": "lockfile: package-lock.json differs from base",
+        "source": "package-lock.json",
+        "detail": "dependencies are part of the change — timed frozen install on both sides"
+      }
+    ],
+    "warnings": []
+  },
+  "config": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "thresholdPercent": 5,
+    "noiseFloorPercent": 2,
+    "base": "main",
+    "sourcePath": "/Users/ahmednaguib/Driftwatch/fixtures/next-app/perf.yml"
+  },
+  "base": {
+    "available": true,
+    "ref": "96c2645",
+    "sha": "96c2645f294f9072367ae26b0a449cfdc9fc2807",
+    "fromCache": false,
+    "measuredAt": null,
+    "metrics": [
+      {
+        "id": "install_time",
+        "status": "measured",
+        "value": 3981,
+        "unit": "ms",
+        "label": "install time",
+        "collectedBy": "wall clock around `npm ci` in a worktree; single sample, package-manager cache shared with the machine",
+        "samples": 1
+      },
+      {
+        "id": "build_time",
+        "status": "measured",
+        "value": 9168,
+        "unit": "ms",
+        "label": "build time (cold)",
+        "collectedBy": "median of 3 cold builds after 1 discarded warm-up, wall clock around `npm run build` in a worktree",
+        "samples": 3,
+        "sampleValues": [
+          9025,
+          9367,
+          9168
+        ]
+      },
+      {
+        "id": "bundle_size",
+        "status": "measured",
+        "value": 2305493,
+        "unit": "bytes",
+        "label": "bundle size",
+        "collectedBy": "sum of file sizes in .next (112 files), excluding internal caches and diagnostics",
+        "samples": 1
+      }
+    ],
+    "protocol": {
+      "version": 1,
+      "workspace": "worktree",
+      "cacheState": "cold",
+      "nodeModules": "fresh-install",
+      "gitMetadata": "absent",
+      "nodeVersion": "v20.20.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "buildCommand": "npm run build",
+      "buildSamples": 3,
+      "warmupSamples": 1,
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      }
+    },
+    "warnings": [],
+    "elapsedMs": 42269
+  },
+  "current": {
+    "workingTree": true,
+    "metrics": [
+      {
+        "id": "install_time",
+        "status": "measured",
+        "value": 4128,
+        "unit": "ms",
+        "label": "install time",
+        "collectedBy": "wall clock around `npm ci` in a copy; single sample, package-manager cache shared with the machine",
+        "samples": 1
+      },
+      {
+        "id": "build_time",
+        "status": "measured",
+        "value": 9346,
+        "unit": "ms",
+        "label": "build time (cold)",
+        "collectedBy": "median of 3 cold builds after 1 discarded warm-up, wall clock around `npm run build` in a copy",
+        "samples": 3,
+        "sampleValues": [
+          9727,
+          9285,
+          9346
+        ]
+      },
+      {
+        "id": "bundle_size",
+        "status": "measured",
+        "value": 2445949,
+        "unit": "bytes",
+        "label": "bundle size",
+        "collectedBy": "sum of file sizes in .next (113 files), excluding internal caches and diagnostics",
+        "samples": 1
+      }
+    ],
+    "protocol": {
+      "version": 1,
+      "workspace": "copy",
+      "cacheState": "cold",
+      "nodeModules": "fresh-install",
+      "gitMetadata": "absent",
+      "nodeVersion": "v20.20.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "buildCommand": "npm run build",
+      "buildSamples": 3,
+      "warmupSamples": 1,
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      }
+    },
+    "warnings": [],
+    "elapsedMs": 43595
+  },
+  "comparison": {
+    "measurementPath": "fresh",
+    "dependenciesChanged": true,
+    "lockfileStatus": "changed",
+    "protocolsMatch": true,
+    "protocolMismatches": [],
+    "metrics": [
+      {
+        "id": "install_time",
+        "label": "install time",
+        "unit": "ms",
+        "base": 3981,
+        "current": 4128,
+        "delta": {
+          "absolute": 147,
+          "percent": 3.69
+        },
+        "verdict": "regressed",
+        "exceedsThreshold": false,
+        "reason": null
+      },
+      {
+        "id": "build_time",
+        "label": "build time (cold)",
+        "unit": "ms",
+        "base": 9168,
+        "current": 9346,
+        "delta": null,
+        "verdict": "no_change",
+        "exceedsThreshold": false,
+        "reason": "delta is under the 2% noise floor"
+      },
+      {
+        "id": "bundle_size",
+        "label": "bundle size",
+        "unit": "bytes",
+        "base": 2305493,
+        "current": 2445949,
+        "delta": {
+          "absolute": 140456,
+          "percent": 6.09
+        },
+        "verdict": "regressed",
+        "exceedsThreshold": true,
+        "reason": null
+      }
+    ]
+  },
+  "verdict": "regression",
+  "warnings": []
+}

@@ -1,0 +1,9 @@
+{
+  "outcome": "analysed",
+  "suspectsInclude": ["fixtures/next-app/lib/posts.ts"],
+  "causeAnyOf": ["static", "prerender", "pages"],
+  "confidence": { "min": 0.5, "max": 1.0 },
+  "fix": {
+    "mustMentionAnyOf": ["archive", "posts", "static", "generateStaticParams", "dynamic"]
+  }
+}

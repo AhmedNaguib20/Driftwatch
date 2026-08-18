@@ -1,0 +1,26 @@
+[
+  {
+    "path": "fixtures/next-app/package-lock.json",
+    "insertions": 9,
+    "deletions": 0,
+    "binary": false,
+    "untracked": false,
+    "patch": "diff --git a/fixtures/next-app/package-lock.json b/fixtures/next-app/package-lock.json\nindex 4e5b1c4..e2fae22 100644\n--- a/fixtures/next-app/package-lock.json\n+++ b/fixtures/next-app/package-lock.json\n@@ -9,6 +9,7 @@\n       \"version\": \"0.0.0\",\n       \"dependencies\": {\n         \"date-fns\": \"^4.1.0\",\n+        \"lodash\": \"^4.18.1\",\n         \"next\": \"15.1.3\",\n         \"react\": \"^19.0.0\",\n         \"react-dom\": \"^19.0.0\",\n@@ -16,6 +17,7 @@\n         \"zod\": \"^3.24.1\"\n       },\n       \"devDependencies\": {\n+        \"@types/lodash\": \"^4.17.25\",\n         \"@types/node\": \"^20.17.10\",\n         \"@types/react\": \"^19.0.2\",\n         \"@types/react-dom\": \"^19.0.2\",\n@@ -614,6 +616,13 @@\n       \"integrity\": \"sha512-Ps3T8E8dZDam6fUyNiMkekK3XUsaUEik+idO9/YjPtfj2qruF8tFBXS7XhtE4iIXBLxhmLjP3SXpLhVf21I9Lw==\",\n       \"license\": \"MIT\"\n     },\n+    \"node_modules/@types/lodash\": {\n+      \"version\": \"4.17.25\",\n+      \"resolved\": \"https://registry.npmjs.org/@types/lodash/-/lodash-4.17.25.tgz\",\n+      \"integrity\": \"sha512-+K1NIO8I+F9/wNulfVvu23QYd0Pe9/OCqRrim4NoYIf1VoEDL90Ve4ClzpyqBLc7NpGGWRvYNCKZ1BE/Jpf8dQ==\",\n+      \"dev\": true,\n+      \"license\": \"MIT\"\n+    },\n     \"node_modules/@types/node\": {\n       \"version\": \"20.19.43\",\n       \"resolved\": \"https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz\",\n"
+  },
+  {
+    "path": "fixtures/next-app/app/dashboard/chart.tsx",
+    "insertions": 4,
+    "deletions": 0,
+    "binary": false,
+    "untracked": false,
+    "patch": "diff --git a/fixtures/next-app/app/dashboard/chart.tsx b/fixtures/next-app/app/dashboard/chart.tsx\nindex 772d43f..39871bf 100644\n--- a/fixtures/next-app/app/dashboard/chart.tsx\n+++ b/fixtures/next-app/app/dashboard/chart.tsx\n@@ -1,5 +1,6 @@\n 'use client'\n \n+import _ from 'lodash'\n import {\n   CartesianGrid,\n   Line,\n@@ -11,7 +12,10 @@ import {\n } from 'recharts'\n import type { Sample } from '@/lib/metrics'\n \n+const logResize = _.debounce(() => console.log('chart resized'), 200)\n+\n export default function Chart({ data }: { data: Sample[] }) {\n+  if (typeof window !== 'undefined') window.addEventListener('resize', logResize)\n   return (\n     <div style={{ width: '100%', height: 280 }}>\n       <ResponsiveContainer>\n"
+  },
+  {
+    "path": "fixtures/next-app/package.json",
+    "insertions": 2,
+    "deletions": 0,
+    "binary": false,
+    "untracked": false,
+    "patch": "diff --git a/fixtures/next-app/package.json b/fixtures/next-app/package.json\nindex 2ed0731..90b0541 100644\n--- a/fixtures/next-app/package.json\n+++ b/fixtures/next-app/package.json\n@@ -9,6 +9,7 @@\n   },\n   \"dependencies\": {\n     \"date-fns\": \"^4.1.0\",\n+    \"lodash\": \"^4.18.1\",\n     \"next\": \"15.1.3\",\n     \"react\": \"^19.0.0\",\n     \"react-dom\": \"^19.0.0\",\n@@ -16,6 +17,7 @@\n     \"zod\": \"^3.24.1\"\n   },\n   \"devDependencies\": {\n+    \"@types/lodash\": \"^4.17.25\",\n     \"@types/node\": \"^20.17.10\",\n     \"@types/react\": \"^19.0.2\",\n     \"@types/react-dom\": \"^19.0.2\",\n"
+  }
+]

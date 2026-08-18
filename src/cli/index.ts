@@ -23,6 +23,15 @@ program
   })
 
 program
+  .command('eval', { hidden: true })
+  .description('dev: run the eval cases against the live provider and judge the prompts')
+  .option('--cases <dir>', 'cases directory', 'eval/cases')
+  .action(async (options: { cases: string }) => {
+    const { evalCommand } = await import('./eval-command.js')
+    await evalCommand(options)
+  })
+
+program
   .command('init')
   .description('Detect the stack and write perf.yml')
   .option('--cwd <dir>', 'directory to detect in', process.cwd())

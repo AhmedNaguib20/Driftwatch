@@ -1,0 +1,10 @@
+{
+  "outcome": "analysed",
+  "suspectsInclude": ["fixtures/next-app/app/dashboard/chart.tsx"],
+  "causeMustContain": ["lodash"],
+  "confidence": { "min": 0.5, "max": 1.0 },
+  "fix": {
+    "mustMentionAnyOf": ["lodash"],
+    "diffMayOnlyTouch": ["fixtures/next-app/app/dashboard/chart.tsx"]
+  }
+}

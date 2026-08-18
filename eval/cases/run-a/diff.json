@@ -1,0 +1,250 @@
+[
+  {
+    "path": "fixtures/next-app/app/guides/guide-01/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-01/page.tsx b/fixtures/next-app/app/guides/guide-01/page.tsx\nnew file mode 100644\nindex 0000000..153ca30\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-01/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 01' }\n+\n+export default function Guide01Page() {\n+  const related = posts.filter((_, i) => i % 3 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 01: measurement notes</h1>\n+      <p className=\"meta\">Chapter 1 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-02/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-02/page.tsx b/fixtures/next-app/app/guides/guide-02/page.tsx\nnew file mode 100644\nindex 0000000..a39b723\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-02/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 02' }\n+\n+export default function Guide02Page() {\n+  const related = posts.filter((_, i) => i % 4 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 02: measurement notes</h1>\n+      <p className=\"meta\">Chapter 2 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-03/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-03/page.tsx b/fixtures/next-app/app/guides/guide-03/page.tsx\nnew file mode 100644\nindex 0000000..d523e39\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-03/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 03' }\n+\n+export default function Guide03Page() {\n+  const related = posts.filter((_, i) => i % 5 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 03: measurement notes</h1>\n+      <p className=\"meta\">Chapter 3 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-04/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-04/page.tsx b/fixtures/next-app/app/guides/guide-04/page.tsx\nnew file mode 100644\nindex 0000000..bfa312b\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-04/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 04' }\n+\n+export default function Guide04Page() {\n+  const related = posts.filter((_, i) => i % 6 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 04: measurement notes</h1>\n+      <p className=\"meta\">Chapter 4 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-05/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-05/page.tsx b/fixtures/next-app/app/guides/guide-05/page.tsx\nnew file mode 100644\nindex 0000000..9688fea\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-05/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 05' }\n+\n+export default function Guide05Page() {\n+  const related = posts.filter((_, i) => i % 7 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 05: measurement notes</h1>\n+      <p className=\"meta\">Chapter 5 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-06/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-06/page.tsx b/fixtures/next-app/app/guides/guide-06/page.tsx\nnew file mode 100644\nindex 0000000..6ee567c\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-06/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 06' }\n+\n+export default function Guide06Page() {\n+  const related = posts.filter((_, i) => i % 8 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 06: measurement notes</h1>\n+      <p className=\"meta\">Chapter 6 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-07/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-07/page.tsx b/fixtures/next-app/app/guides/guide-07/page.tsx\nnew file mode 100644\nindex 0000000..16b9040\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-07/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 07' }\n+\n+export default function Guide07Page() {\n+  const related = posts.filter((_, i) => i % 2 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 07: measurement notes</h1>\n+      <p className=\"meta\">Chapter 7 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-08/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-08/page.tsx b/fixtures/next-app/app/guides/guide-08/page.tsx\nnew file mode 100644\nindex 0000000..169278a\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-08/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 08' }\n+\n+export default function Guide08Page() {\n+  const related = posts.filter((_, i) => i % 3 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 08: measurement notes</h1>\n+      <p className=\"meta\">Chapter 8 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-09/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-09/page.tsx b/fixtures/next-app/app/guides/guide-09/page.tsx\nnew file mode 100644\nindex 0000000..77f003c\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-09/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 09' }\n+\n+export default function Guide09Page() {\n+  const related = posts.filter((_, i) => i % 4 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 09: measurement notes</h1>\n+      <p className=\"meta\">Chapter 9 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-10/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-10/page.tsx b/fixtures/next-app/app/guides/guide-10/page.tsx\nnew file mode 100644\nindex 0000000..2b76a64\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-10/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 10' }\n+\n+export default function Guide10Page() {\n+  const related = posts.filter((_, i) => i % 5 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 10: measurement notes</h1>\n+      <p className=\"meta\">Chapter 10 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-11/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-11/page.tsx b/fixtures/next-app/app/guides/guide-11/page.tsx\nnew file mode 100644\nindex 0000000..bb9c7aa\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-11/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 11' }\n+\n+export default function Guide11Page() {\n+  const related = posts.filter((_, i) => i % 6 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 11: measurement notes</h1>\n+      <p className=\"meta\">Chapter 11 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-12/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-12/page.tsx b/fixtures/next-app/app/guides/guide-12/page.tsx\nnew file mode 100644\nindex 0000000..6865805\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-12/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 12' }\n+\n+export default function Guide12Page() {\n+  const related = posts.filter((_, i) => i % 7 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 12: measurement notes</h1>\n+      <p className=\"meta\">Chapter 12 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-13/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-13/page.tsx b/fixtures/next-app/app/guides/guide-13/page.tsx\nnew file mode 100644\nindex 0000000..bc8d078\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-13/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 13' }\n+\n+export default function Guide13Page() {\n+  const related = posts.filter((_, i) => i % 8 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 13: measurement notes</h1>\n+      <p className=\"meta\">Chapter 13 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-14/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-14/page.tsx b/fixtures/next-app/app/guides/guide-14/page.tsx\nnew file mode 100644\nindex 0000000..7bfcdf5\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-14/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 14' }\n+\n+export default function Guide14Page() {\n+  const related = posts.filter((_, i) => i % 2 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 14: measurement notes</h1>\n+      <p className=\"meta\">Chapter 14 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-15/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-15/page.tsx b/fixtures/next-app/app/guides/guide-15/page.tsx\nnew file mode 100644\nindex 0000000..15d0fd2\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-15/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 15' }\n+\n+export default function Guide15Page() {\n+  const related = posts.filter((_, i) => i % 3 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 15: measurement notes</h1>\n+      <p className=\"meta\">Chapter 15 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-16/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-16/page.tsx b/fixtures/next-app/app/guides/guide-16/page.tsx\nnew file mode 100644\nindex 0000000..f967b37\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-16/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 16' }\n+\n+export default function Guide16Page() {\n+  const related = posts.filter((_, i) => i % 4 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 16: measurement notes</h1>\n+      <p className=\"meta\">Chapter 16 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-17/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-17/page.tsx b/fixtures/next-app/app/guides/guide-17/page.tsx\nnew file mode 100644\nindex 0000000..88ff5b1\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-17/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 17' }\n+\n+export default function Guide17Page() {\n+  const related = posts.filter((_, i) => i % 5 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 17: measurement notes</h1>\n+      <p className=\"meta\">Chapter 17 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-18/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-18/page.tsx b/fixtures/next-app/app/guides/guide-18/page.tsx\nnew file mode 100644\nindex 0000000..5f2e501\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-18/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 18' }\n+\n+export default function Guide18Page() {\n+  const related = posts.filter((_, i) => i % 6 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 18: measurement notes</h1>\n+      <p className=\"meta\">Chapter 18 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-19/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-19/page.tsx b/fixtures/next-app/app/guides/guide-19/page.tsx\nnew file mode 100644\nindex 0000000..73270cf\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-19/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 19' }\n+\n+export default function Guide19Page() {\n+  const related = posts.filter((_, i) => i % 7 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 19: measurement notes</h1>\n+      <p className=\"meta\">Chapter 19 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-20/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-20/page.tsx b/fixtures/next-app/app/guides/guide-20/page.tsx\nnew file mode 100644\nindex 0000000..c7edaae\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-20/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 20' }\n+\n+export default function Guide20Page() {\n+  const related = posts.filter((_, i) => i % 8 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 20: measurement notes</h1>\n+      <p className=\"meta\">Chapter 20 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-21/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-21/page.tsx b/fixtures/next-app/app/guides/guide-21/page.tsx\nnew file mode 100644\nindex 0000000..22a948d\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-21/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 21' }\n+\n+export default function Guide21Page() {\n+  const related = posts.filter((_, i) => i % 2 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 21: measurement notes</h1>\n+      <p className=\"meta\">Chapter 21 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-22/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-22/page.tsx b/fixtures/next-app/app/guides/guide-22/page.tsx\nnew file mode 100644\nindex 0000000..67e44c0\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-22/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 22' }\n+\n+export default function Guide22Page() {\n+  const related = posts.filter((_, i) => i % 3 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 22: measurement notes</h1>\n+      <p className=\"meta\">Chapter 22 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-23/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-23/page.tsx b/fixtures/next-app/app/guides/guide-23/page.tsx\nnew file mode 100644\nindex 0000000..c2a340c\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-23/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 23' }\n+\n+export default function Guide23Page() {\n+  const related = posts.filter((_, i) => i % 4 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 23: measurement notes</h1>\n+      <p className=\"meta\">Chapter 23 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-24/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-24/page.tsx b/fixtures/next-app/app/guides/guide-24/page.tsx\nnew file mode 100644\nindex 0000000..58c1b31\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-24/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 24' }\n+\n+export default function Guide24Page() {\n+  const related = posts.filter((_, i) => i % 5 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 24: measurement notes</h1>\n+      <p className=\"meta\">Chapter 24 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-25/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-25/page.tsx b/fixtures/next-app/app/guides/guide-25/page.tsx\nnew file mode 100644\nindex 0000000..3e1c609\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-25/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 25' }\n+\n+export default function Guide25Page() {\n+  const related = posts.filter((_, i) => i % 6 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 25: measurement notes</h1>\n+      <p className=\"meta\">Chapter 25 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-26/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-26/page.tsx b/fixtures/next-app/app/guides/guide-26/page.tsx\nnew file mode 100644\nindex 0000000..47d2480\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-26/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 26' }\n+\n+export default function Guide26Page() {\n+  const related = posts.filter((_, i) => i % 7 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 26: measurement notes</h1>\n+      <p className=\"meta\">Chapter 26 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-27/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-27/page.tsx b/fixtures/next-app/app/guides/guide-27/page.tsx\nnew file mode 100644\nindex 0000000..33d181f\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-27/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 27' }\n+\n+export default function Guide27Page() {\n+  const related = posts.filter((_, i) => i % 8 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 27: measurement notes</h1>\n+      <p className=\"meta\">Chapter 27 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-28/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-28/page.tsx b/fixtures/next-app/app/guides/guide-28/page.tsx\nnew file mode 100644\nindex 0000000..7239f28\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-28/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 28' }\n+\n+export default function Guide28Page() {\n+  const related = posts.filter((_, i) => i % 2 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 28: measurement notes</h1>\n+      <p className=\"meta\">Chapter 28 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-29/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-29/page.tsx b/fixtures/next-app/app/guides/guide-29/page.tsx\nnew file mode 100644\nindex 0000000..c4aa132\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-29/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 29' }\n+\n+export default function Guide29Page() {\n+  const related = posts.filter((_, i) => i % 3 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 29: measurement notes</h1>\n+      <p className=\"meta\">Chapter 29 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/guides/guide-30/page.tsx",
+    "insertions": 20,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/guides/guide-30/page.tsx b/fixtures/next-app/app/guides/guide-30/page.tsx\nnew file mode 100644\nindex 0000000..058eb36\n--- /dev/null\n+++ b/fixtures/next-app/app/guides/guide-30/page.tsx\n@@ -0,0 +1,20 @@\n+import Link from 'next/link'\n+import { posts } from '@/lib/posts'\n+\n+export const metadata = { title: 'Guide 30' }\n+\n+export default function Guide30Page() {\n+  const related = posts.filter((_, i) => i % 4 === 0).slice(0, 6)\n+  return (\n+    <>\n+      <h1>Guide 30: measurement notes</h1>\n+      <p className=\"meta\">Chapter 30 of the imported documentation set.</p>\n+      {related.map((post) => (\n+        <article key={post.slug}>\n+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n+          <p className=\"meta\">{post.publishedAt} · {post.readingMinutes} min</p>\n+        </article>\n+      ))}\n+    </>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/lib/posts.ts",
+    "insertions": 14,
+    "deletions": 1,
+    "binary": false,
+    "untracked": false,
+    "patch": "diff --git a/fixtures/next-app/lib/posts.ts b/fixtures/next-app/lib/posts.ts\nindex e1f257c..ba4929e 100644\n--- a/fixtures/next-app/lib/posts.ts\n+++ b/fixtures/next-app/lib/posts.ts\n@@ -18,7 +18,7 @@ const seed = [\n   ['bundle-size-is-a-proxy', 'Bundle size is a proxy', 'It proves something changed, not that it got slower.', 5],\n ] as const\n \n-export const posts: Post[] = seed.map(([slug, title, excerpt, readingMinutes], i) =>\n+const handWritten: Post[] = seed.map(([slug, title, excerpt, readingMinutes], i) =>\n   postSchema.parse({\n     slug,\n     title,\n@@ -28,6 +28,19 @@ export const posts: Post[] = seed.map(([slug, title, excerpt, readingMinutes], i\n   }),\n )\n \n+// The archive import: 300 generated posts, each its own statically generated page.\n+const archive: Post[] = Array.from({ length: 300 }, (_, i) =>\n+  postSchema.parse({\n+    slug: `archive-post-${String(i + 1).padStart(3, '0')}`,\n+    title: `Archive post ${i + 1}`,\n+    excerpt: `Retrospective measurement notes, entry ${i + 1} of the imported archive.`,\n+    publishedAt: format(subDays(new Date('2026-08-01T00:00:00Z'), i), 'yyyy-MM-dd'),\n+    readingMinutes: (i % 11) + 2,\n+  }),\n+)\n+\n+export const posts: Post[] = [...handWritten, ...archive]\n+\n export function getPost(slug: string): Post | undefined {\n   return posts.find((p) => p.slug === slug)\n }\n"
+  }
+]

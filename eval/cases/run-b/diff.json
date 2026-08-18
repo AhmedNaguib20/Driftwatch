@@ -1,0 +1,10 @@
+[
+  {
+    "path": "fixtures/next-app/app/dashboard/chart.tsx",
+    "insertions": 4,
+    "deletions": 0,
+    "binary": false,
+    "untracked": false,
+    "patch": "diff --git a/fixtures/next-app/app/dashboard/chart.tsx b/fixtures/next-app/app/dashboard/chart.tsx\nindex 772d43f..39871bf 100644\n--- a/fixtures/next-app/app/dashboard/chart.tsx\n+++ b/fixtures/next-app/app/dashboard/chart.tsx\n@@ -1,5 +1,6 @@\n 'use client'\n \n+import _ from 'lodash'\n import {\n   CartesianGrid,\n   Line,\n@@ -11,7 +12,10 @@ import {\n } from 'recharts'\n import type { Sample } from '@/lib/metrics'\n \n+const logResize = _.debounce(() => console.log('chart resized'), 200)\n+\n export default function Chart({ data }: { data: Sample[] }) {\n+  if (typeof window !== 'undefined') window.addEventListener('resize', logResize)\n   return (\n     <div style={{ width: '100%', height: 280 }}>\n       <ResponsiveContainer>\n"
+  }
+]

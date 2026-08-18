@@ -1,0 +1,15 @@
+[
+  {
+    "lockfile": "fixtures/next-app/package-lock.json",
+    "added": [
+      {
+        "name": "@types/lodash",
+        "from": null,
+        "to": "4.17.25"
+      }
+    ],
+    "removed": [],
+    "bumped": [],
+    "unparsed": null
+  }
+]

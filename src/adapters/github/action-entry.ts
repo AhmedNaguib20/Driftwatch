@@ -97,6 +97,10 @@ export async function main(): Promise<void> {
         console.log(`driftwatch: fix PR skipped: ${outcome.reason}`)
       }
     } catch (error) {
+      // The comment must not imply a config the user lacks — name the real failure instead
+      // of falling back to the generic "enable auto_fix" line.
+      const message = (error as Error).message.split('\n')[0]
+      fixPrNote = `a verified fix exists but the fix PR could not be opened: ${message}`
       console.error(`driftwatch: warning: fix PR failed: ${(error as Error).message}`)
     }
   }

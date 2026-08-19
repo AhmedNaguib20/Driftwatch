@@ -34,6 +34,12 @@ export function renderComment(result: ResultJson, options: CommentOptions = {}):
   } else if (options.fixPrNote) {
     lines.push('')
     lines.push(`_${options.fixPrNote}_`)
+  } else {
+    const line = verificationLine(result)
+    if (line) {
+      lines.push('')
+      lines.push(line)
+    }
   }
   lines.push('')
   lines.push(...comparisonTable(result))
@@ -194,6 +200,27 @@ function compactReason(reason: string): string {
   return text.replaceAll('|', '\\|')
 }
 
+/** The honest one-liner when verification ran but no fix PR exists. */
+function verificationLine(result: ResultJson): string | null {
+  const v = result.verification
+  if (!v) return null
+  const three = (m: NonNullable<ResultJson['verification']>['metrics'][number]) =>
+    `${m.label} ${formatValue(m.current, m.unit ?? 'bytes')}→${formatValue(m.fixed, m.unit ?? 'bytes')} vs base ${m.base !== null ? formatValue(m.base, m.unit ?? 'bytes') : '—'}`
+  switch (v.outcome) {
+    case 'restored':
+    case 'partial':
+      return `✓ _a fix verified (${v.outcome}${v.metrics[0] ? `: ${three(v.metrics[0])}` : ''}, measured) — enable \`auto_fix: propose\` to receive it as a PR._`
+    case 'no-recovery':
+      return `⚠ _a fix was proposed but did not verify (no recovery${v.metrics[0] ? `: ${three(v.metrics[0])}` : ''}) — no fix PR opened._`
+    case 'build-broken':
+      return '⚠ _a fix was proposed but did not verify (it breaks the build) — no fix PR opened._'
+    case 'not-applicable':
+      return '⚠ _a fix was proposed but could not be applied cleanly — no fix PR opened._'
+    default:
+      return null
+  }
+}
+
 function footer(result: ResultJson): string {
   const parts: string[] = []
   if (result.base.available) {
@@ -203,5 +230,8 @@ function footer(result: ResultJson): string {
   }
   parts.push(`driftwatch v${result.driftwatchVersion}`)
   parts.push(...renderAnalysisFooterParts(result.analysis))
+  if (result.verification?.devOverride) {
+    parts.push('⚠ DEV OVERRIDE: verification measured a substituted diff, not the analysis fix')
+  }
   return `<sub>${parts.join(' · ')}</sub>`
 }

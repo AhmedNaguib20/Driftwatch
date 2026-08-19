@@ -41,4 +41,10 @@ export interface VerificationReport {
   /** The exact diff that was measured — it is now measurement-backed evidence. */
   readonly diff: string | null
   readonly elapsedMs: number
+  /**
+   * True when DRIFTWATCH_DEV_FIX_DIFF substituted the analysis diff before verification (the
+   * permanent testing seam for the negative case). Stamped into every surface so no screenshot
+   * of an overridden run can ever pass as organic.
+   */
+  readonly devOverride?: true
 }

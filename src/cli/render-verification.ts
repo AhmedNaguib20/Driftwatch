@@ -38,6 +38,9 @@ export function renderVerification(verification: VerificationReport): string {
         )
       }
       lines.push(pc.dim(`  verification cost ${(verification.elapsedMs / 1000).toFixed(1)}s`))
+      if (verification.devOverride) {
+        lines.push(pc.red('  ⚠ DEV OVERRIDE: this verification measured a substituted diff'))
+      }
       return lines.join('\n')
     }
   }

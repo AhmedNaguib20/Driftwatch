@@ -85,6 +85,18 @@ async function scenario(name: string): Promise<ResultJson> {
         },
         analysis: { outcome: 'skipped', reason: 'analysis runs only on a regression verdict' },
       }
+    case 'regression-verify-failed':
+      return {
+        ...result,
+        verification: {
+          outcome: 'no-recovery',
+          reason: null,
+          metrics: [{ id: 'bundle_size', label: 'bundle size', unit: 'bytes', base: 2305491, current: 2453493, fixed: 2452000, verdict: 'no-recovery' }],
+          diff: '--- a/x\n+++ b/x\n',
+          elapsedMs: 39000,
+          devOverride: true,
+        },
+      }
     case 'inconclusive-measurement':
       return {
         ...result,
@@ -111,6 +123,7 @@ async function scenario(name: string): Promise<ResultJson> {
 
 const SCENARIOS = [
   'regression-analysed',
+  'regression-verify-failed',
   'regression-no-key',
   'regression-analysis-skipped',
   'no-change',
@@ -204,6 +217,12 @@ describe('PR comment renderer — golden contract', () => {
     const file = golden('summary-regression-analysed.md')
     if (process.env.UPDATE_GOLDEN === '1') await writeFile(file, summary, 'utf8')
     expect(summary).toBe(await readFile(file, 'utf8'))
+  })
+
+  it('a failed verification reports honestly and stamps the dev override', async () => {
+    const rendered = renderComment(await scenario('regression-verify-failed'))
+    expect(rendered).toContain('a fix was proposed but did not verify (no recovery: bundle size 2.34 MB→2.34 MB vs base 2.20 MB) — no fix PR opened.')
+    expect(rendered).toContain('DEV OVERRIDE: verification measured a substituted diff')
   })
 
   it('the what-was-sent details appear only when analysis actually ran', async () => {

@@ -108,14 +108,50 @@ async function resolveVerification(
   const config = await loadConfig(profile.projectRoot, configFromProfile(profile))
   if (!config.verify) return result
 
-  const verification = await verifyFix(profile, result, {
+  const { result: subject, devOverride } = await applyDevFixOverride(result)
+
+  const verification = await verifyFix(profile, subject, {
     installIfAbsent: true,
     serve: flags.serve && config.serve,
     browser: flags.browser && config.browser,
     progress,
   })
   if (verification.outcome === 'skipped') return result
-  return attachVerification(result, verification)
+  return attachVerification(result, devOverride ? { ...verification, devOverride: true } : verification)
+}
+
+/**
+ * The sabotage seam (permanent testing facility): DRIFTWATCH_DEV_FIX_DIFF=<path> substitutes the
+ * analysis diff before verification, so the negative case — a plausible fix that must NOT open a
+ * PR — is reproducible forever. Guarded: refuses unless DRIFTWATCH_DEV=1 is also set, announces
+ * itself loudly, and the verification block is stamped devOverride so no surface can pass the
+ * run off as organic.
+ */
+async function applyDevFixOverride(
+  result: ResultJson,
+): Promise<{ result: ResultJson; devOverride: boolean }> {
+  const diffPath = process.env.DRIFTWATCH_DEV_FIX_DIFF
+  if (!diffPath) return { result, devOverride: false }
+  if (process.env.DRIFTWATCH_DEV !== '1') {
+    console.error(
+      pc.red('driftwatch: DRIFTWATCH_DEV_FIX_DIFF is set but DRIFTWATCH_DEV=1 is not — refusing the override.'),
+    )
+    return { result, devOverride: false }
+  }
+  if (result.analysis?.outcome !== 'analysed' || result.analysis.fix.kind !== 'diff') {
+    return { result, devOverride: false }
+  }
+
+  const { readFile } = await import('node:fs/promises')
+  const diff = await readFile(diffPath, 'utf8')
+  console.error(pc.red(`driftwatch: ⚠ DEV OVERRIDE ACTIVE — verification will measure the diff from ${diffPath}, NOT the analysis's own fix.`))
+  return {
+    result: {
+      ...result,
+      analysis: { ...result.analysis, fix: { ...result.analysis.fix, content: diff } },
+    },
+    devOverride: true,
+  }
 }
 
 /** Cost rates live in the ai graph; when it never loaded, there is no cost to estimate. */

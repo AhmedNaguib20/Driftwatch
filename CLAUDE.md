@@ -134,7 +134,10 @@ mismatch.
         it, SSG-exclusion bet paid, TBT correctly under quantum. Fixes: excluded-vs-failed skips,
         predictProtocol parity (cache was silently dead with browser on). Per-route LH warm-up +
         SAMPLES 3→2 (net zero). run-d in the eval set.
-**M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.
+**M5 — Trends + static dashboard (current).** JSON in a `perf-data` branch; static site reads it.
+Carried-in backlog: stream the action child's stderr live (CI log looks hung for 7 minutes, and
+per-phase timestamps are lost — fix first); LCP-jitter watch-item (collect CI spread passively);
+TBT machine-class note recorded in spec §5.
 
 Do not start a milestone before the previous one's definition of done is met.
 

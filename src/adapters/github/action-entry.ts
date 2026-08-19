@@ -1,15 +1,12 @@
-import { execFile } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { appendFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { promisify } from 'node:util'
 import type { ResultJson } from '../../core/index.js'
 import { parseActionEvent } from './event.js'
 import { preflightBase } from './preflight.js'
 import { publishResult } from './publish.js'
 import { renderComment } from './render-comment.js'
-
-const exec = promisify(execFile)
 
 /**
  * The Action entry (action.yml → this file). Thin: parse event → preflight → run the CLI with
@@ -85,6 +82,11 @@ export function exitCodeFor(result: Pick<ResultJson, 'verdict' | 'config'>): num
   return result.config.block_merge && result.verdict === 'regression' ? 1 : 0
 }
 
+/**
+ * Runs the CLI as a child with stderr INHERITED — progress streams into the CI log live, with the
+ * runner's own timestamps intact. (The first Layer 2a observation ran 7 minutes with a silent log
+ * because this buffered stderr and dumped it at the end.) stdout is captured: it carries the JSON.
+ */
 async function runCli(
   cwd: string,
   baseSha: string,
@@ -92,23 +94,36 @@ async function runCli(
   hostLabels: string,
 ): Promise<ResultJson | null> {
   const cliPath = path.resolve(fileURLToPath(import.meta.url), '../../../cli/index.js')
-  try {
-    const { stdout, stderr } = await exec(
-      process.execPath,
-      [cliPath, 'run', '--json', '--base', baseSha, '--base-label', baseRef, '--cwd', cwd],
-      {
-        env: { ...process.env, DRIFTWATCH_HOST_LABELS: hostLabels },
-        maxBuffer: 256 * 1024 * 1024,
-      },
-    )
-    if (stderr) process.stderr.write(stderr)
-    return JSON.parse(stdout) as ResultJson
-  } catch (error) {
-    const e = error as { stdout?: string; stderr?: string; message?: string }
-    console.error(`driftwatch: the measurement run failed: ${e.message ?? 'unknown error'}`)
-    if (e.stderr) process.stderr.write(e.stderr)
-    return null
-  }
+  const args = [cliPath, 'run', '--json', '--base', baseSha, '--base-label', baseRef, '--cwd', cwd]
+
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, args, {
+      env: { ...process.env, DRIFTWATCH_HOST_LABELS: hostLabels },
+      stdio: ['ignore', 'pipe', 'inherit'],
+    })
+
+    let stdout = ''
+    child.stdout.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString('utf8')
+    })
+    child.on('error', (error) => {
+      console.error(`driftwatch: the measurement run failed to start: ${error.message}`)
+      resolve(null)
+    })
+    child.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`driftwatch: the measurement run exited with code ${code}`)
+        resolve(null)
+        return
+      }
+      try {
+        resolve(JSON.parse(stdout) as ResultJson)
+      } catch {
+        console.error('driftwatch: the measurement run produced unparseable JSON')
+        resolve(null)
+      }
+    })
+  })
 }
 
 // action.yml invokes this file directly.

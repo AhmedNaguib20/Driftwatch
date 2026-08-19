@@ -267,10 +267,25 @@ no longer gate the verdict; only real failures (boot/build) make a run inconclus
 the base cache silently dead — every run re-measured; caught only via `measurementPath` in the
 JSON). A Chrome upgrade stranding caches is intended behaviour, now test-asserted.
 
-**CI wall-clock stance (M4 step 2):** Layer 2a ≈ ~50s/side locally, projected ~90–110s/side on CI
-(runners ~2× slower). Wire now, revisit after **one real CI observation** — first lever
-`LIGHTHOUSE_SAMPLES` 3→2 (data says 2 stays in noise with warm-up), second the route cap 3→2.
-Never pre-trim on a projection.
+**CI wall-clock stance (M4 step 2):** wire now, revisit after **one real CI observation**. Never
+pre-trim on a projection.
+
+**The observation (PR #5, M4 close):** total job 7m18s; Layer 2a ≈ **55s/side on CI** — comfortably
+inside the guardrail; **no trimming warranted**. The dominant cost is build sampling (~128s/side,
+63% of the job; the runner builds 3.5× slower than local) — an M1 decision, not a Layer 2a problem.
+Per-class behaviour on the runner: `transfer_size` byte-identical across environments (the fully
+deterministic class); **TBT is machine-class-local** — ~140ms on CI vs 1–2ms locally (simulated
+throttling computes from the observed trace; slow CPU inflates it), cross-side spread ±8ms under
+the quantum, cross-environment already refused via hostLabels — contained by design, but TBT values
+only mean anything within one machine class; route quantum absorbed 4× runner noise as calibrated;
+LCP at 1.9s values is governed by the 2% floor over the 25ms quantum (the layering working) — LCP
+wobble is a **watch-item**, one observation isn't spread data.
+
+**Eval-history reading rule (M4 close):** temperature-0 DeepSeek still varies between invocations
+(run-c passed at 0.9 then 0.7, same correct cause). Confidence bands in expected.json exist for
+exactly this; when comparing eval runs over time, judge pass/fail and cause quality, not exact
+confidence values. (Eval replays captured measurement data — measurement changes can't shift it;
+only prompts and provider can.)
 
 **Route-latency scope note (M4 step 1):** request-level latency on prerendered (SSG) routes
 measures the file server, not the app — 1–2ms responses where ±1ms is 50–100% relative. Route

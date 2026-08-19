@@ -18,12 +18,18 @@ export const RESULT_SCHEMA_VERSION = 1
  * Minor: additive changes only — new fields, new optional blocks. A 1.0 consumer reading a 1.1
  * result must keep working; anything that would break one bumps the major instead.
  */
-export const RESULT_SCHEMA_MINOR = 1
+export const RESULT_SCHEMA_MINOR = 2
 
 export interface ResultJson {
   readonly schemaVersion: typeof RESULT_SCHEMA_VERSION
   readonly schemaMinorVersion: typeof RESULT_SCHEMA_MINOR
   readonly driftwatchVersion: string
+  /**
+   * 'compare' (default, PR runs): two sides, deltas, thresholds. 'record' (trend runs): the
+   * absolute measurement of one commit — current side only, no base, no deltas, no AI. Two
+   * different questions: "did this change regress?" vs "where has main been going?".
+   */
+  readonly mode: 'compare' | 'record'
   readonly createdAt: string
   readonly project: ProjectReport
   readonly config: ConfigReport
@@ -41,7 +47,8 @@ export interface ResultJson {
   readonly warnings: readonly string[]
 }
 
-export type RunVerdict = 'ok' | 'regression' | 'inconclusive'
+/** 'recorded' is record mode's verdict: nothing was compared, so nothing passed or failed. */
+export type RunVerdict = 'ok' | 'regression' | 'inconclusive' | 'recorded'
 
 export interface ProjectReport {
   readonly root: string

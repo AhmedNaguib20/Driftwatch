@@ -4,15 +4,18 @@ export function renderWorkflow(projectDir = '.'): string {
 # this file without --force.
 name: driftwatch
 
-on: pull_request
+on:
+  pull_request:          # compare mode: did this change regress?
+  push:
+    branches: [main]     # record mode: append main's trend point to the perf-data branch
 
 # A superseded push should not waste a measurement (~2-4 minutes each).
 concurrency:
-  group: driftwatch-\${{ github.event.pull_request.number }}
+  group: driftwatch-\${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write        # record mode pushes trend points to the perf-data branch
   pull-requests: write   # the self-updating PR comment
   checks: write          # the non-blocking check run
 

@@ -24,7 +24,7 @@ export interface CheckContent {
 }
 
 export function conclusionFor(verdict: RunVerdict, blockMerge: boolean): 'success' | 'neutral' | 'failure' {
-  if (verdict === 'ok') return 'success'
+  if (verdict === 'ok' || verdict === 'recorded') return 'success'
   if (verdict === 'regression') return blockMerge ? 'failure' : 'neutral'
   return 'neutral' // inconclusive — we cannot honestly pass or fail what we could not compare
 }

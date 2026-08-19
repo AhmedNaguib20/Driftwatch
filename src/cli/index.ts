@@ -26,6 +26,18 @@ program
   })
 
 program
+  .command('record')
+  .description('Measure this commit absolutely (trend point) — no baseline, no comparison, no AI')
+  .option('--json', 'print the schema result JSON to stdout instead of the table', false)
+  .option('--no-serve', 'skip booting the app and route-latency metrics')
+  .option('--no-browser', 'skip Lighthouse browser metrics')
+  .option('--cwd <dir>', 'project directory', process.cwd())
+  .action(async (flags: { json: boolean; serve: boolean; browser: boolean; cwd: string }) => {
+    const { recordCommand } = await import('./record-command.js')
+    await recordCommand(flags)
+  })
+
+program
   .command('eval', { hidden: true })
   .description('dev: run the eval cases against the live provider and judge the prompts')
   .option('--cases <dir>', 'cases directory', 'eval/cases')

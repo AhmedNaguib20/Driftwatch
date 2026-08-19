@@ -399,7 +399,7 @@ describe('measureBaseSide — end to end on a tiny repo', () => {
     const install = result.side.metrics.find((m) => m.id === 'install_time')
 
     expect(install?.status).toBe('skipped')
-    if (install?.status === 'skipped') expect(install.reason).toMatch(/unchanged/)
+    if (install?.status === 'skipped') expect(install.reason).toMatch(/provided by cloning/)
   })
 
   it('measures install time on the base when the lockfile changed', async () => {

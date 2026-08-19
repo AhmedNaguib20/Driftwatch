@@ -16,14 +16,25 @@ export type ActionEvent =
       readonly baseRef: string
       readonly headSha: string
     }
+  | {
+      /** Push to the DEFAULT branch → record mode: measure the landed commit, append the trend. */
+      readonly kind: 'record-push'
+      readonly owner: string
+      readonly repo: string
+      readonly sha: string
+      readonly branch: string
+    }
   | { readonly kind: 'not-a-pr'; readonly reason: string }
 
-interface PullRequestPayload {
+interface EventPayload {
   pull_request?: {
     number?: number
     base?: { sha?: string; ref?: string }
     head?: { sha?: string }
   }
+  repository?: { default_branch?: string }
+  after?: string
+  ref?: string
 }
 
 export async function parseActionEvent(
@@ -31,10 +42,10 @@ export async function parseActionEvent(
   readFileImpl: (path: string) => Promise<string> = (p) => readFile(p, 'utf8'),
 ): Promise<ActionEvent> {
   const eventName = env.GITHUB_EVENT_NAME ?? '(unset)'
-  if (eventName !== 'pull_request' && eventName !== 'pull_request_target') {
+  if (eventName !== 'pull_request' && eventName !== 'pull_request_target' && eventName !== 'push') {
     return {
       kind: 'not-a-pr',
-      reason: `driftwatch runs on pull_request events; this is "${eventName}" — nothing to do`,
+      reason: `driftwatch runs on pull_request and push events; this is "${eventName}" — nothing to do`,
     }
   }
 
@@ -49,11 +60,26 @@ export async function parseActionEvent(
     return { kind: 'not-a-pr', reason: 'GITHUB_EVENT_PATH is not set — not running under Actions?' }
   }
 
-  let payload: PullRequestPayload
+  let payload: EventPayload
   try {
-    payload = JSON.parse(await readFileImpl(eventPath)) as PullRequestPayload
+    payload = JSON.parse(await readFileImpl(eventPath)) as EventPayload
   } catch (error) {
     return { kind: 'not-a-pr', reason: `could not read the event payload: ${(error as Error).message}` }
+  }
+
+  if (eventName === 'push') {
+    const defaultBranch = payload.repository?.default_branch
+    const pushedBranch = payload.ref?.replace(/^refs\/heads\//, '')
+    if (!defaultBranch || !pushedBranch || pushedBranch !== defaultBranch) {
+      return {
+        kind: 'not-a-pr',
+        reason: `record mode runs only on pushes to the default branch (this push: "${pushedBranch ?? '?'}", default: "${defaultBranch ?? '?'}")`,
+      }
+    }
+    if (typeof payload.after !== 'string' || /^0+$/.test(payload.after)) {
+      return { kind: 'not-a-pr', reason: 'push payload has no usable head sha' }
+    }
+    return { kind: 'record-push', owner, repo, sha: payload.after, branch: pushedBranch }
   }
 
   const pr = payload.pull_request

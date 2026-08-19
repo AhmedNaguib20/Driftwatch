@@ -1,0 +1,78 @@
+import { DRIFTWATCH_VERSION } from '../baseline/cache.js'
+import type { ResolvedConfig } from '../detect/config-schema.js'
+import type { ProjectProfile } from '../detect/types.js'
+import type { SideMeasurement } from '../measure/types.js'
+import { RESULT_SCHEMA_MINOR, RESULT_SCHEMA_VERSION } from './types.js'
+import type { ResultJson } from './types.js'
+
+/**
+ * Assembles a record-mode result: the absolute measurement of one commit. No base, no deltas, no
+ * thresholds — the comparison block is empty rather than full of vacuous rows, and the verdict is
+ * 'recorded': nothing was compared, so nothing passed or failed (saying "ok" would report a
+ * judgement we never made — rule 3).
+ *
+ * The full protocol rides along untouched: trend consumers must refuse cross-protocol
+ * comparisons exactly like PR runs do — a Node upgrade mid-history is a protocol break in the
+ * chart, not a data point (§5.1 applies to time-series too).
+ */
+export interface BuildRecordInput {
+  readonly profile: ProjectProfile
+  readonly config: ResolvedConfig
+  readonly current: SideMeasurement
+  /** The commit this measurement describes (record mode measures a pushed, committed tree). */
+  readonly sha: string | null
+  readonly branch: string | null
+  readonly now?: () => Date
+}
+
+export function buildRecordResult(input: BuildRecordInput): ResultJson {
+  const { profile, config, current } = input
+  const now = input.now ?? (() => new Date())
+
+  return {
+    schemaVersion: RESULT_SCHEMA_VERSION,
+    schemaMinorVersion: RESULT_SCHEMA_MINOR,
+    driftwatchVersion: DRIFTWATCH_VERSION,
+    mode: 'record',
+    createdAt: now().toISOString(),
+    project: {
+      root: profile.projectRoot,
+      gitRoot: profile.gitRoot,
+      pathInRepo: profile.pathInRepo,
+      framework: profile.framework,
+      frameworkVersion: profile.frameworkVersion,
+      packageManager: profile.packageManager,
+      lockfile: profile.lockfile,
+      routes: profile.routes,
+      evidence: [
+        ...profile.evidence,
+        ...(input.sha
+          ? [{ fact: `recorded: ${input.branch ?? '(detached)'} @ ${input.sha.slice(0, 12)}`, source: 'git' }]
+          : []),
+      ],
+      warnings: profile.warnings,
+    },
+    config: {
+      provider: config.provider,
+      model: config.model,
+      thresholdPercent: config.thresholdPercent,
+      noiseFloorPercent: config.noiseFloorPercent,
+      base: config.base,
+      block_merge: config.block_merge,
+      sourcePath: config.sourcePath,
+    },
+    base: { available: false, reason: 'record mode — this run measures one commit; there is no baseline comparison' },
+    current: { workingTree: true, ...current },
+    comparison: {
+      measurementPath: 'fresh',
+      dependenciesChanged: null,
+      lockfileStatus: null,
+      protocolsMatch: true,
+      protocolMismatches: [],
+      metrics: [],
+    },
+    verdict: 'recorded',
+    analysis: { outcome: 'skipped', reason: 'record mode — no comparison to analyse' },
+    warnings: [...config.warnings],
+  }
+}

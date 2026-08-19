@@ -23,6 +23,11 @@ export async function main(): Promise<void> {
   }
 
   const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd()
+
+  if (event.kind === 'record-push') {
+    await recordMain(workspace, event.sha, event.branch)
+    return
+  }
   // Actions passes inputs as INPUT_<NAME>; detection walks UP from cwd, never down, so a nested
   // project (monorepo, fixtures) must be pointed at explicitly.
   const projectDir = process.env['INPUT_PROJECT-DIR']?.trim() || '.'
@@ -75,6 +80,70 @@ export async function main(): Promise<void> {
   }
 
   process.exitCode = exitCodeFor(result)
+}
+
+/**
+ * Record mode: measure the landed commit absolutely, append it to the perf-data branch. Publish
+ * failures warn and exit 0 — a missing trend point must never break a merge-to-main pipeline.
+ */
+async function recordMain(workspace: string, sha: string, branch: string): Promise<void> {
+  const projectDir = process.env['INPUT_PROJECT-DIR']?.trim() || '.'
+  const projectCwd = path.resolve(workspace, projectDir)
+
+  const result = await runCliRecord(projectCwd)
+  if (!result) {
+    process.exitCode = 1
+    return
+  }
+  console.log(`driftwatch: recorded ${sha.slice(0, 12)} on ${branch}`)
+
+  const { appendToPerfData } = await import('../../core/index.js')
+  const outcome = await appendToPerfData(workspace, result, sha, branch, true)
+  if (outcome.ok) {
+    console.log(`driftwatch: perf-data ${outcome.detail}`)
+  } else {
+    console.error(`driftwatch: warning: ${outcome.detail}`)
+  }
+
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    await appendFile(process.env.GITHUB_STEP_SUMMARY, renderComment(result) + '\n', 'utf8')
+  }
+}
+
+async function runCliRecord(cwd: string): Promise<ResultJson | null> {
+  const cliPath = path.resolve(fileURLToPath(import.meta.url), '../../../cli/index.js')
+  const hostLabels = [
+    process.env.RUNNER_OS && `os:${process.env.RUNNER_OS}`,
+    process.env.RUNNER_ARCH && `arch:${process.env.RUNNER_ARCH}`,
+    process.env.ImageOS && `image:${process.env.ImageOS}`,
+    process.env.RUNNER_ENVIRONMENT && `env:${process.env.RUNNER_ENVIRONMENT}`,
+  ].filter(Boolean)
+
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [cliPath, 'record', '--json', '--cwd', cwd], {
+      env: { ...process.env, DRIFTWATCH_HOST_LABELS: hostLabels.join(',') },
+      stdio: ['ignore', 'pipe', 'inherit'],
+    })
+    let stdout = ''
+    child.stdout.on('data', (chunk: Buffer) => (stdout += chunk.toString('utf8')))
+    child.on('error', (error) => {
+      console.error(`driftwatch: the record run failed to start: ${error.message}`)
+      resolve(null)
+    })
+    child.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`driftwatch: the record run exited with code ${code}`)
+        resolve(null)
+        return
+      }
+      try {
+        resolve(JSON.parse(stdout) as ResultJson)
+      } catch {
+        console.error('driftwatch: the record run produced unparseable JSON')
+        resolve(null)
+      }
+    })
+  })
 }
 
 /** Exit 1 only when the team explicitly opted into blocking and a regression was confirmed. */

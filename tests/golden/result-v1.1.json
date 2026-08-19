@@ -1,7 +1,8 @@
 {
   "schemaVersion": 1,
-  "schemaMinorVersion": 1,
+  "schemaMinorVersion": 2,
   "driftwatchVersion": "<driftwatch-version>",
+  "mode": "compare",
   "createdAt": "2026-08-19T12:00:00.000Z",
   "project": {
     "root": "/repo/app",
@@ -51,7 +52,7 @@
         "id": "install_time",
         "status": "skipped",
         "label": "install time",
-        "reason": "dependencies unchanged between sides — provided by clone, install not measured"
+        "reason": "dependencies provided by cloning the existing node_modules — install not measured"
       },
       {
         "id": "build_time",
@@ -109,7 +110,7 @@
         "id": "install_time",
         "status": "skipped",
         "label": "install time",
-        "reason": "dependencies unchanged between sides — provided by clone, install not measured"
+        "reason": "dependencies provided by cloning the existing node_modules — install not measured"
       },
       {
         "id": "build_time",
@@ -176,7 +177,7 @@
         "delta": null,
         "verdict": "skipped",
         "exceedsThreshold": false,
-        "reason": "base: dependencies unchanged between sides — provided by clone, install not measured | current: dependencies unchanged between sides — provided by clone, install not measured"
+        "reason": "base: dependencies provided by cloning the existing node_modules — install not measured | current: dependencies provided by cloning the existing node_modules — install not measured"
       },
       {
         "id": "build_time",

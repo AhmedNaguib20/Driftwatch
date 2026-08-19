@@ -33,6 +33,7 @@ export function buildResult(input: BuildResultInput): ResultJson {
     schemaVersion: RESULT_SCHEMA_VERSION,
     schemaMinorVersion: RESULT_SCHEMA_MINOR,
     driftwatchVersion: DRIFTWATCH_VERSION,
+    mode: 'compare',
     createdAt: now().toISOString(),
     project: {
       root: profile.projectRoot,

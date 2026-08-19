@@ -14,7 +14,11 @@ export function renderResult(result: ResultJson): string {
 
   lines.push(verdictLine(result))
   lines.push('')
-  lines.push(...table(sortForDisplay(result.comparison.metrics)))
+  if (result.mode === 'record' && 'metrics' in result.current) {
+    lines.push(...recordTable(result))
+  } else {
+    lines.push(...table(sortForDisplay(result.comparison.metrics)))
+  }
   lines.push('')
   lines.push(...footer(result))
 
@@ -52,6 +56,12 @@ function verdictLine(result: ResultJson): string {
           : 'a key metric could not be measured'
       return pc.yellow(`? inconclusive ${vs}: ${why}`.trim())
     }
+    case 'recorded': {
+      const measured = 'metrics' in result.current
+        ? result.current.metrics.filter((m) => m.status === 'measured').length
+        : 0
+      return pc.green(`● recorded ${measured} metrics (trend point — no comparison)`)
+    }
   }
 }
 
@@ -59,6 +69,17 @@ function verdictLine(result: ResultJson): string {
 function sortForDisplay(metrics: readonly MetricComparison[]): MetricComparison[] {
   const rank = { regressed: 0, improved: 1, no_change: 2, not_comparable: 3, skipped: 4 }
   return [...metrics].sort((a, b) => rank[a.verdict] - rank[b.verdict])
+}
+
+function recordTable(result: ResultJson): string[] {
+  if (!('metrics' in result.current)) return []
+  const rows = result.current.metrics.map((m) => [
+    m.label,
+    m.status === 'measured' ? formatValue(m.value, m.unit) : '—',
+    m.status === 'measured' ? '' : pc.dim(`skipped — ${m.reason.split('\n')[0]}`),
+  ])
+  const width = Math.max(...rows.map((r) => visibleLength(r[0]!)))
+  return rows.map((r) => `  ${padVisible(r[0]!, width)}   ${r[1]}${r[2] ? '   ' + r[2] : ''}`)
 }
 
 function table(metrics: MetricComparison[]): string[] {

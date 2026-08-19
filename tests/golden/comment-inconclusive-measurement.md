@@ -16,7 +16,7 @@ _AI analysis skipped: analysis runs only on a regression verdict_
 <summary>All metrics</summary>
 
 **This PR**
-- install time: skipped — dependencies unchanged between sides — provided by clone, install not measured
+- install time: skipped — dependencies provided by cloning the existing node_modules — install not measured
 - build time (cold): 9.35 s (samples: 11810, 9350, 9349) — median of 3 cold builds, wall clock around `npm run build` in a copy
 - bundle size: 2.20 MB — sum of file sizes in .next (113 files), excluding internal caches and diagnostics
 

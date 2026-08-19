@@ -55,6 +55,8 @@ export function renderCheckTitle(result: ResultJson): string {
       return !result.base.available
         ? `inconclusive: ${result.base.reason}`
         : 'inconclusive: a key metric could not be compared'
+    case 'recorded':
+      return 'trend point recorded (no comparison)'
   }
 }
 
@@ -89,6 +91,8 @@ function verdictBanner(result: ResultJson): string[] {
           : 'a key metric could not be measured'
       return [`### ❔ Measurement inconclusive`, '', `${why}. Baseline: ${baseline}.`]
     }
+    case 'recorded':
+      return [`### 📈 Trend point recorded`, '', 'Absolute measurement of this commit — no comparison was made.']
   }
 }
 

@@ -56,10 +56,51 @@ describe('event parsing', () => {
     })
   })
 
-  it('a push event is a clean no-op with a reason, not an error', async () => {
-    const event = await parseActionEvent({ GITHUB_EVENT_NAME: 'push' })
+  it('a push to the default branch becomes record mode', async () => {
+    const event = await parseActionEvent(
+      {
+        GITHUB_EVENT_NAME: 'push',
+        GITHUB_REPOSITORY: 'ahmed/driftwatch',
+        GITHUB_EVENT_PATH: '/event.json',
+      },
+      async () =>
+        JSON.stringify({
+          ref: 'refs/heads/main',
+          after: 'c'.repeat(40),
+          repository: { default_branch: 'main' },
+        }),
+    )
+    expect(event).toEqual({
+      kind: 'record-push',
+      owner: 'ahmed',
+      repo: 'driftwatch',
+      sha: 'c'.repeat(40),
+      branch: 'main',
+    })
+  })
+
+  it('a push to a non-default branch is a reasoned no-op', async () => {
+    const event = await parseActionEvent(
+      {
+        GITHUB_EVENT_NAME: 'push',
+        GITHUB_REPOSITORY: 'ahmed/driftwatch',
+        GITHUB_EVENT_PATH: '/event.json',
+      },
+      async () =>
+        JSON.stringify({
+          ref: 'refs/heads/feature',
+          after: 'c'.repeat(40),
+          repository: { default_branch: 'main' },
+        }),
+    )
     expect(event.kind).toBe('not-a-pr')
-    if (event.kind === 'not-a-pr') expect(event.reason).toMatch(/"push".*nothing to do/)
+    if (event.kind === 'not-a-pr') expect(event.reason).toMatch(/default branch/)
+  })
+
+  it('a schedule event stays a clean no-op', async () => {
+    const event = await parseActionEvent({ GITHUB_EVENT_NAME: 'schedule' })
+    expect(event.kind).toBe('not-a-pr')
+    if (event.kind === 'not-a-pr') expect(event.reason).toMatch(/"schedule".*nothing to do/)
   })
 
   it('malformed payload degrades to a reasoned no-op', async () => {

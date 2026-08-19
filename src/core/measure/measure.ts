@@ -64,7 +64,7 @@ export async function measureWorkspace(
       reason:
         workspace.nodeModules === 'absent'
           ? 'dependencies are not installed and no install was requested'
-          : 'dependencies unchanged between sides — provided by clone, install not measured',
+          : 'dependencies provided by cloning the existing node_modules — install not measured',
     })
   }
 

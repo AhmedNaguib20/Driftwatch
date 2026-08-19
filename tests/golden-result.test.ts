@@ -108,7 +108,7 @@ const baseSide: SideMeasurement = {
       id: 'install_time',
       status: 'skipped',
       label: 'install time',
-      reason: 'dependencies unchanged between sides — provided by clone, install not measured',
+      reason: 'dependencies provided by cloning the existing node_modules — install not measured',
     },
     {
       id: 'build_time',
@@ -142,7 +142,7 @@ const currentSide: SideMeasurement = {
       id: 'install_time',
       status: 'skipped',
       label: 'install time',
-      reason: 'dependencies unchanged between sides — provided by clone, install not measured',
+      reason: 'dependencies provided by cloning the existing node_modules — install not measured',
     },
     {
       id: 'build_time',
@@ -235,9 +235,17 @@ describe('result JSON contract (schema v1)', () => {
     const v10 = JSON.parse(await readFile(GOLDEN, 'utf8'))
     const v11 = JSON.parse(await readFile(GOLDEN_11, 'utf8'))
 
+    // Prose fields (reasons, labels, evidence text) may be reworded between minors; their
+    // EXISTENCE is contract, their wording is not. Machine fields must survive with their values.
+    const PROSE_KEYS = new Set(['reason', 'collectedBy', 'label', 'detail', 'fact'])
     const missing: string[] = []
     function compare(a: unknown, b: unknown, at: string): void {
       if (typeof a !== 'object' || a === null) {
+        const key = at.split('.').at(-1)?.replace(/\[\d+\]$/, '')
+        if (PROSE_KEYS.has(key ?? '')) {
+          if (typeof a === 'string' && typeof b !== 'string') missing.push(`${at}: prose field vanished`)
+          return
+        }
         if (JSON.stringify(a) !== JSON.stringify(b)) missing.push(`${at}: ${JSON.stringify(a)} → ${JSON.stringify(b)}`)
         return
       }

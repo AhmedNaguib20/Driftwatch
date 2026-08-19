@@ -20,6 +20,13 @@ serve: true
 # Lighthouse browser metrics against the served app (needs Chrome). --no-browser skips per run.
 browser: true
 
+# Measure the AI's suggested diff fix in a fresh copy before showing it (M6). --no-verify skips.
+verify: true
+
+# "propose": when a verified fix RESTORES the regressed metrics, open a fix PR into your PR
+# branch carrying the measured evidence. Off by default — turn it on once you trust the numbers.
+auto_fix: propose
+
 # Warn only. Set to true once you trust the numbers and want failing checks to block merges.
 block_merge: false
 

@@ -158,7 +158,8 @@ spec §5. (stderr streaming: fixed, `74d74af`.)
 metric methodology, comment=readable / summary=accounting role split, verdict line is the email
 preview and stays self-sufficient. Details blocks render EXPANDED in mail clients — design for it.
 
-**M6 — Verified Auto-fix PR (current).** The differentiator: no fix PR opens without being
+**M6 — Verified Auto-fix PR — COMPLETE (Run A: PR #9 merged, comment flipped in place; Run B:
+no-recovery, zero fix-PR calls, deterministic under v36 CI quanta; 275 tests).** The differentiator: no fix PR opens without being
 MEASURED first. Flow: confirmed regression + high-confidence diff fix → apply the diff in a fresh
 temp copy → measure it same-invocation → three-way verdict (fixed vs current vs base):
 `restored` (within floor/quantum of base) / `partial` / `no-recovery` / `build-broken`. Only
@@ -181,8 +182,22 @@ Launch planning (npm publish, name/license/visibility, onboarding) remains queue
   - [x] Resolution gate (from B4): noise-radius-indistinguishable rows never certify recovery.
   - [x] DECIDED: environment-conditional browser quanta — LCP/FCP 200ms, TBT 100ms on CI
         (hostLabels present), local values unchanged. Protocol change, version bump.
-  - [ ] implement the CI quanta + document the Actions repo-setting prereq in init --github →
-        rerun Run B to deterministic close → cleanup → M6 CLOSED
+  - [x] CI quanta implemented (v0.6.0; trend drift reads the SEGMENT's recorded hostLabels, never
+        the reading machine) + Actions repo-setting prereq documented in the generated workflow.
+  - [x] Run B CLOSED, deterministic: sabotage → no-recovery (bundle 2.34→2.34 vs base 2.21),
+        fix PR skipped at the outcome gate (zero API calls), devOverride stamped, banner carried
+        only the true lodash signature — no browser-noise rows crossed under the CI quanta.
+  - [x] cleanup: PRs #7/#8 closed with evidence notes, #10/#11 (the two sabotage-caught wrong
+        fix PRs) closed en route, all acceptance branches deleted, fixture perf.yml aligned on
+        main. Eval snapshot pending (needs DRIFTWATCH_API_KEY re-exported; run before launch).
+
+M6 story (takes as data): seven takes, every failure a finding. A1 auto_fix-off gate; A2
+not-applicable honesty → `git apply --recount`; A3/A4 the confidence-vs-rubric conflict → the
+second de-gating (measurement gates, confidence is self-report); A6 the 403 → repo-setting
+prereq documented + honest fix-PR-failure comment line; B4 a TBT wobble bought a worthless diff
+a 'partial' → threshold-crossers-only + the resolution gate (indistinguishable rows never
+certify); B5 LCP jitter certified a rename → environment-conditional quanta (the machine is part
+of the instrument, spec v36). The sabotage seam earned its keep twice before it ever went green.
 
 Do not start a milestone before the previous one's definition of done is met.
 

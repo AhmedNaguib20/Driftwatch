@@ -34,12 +34,12 @@ export async function pushFixBranch(options: {
     const patch = path.join(parent, 'fix.diff')
     await writeFile(patch, options.diff.endsWith('\n') ? options.diff : options.diff + '\n', 'utf8')
     try {
-      await exec('git', ['-C', tree, 'apply', '--check', patch])
+      await exec('git', ['-C', tree, 'apply', '--recount', '--check', patch])
     } catch (error) {
       const e = error as { stderr?: string }
       return { ok: false, reason: `the verified diff no longer applies to ${options.headSha.slice(0, 12)}: ${(e.stderr ?? '').trim().split('\n')[0]}` }
     }
-    await exec('git', ['-C', tree, 'apply', patch])
+    await exec('git', ['-C', tree, 'apply', '--recount', patch])
     await exec('git', ['-C', tree, 'add', '-A'])
     await exec('git', [
       '-C', tree,

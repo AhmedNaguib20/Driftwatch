@@ -18,3 +18,5 @@ export {
 export type { EntryCommitInfo, IndexEntry, IndexFile } from './index-file.js'
 export { orderEntries, orderedIndex } from './order.js'
 export { commitInfo } from './store.js'
+export { appendReplayBatch } from './store-batch.js'
+export type { BatchOutcome, ReplayBatchItem } from './store-batch.js'

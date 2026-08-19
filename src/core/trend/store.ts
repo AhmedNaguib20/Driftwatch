@@ -1,23 +1,16 @@
-import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { promisify } from 'node:util'
 import type { ResultJson } from '../report/types.js'
 import { assessDrift } from './drift.js'
 import { renderDashboard } from './dashboard/index.js'
-import { appendEntry, emptyIndex, entryFromResult, parseIndex } from './index-file.js'
+import { appendEntry, entryFromResult } from './index-file.js'
 import type { EntryCommitInfo } from './index-file.js'
+import { PERF_DATA_BRANCH, commitPerfDataTree, git, openPerfDataTree } from './store-tree.js'
 import { buildTimelines } from './timeline.js'
-
-const exec = promisify(execFile)
-const GIT_BUFFER = 64 * 1024 * 1024
 
 /**
  * The perf-data branch writer (spec §6.3): results as JSON in a dedicated orphan branch of the
- * user's own repo — plain Git, portable, no backend. All work happens in a temp worktree; no
- * other branch and no working directory is ever touched (rule 2 discipline applies to the tool's
- * own branch mechanics too).
+ * user's own repo — plain Git, portable, no backend. Worktree mechanics live in store-tree.ts.
  *
  *  - perf-data absent → created as an orphan.
  *  - perf-data present WITHOUT our index marker → refuse. It is somebody else's branch.
@@ -25,7 +18,7 @@ const GIT_BUFFER = 64 * 1024 * 1024
  *    warns and gives up: a missing trend point is recoverable, a corrupted index is not.
  */
 
-export const PERF_DATA_BRANCH = 'perf-data'
+export { PERF_DATA_BRANCH }
 
 export interface AppendOutcome {
   readonly ok: boolean
@@ -65,43 +58,16 @@ async function tryAppend(
   branch: string | null,
   push: boolean,
 ): Promise<AttemptOutcome> {
-  const parent = await mkdtemp(path.join(tmpdir(), 'driftwatch-perfdata-'))
-  const tree = path.join(parent, 'tree')
+  let opened
+  try {
+    opened = await openPerfDataTree(gitRoot, push)
+  } catch (error) {
+    return `perf-data append failed: ${(error as Error).message}`
+  }
+  if ('refusal' in opened) return opened.refusal
+  const { tree, index, hasRemote, cleanup } = opened
 
   try {
-    const hasRemote = await git(gitRoot, ['remote', 'get-url', 'origin']).then(() => true, () => false)
-    if (push && hasRemote) {
-      // Tolerate a missing remote branch; a fetch failure for other reasons surfaces on push.
-      await git(gitRoot, ['fetch', 'origin', `${PERF_DATA_BRANCH}:refs/remotes/origin/${PERF_DATA_BRANCH}`]).catch(() => {})
-    }
-
-    const localRef = await resolvePerfDataRef(gitRoot)
-
-    if (localRef) {
-      await git(gitRoot, ['worktree', 'add', '--detach', tree, localRef])
-    } else {
-      // Orphan: an empty worktree seeded from git's empty tree, so the first commit has no parent
-      // history from any other branch.
-      await git(gitRoot, ['worktree', 'add', '--detach', tree, await emptyTreeCommit(gitRoot)])
-    }
-
-    // Ownership check BEFORE writing anything (refuse, never overwrite).
-    const indexPath = path.join(tree, 'index.json')
-    const existingRaw = await readFile(indexPath, 'utf8').catch(() => null)
-    let index = emptyIndex()
-    if (existingRaw !== null) {
-      const parsed = parseIndex(existingRaw)
-      if (parsed === null) {
-        return `a "${PERF_DATA_BRANCH}" branch exists but its index.json is not driftwatch's — refusing to touch it (rename or remove the branch to let driftwatch own it)`
-      }
-      index = parsed
-    } else if (localRef) {
-      const files = (await git(gitRoot, ['ls-tree', '-r', '--name-only', localRef])).trim()
-      if (files.length > 0) {
-        return `a "${PERF_DATA_BRANCH}" branch exists with content that is not driftwatch's — refusing to touch it`
-      }
-    }
-
     await mkdir(path.join(tree, 'results'), { recursive: true })
     await writeFile(
       path.join(tree, 'results', `${sha.slice(0, 12)}.json`),
@@ -109,7 +75,7 @@ async function tryAppend(
       'utf8',
     )
     const updated = appendEntry(index, entryFromResult(result, sha, branch, await commitInfo(gitRoot, sha)))
-    await writeFile(indexPath, JSON.stringify(updated, null, 2) + '\n', 'utf8')
+    await writeFile(path.join(tree, 'index.json'), JSON.stringify(updated, null, 2) + '\n', 'utf8')
 
     // The dashboard is regenerated on every append: point GitHub Pages at this branch and the
     // trend chart is always current (spec §6.3 — no server, no backend).
@@ -125,37 +91,25 @@ async function tryAppend(
       'utf8',
     )
 
-    await git(tree, ['add', '-A'])
-    await git(tree, [
-      '-c', 'user.name=driftwatch',
-      '-c', 'user.email=driftwatch@local',
-      'commit', '-q', '-m', `record ${sha.slice(0, 12)}${branch ? ` (${branch})` : ''}`,
-    ])
-    const newCommit = (await git(tree, ['rev-parse', 'HEAD'])).trim()
-    await git(gitRoot, ['update-ref', `refs/heads/${PERF_DATA_BRANCH}`, newCommit])
-
-    if (push && hasRemote) {
-      try {
-        await git(gitRoot, ['push', 'origin', `refs/heads/${PERF_DATA_BRANCH}:refs/heads/${PERF_DATA_BRANCH}`])
-      } catch {
-        // Someone else appended first — reset our local ref to theirs and let the caller retry.
-        await git(gitRoot, ['fetch', 'origin', `+${PERF_DATA_BRANCH}:refs/heads/${PERF_DATA_BRANCH}`]).catch(() => {})
-        return 'push-rejected'
-      }
-    }
-
-    return 'appended'
+    const committed = await commitPerfDataTree(
+      gitRoot,
+      tree,
+      `record ${sha.slice(0, 12)}${branch ? ` (${branch})` : ''}`,
+      push,
+      hasRemote,
+    )
+    return committed === 'committed' ? 'appended' : 'push-rejected'
   } catch (error) {
     return `perf-data append failed: ${(error as Error).message}`
   } finally {
-    await rm(parent, { recursive: true, force: true })
-    await git(gitRoot, ['worktree', 'prune']).catch(() => {})
+    await cleanup()
   }
 }
 
 /**
- * Author date + first parent for the entry's topology fields (M7 ordering). Null when the sha is
- * unknown to this clone (shallow checkout) — the entry then orders by its measurement timestamp.
+ * Author date + first parent for the entry's topology fields (M7 ordering). Undefined when the
+ * sha is unknown to this clone (shallow checkout) — the entry then orders by its measurement
+ * timestamp.
  */
 export async function commitInfo(gitRoot: string, sha: string): Promise<EntryCommitInfo | undefined> {
   try {
@@ -166,29 +120,4 @@ export async function commitInfo(gitRoot: string, sha: string): Promise<EntryCom
   } catch {
     return undefined
   }
-}
-
-/** Prefers the freshly fetched remote state over a stale local ref. */
-async function resolvePerfDataRef(gitRoot: string): Promise<string | null> {
-  for (const ref of [`refs/remotes/origin/${PERF_DATA_BRANCH}`, `refs/heads/${PERF_DATA_BRANCH}`]) {
-    const ok = await git(gitRoot, ['rev-parse', '--verify', '--quiet', ref]).then(() => true, () => false)
-    if (ok) return ref
-  }
-  return null
-}
-
-/** A parentless commit on the canonical empty tree — the orphan branch's seed. */
-async function emptyTreeCommit(gitRoot: string): Promise<string> {
-  const emptyTree = (await git(gitRoot, ['hash-object', '-t', 'tree', '/dev/null'])).trim()
-  const { stdout } = await exec(
-    'git',
-    ['-C', gitRoot, '-c', 'user.name=driftwatch', '-c', 'user.email=driftwatch@local', 'commit-tree', emptyTree, '-m', 'driftwatch perf-data (orphan seed)'],
-    { maxBuffer: GIT_BUFFER },
-  )
-  return stdout.trim()
-}
-
-async function git(cwd: string, args: string[]): Promise<string> {
-  const { stdout } = await exec('git', ['-C', cwd, ...args], { maxBuffer: GIT_BUFFER })
-  return stdout
 }

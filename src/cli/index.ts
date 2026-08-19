@@ -40,6 +40,22 @@ program
   })
 
 program
+  .command('replay')
+  .description('Measure the mainline\'s recent history retroactively (record mode, no AI) — spec §10')
+  .option('--last <n>', 'how many first-parent commits of the default branch to replay', '10')
+  .option('--since <ref>', 'replay every mainline commit after <ref> instead of a count')
+  .option('--yes', 'skip the cost-estimate confirmation', false)
+  .option('--push', 'push the batched perf-data update to origin (default: local only)', false)
+  .option('--json', 'print the replay summary as JSON', false)
+  .option('--no-serve', 'skip booting the app and route-latency metrics')
+  .option('--no-browser', 'skip Lighthouse browser metrics')
+  .option('--cwd <dir>', 'project directory', process.cwd())
+  .action(async (flags: { last?: string; since?: string; yes: boolean; push: boolean; json: boolean; serve: boolean; browser: boolean; cwd: string }) => {
+    const { replayCommand } = await import('./replay-command.js')
+    await replayCommand(flags)
+  })
+
+program
   .command('trend')
   .description('Where has main been going? Reads the perf-data branch (read-only)')
   .option('--json', 'print the trend structures as JSON', false)

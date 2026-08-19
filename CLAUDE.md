@@ -189,7 +189,13 @@ Launch planning (npm publish, name/license/visibility, onboarding) remains queue
         only the true lodash signature — no browser-noise rows crossed under the CI quanta.
   - [x] cleanup: PRs #7/#8 closed with evidence notes, #10/#11 (the two sabotage-caught wrong
         fix PRs) closed en route, all acceptance branches deleted, fixture perf.yml aligned on
-        main. Eval snapshot pending (needs DRIFTWATCH_API_KEY re-exported; run before launch).
+        main.
+  - [x] eval snapshot (M6-close baseline): **3/4**. run-b PASS 0.9, lodash named, diff confined
+        ($0.0021); run-c PASS 0.7, lodash ($0.0022); run-d PASS 0.7, reading-time.tsx +
+        client-bundle mechanism ($0.0034). run-a FAIL — transport, not analysis: triage JSON
+        truncated twice (response cut mid-string; deepseek-v4-flash verbosity vs the 1000-token
+        triage output cap — run-a passed 4/4 at the M5-close snapshot, so this is served-model
+        drift). Pre-launch item: revisit TRIAGE_MAX_OUTPUT against current model verbosity.
 
 M6 story (takes as data): seven takes, every failure a finding. A1 auto_fix-off gate; A2
 not-applicable honesty → `git apply --recount`; A3/A4 the confidence-vs-rubric conflict → the

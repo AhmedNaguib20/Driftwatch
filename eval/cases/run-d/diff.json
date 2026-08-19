@@ -1,0 +1,18 @@
+[
+  {
+    "path": "fixtures/next-app/app/reading-time.tsx",
+    "insertions": 28,
+    "deletions": 0,
+    "binary": false,
+    "untracked": true,
+    "patch": "diff --git a/fixtures/next-app/app/reading-time.tsx b/fixtures/next-app/app/reading-time.tsx\nnew file mode 100644\nindex 0000000..3f20809\n--- /dev/null\n+++ b/fixtures/next-app/app/reading-time.tsx\n@@ -0,0 +1,28 @@\n+'use client'\n+\n+import _ from 'lodash'\n+import { useMemo, useState } from 'react'\n+import { posts } from '@/lib/posts'\n+\n+/** Client-side reading-time explorer for the home page. */\n+export default function ReadingTime() {\n+  const [threshold, setThreshold] = useState(4)\n+\n+  const stats = useMemo(() => {\n+    const grouped = _.groupBy(posts, (post) => (post.readingMinutes >= threshold ? 'long' : 'short'))\n+    return {\n+      long: _.sumBy(grouped.long ?? [], 'readingMinutes'),\n+      short: _.sumBy(grouped.short ?? [], 'readingMinutes'),\n+      mean: _.meanBy(posts, 'readingMinutes').toFixed(1),\n+    }\n+  }, [threshold])\n+\n+  return (\n+    <div className=\"meta\">\n+      <p>\n+        Mean read: {stats.mean} min · ≥{threshold} min: {stats.long} min total · shorter: {stats.short} min\n+      </p>\n+      <button onClick={() => setThreshold((t) => (t % 8) + 1)}>raise the bar</button>\n+    </div>\n+  )\n+}\n"
+  },
+  {
+    "path": "fixtures/next-app/app/page.tsx",
+    "insertions": 2,
+    "deletions": 0,
+    "binary": false,
+    "untracked": false,
+    "patch": "diff --git a/fixtures/next-app/app/page.tsx b/fixtures/next-app/app/page.tsx\nindex e2caf4f..73edacc 100644\n--- a/fixtures/next-app/app/page.tsx\n+++ b/fixtures/next-app/app/page.tsx\n@@ -1,4 +1,5 @@\n import Link from 'next/link'\n+import ReadingTime from './reading-time'\n import { posts } from '@/lib/posts'\n \n export default function HomePage() {\n@@ -9,6 +10,7 @@ export default function HomePage() {\n         Four routes, a chart, and a couple of real dependencies — enough that a build takes long\n         enough to time honestly.\n       </p>\n+      <ReadingTime />\n       {posts.slice(0, 2).map((post) => (\n         <article key={post.slug}>\n           <Link href={`/blog/${post.slug}`}>{post.title}</Link>\n"
+  }
+]

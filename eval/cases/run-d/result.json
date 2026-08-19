@@ -1,0 +1,909 @@
+{
+  "schemaVersion": 1,
+  "schemaMinorVersion": 1,
+  "driftwatchVersion": "0.5.0",
+  "createdAt": "2026-08-19T07:43:55.587Z",
+  "project": {
+    "root": "/Users/ahmednaguib/Driftwatch/fixtures/next-app",
+    "gitRoot": "/Users/ahmednaguib/Driftwatch",
+    "pathInRepo": "fixtures/next-app",
+    "framework": "nextjs",
+    "frameworkVersion": "15.1.3",
+    "packageManager": "npm",
+    "lockfile": "package-lock.json",
+    "routes": [
+      "/",
+      "/about",
+      "/blog",
+      "/blog/[slug]",
+      "/dashboard",
+      "/live"
+    ],
+    "evidence": [
+      {
+        "fact": "language: javascript",
+        "source": "package.json",
+        "detail": "package \"driftwatch-fixture-next-app\""
+      },
+      {
+        "fact": "git repository: /Users/ahmednaguib/Driftwatch",
+        "source": "git",
+        "detail": "project sits at fixtures/next-app"
+      },
+      {
+        "fact": "package manager: npm",
+        "source": "package-lock.json"
+      },
+      {
+        "fact": "framework: nextjs",
+        "source": "package.json",
+        "detail": "depends on next@15.1.3"
+      },
+      {
+        "fact": "framework: nextjs",
+        "source": "next.config.mjs",
+        "detail": "Next.js config file"
+      },
+      {
+        "fact": "next version: 15.1.3",
+        "source": "node_modules/next/package.json",
+        "detail": "installed version — this is what gets built"
+      },
+      {
+        "fact": "6 route(s) detected",
+        "source": "app",
+        "detail": "app router"
+      },
+      {
+        "fact": "build command: npm run build",
+        "source": "package.json",
+        "detail": "scripts.build = \"next build\""
+      },
+      {
+        "fact": "base: main @ ad02a0654e95",
+        "source": "git"
+      },
+      {
+        "fact": "lockfile: package-lock.json identical to base",
+        "source": "package-lock.json",
+        "detail": "dependencies unchanged — install skipped, node_modules cloned to both sides"
+      }
+    ],
+    "warnings": []
+  },
+  "config": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "thresholdPercent": 5,
+    "noiseFloorPercent": 2,
+    "base": "main",
+    "block_merge": false,
+    "sourcePath": "/Users/ahmednaguib/Driftwatch/fixtures/next-app/perf.yml"
+  },
+  "base": {
+    "available": true,
+    "ref": "main",
+    "sha": "ad02a0654e95124212ab50ad51b2f39a799325a4",
+    "fromCache": false,
+    "measuredAt": null,
+    "metrics": [
+      {
+        "id": "install_time",
+        "status": "skipped",
+        "label": "install time",
+        "reason": "dependencies unchanged between sides — provided by clone, install not measured"
+      },
+      {
+        "id": "build_time",
+        "status": "measured",
+        "value": 9007,
+        "unit": "ms",
+        "label": "build time (cold)",
+        "collectedBy": "median of 3 cold builds after 1 discarded warm-up, wall clock around `npm run build` in a worktree",
+        "samples": 3,
+        "sampleValues": [
+          9007,
+          8988,
+          9075
+        ]
+      },
+      {
+        "id": "bundle_size",
+        "status": "measured",
+        "value": 2322637,
+        "unit": "bytes",
+        "label": "bundle size",
+        "collectedBy": "sum of file sizes in .next (117 files), excluding internal caches and diagnostics",
+        "samples": 1
+      },
+      {
+        "id": "route_latency:/live",
+        "status": "measured",
+        "value": 4,
+        "unit": "ms",
+        "label": "route /live",
+        "collectedBy": "median of 5 sequential requests after 1 discarded warm-up, full response time against the built app",
+        "samples": 5,
+        "sampleValues": [
+          5,
+          5,
+          4,
+          4,
+          3
+        ]
+      },
+      {
+        "id": "route_latency:/blog/[slug]",
+        "status": "skipped",
+        "label": "route /blog/[slug]",
+        "reason": "dynamic segment — no concrete URL to measure",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/",
+        "status": "skipped",
+        "label": "route /",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/blog",
+        "status": "skipped",
+        "label": "route /blog",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/about",
+        "status": "skipped",
+        "label": "route /about",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/dashboard",
+        "status": "skipped",
+        "label": "route /dashboard",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "lcp:/",
+        "status": "measured",
+        "value": 1701,
+        "unit": "ms",
+        "label": "LCP /",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          1706,
+          1701,
+          1701
+        ]
+      },
+      {
+        "id": "tbt:/",
+        "status": "measured",
+        "value": 1,
+        "unit": "ms",
+        "label": "TBT /",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "id": "fcp:/",
+        "status": "measured",
+        "value": 756,
+        "unit": "ms",
+        "label": "FCP /",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          756,
+          756,
+          753
+        ]
+      },
+      {
+        "id": "transfer_size:/",
+        "status": "measured",
+        "value": 231571,
+        "unit": "bytes",
+        "label": "transfer size /",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          231570,
+          231571,
+          231572
+        ]
+      },
+      {
+        "id": "lcp:/live",
+        "status": "measured",
+        "value": 1700,
+        "unit": "ms",
+        "label": "LCP /live",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          1700,
+          1699,
+          1702
+        ]
+      },
+      {
+        "id": "tbt:/live",
+        "status": "measured",
+        "value": 1,
+        "unit": "ms",
+        "label": "TBT /live",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "id": "fcp:/live",
+        "status": "measured",
+        "value": 754,
+        "unit": "ms",
+        "label": "FCP /live",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          755,
+          754,
+          754
+        ]
+      },
+      {
+        "id": "transfer_size:/live",
+        "status": "measured",
+        "value": 230461,
+        "unit": "bytes",
+        "label": "transfer size /live",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          230461,
+          230465,
+          230460
+        ]
+      },
+      {
+        "id": "lcp:/blog",
+        "status": "measured",
+        "value": 1702,
+        "unit": "ms",
+        "label": "LCP /blog",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          1700,
+          1702,
+          1702
+        ]
+      },
+      {
+        "id": "tbt:/blog",
+        "status": "measured",
+        "value": 1,
+        "unit": "ms",
+        "label": "TBT /blog",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "id": "fcp:/blog",
+        "status": "measured",
+        "value": 754,
+        "unit": "ms",
+        "label": "FCP /blog",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          753,
+          754,
+          754
+        ]
+      },
+      {
+        "id": "transfer_size:/blog",
+        "status": "measured",
+        "value": 235500,
+        "unit": "bytes",
+        "label": "transfer size /blog",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          235499,
+          235501,
+          235500
+        ]
+      }
+    ],
+    "protocol": {
+      "version": 1,
+      "workspace": "worktree",
+      "cacheState": "cold",
+      "nodeModules": "cloned",
+      "gitMetadata": "absent",
+      "nodeVersion": "v20.20.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "buildCommand": "npm run build",
+      "buildSamples": 3,
+      "warmupSamples": 1,
+      "routeSamples": 5,
+      "routeWarmupSamples": 1,
+      "browser": "chrome/151.0.7922.140",
+      "lighthouseProfile": "simulated/desktop/v2",
+      "hostLabels": [],
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      }
+    },
+    "warnings": [],
+    "elapsedMs": 93474,
+    "layer2aElapsedMs": 55138
+  },
+  "current": {
+    "workingTree": true,
+    "metrics": [
+      {
+        "id": "install_time",
+        "status": "skipped",
+        "label": "install time",
+        "reason": "dependencies unchanged between sides — provided by clone, install not measured"
+      },
+      {
+        "id": "build_time",
+        "status": "measured",
+        "value": 9409,
+        "unit": "ms",
+        "label": "build time (cold)",
+        "collectedBy": "median of 3 cold builds after 1 discarded warm-up, wall clock around `npm run build` in a copy",
+        "samples": 3,
+        "sampleValues": [
+          9493,
+          9324,
+          9409
+        ]
+      },
+      {
+        "id": "bundle_size",
+        "status": "measured",
+        "value": 2626586,
+        "unit": "bytes",
+        "label": "bundle size",
+        "collectedBy": "sum of file sizes in .next (119 files), excluding internal caches and diagnostics",
+        "samples": 1
+      },
+      {
+        "id": "route_latency:/live",
+        "status": "measured",
+        "value": 5,
+        "unit": "ms",
+        "label": "route /live",
+        "collectedBy": "median of 5 sequential requests after 1 discarded warm-up, full response time against the built app",
+        "samples": 5,
+        "sampleValues": [
+          6,
+          5,
+          4,
+          5,
+          4
+        ]
+      },
+      {
+        "id": "route_latency:/blog/[slug]",
+        "status": "skipped",
+        "label": "route /blog/[slug]",
+        "reason": "dynamic segment — no concrete URL to measure",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/",
+        "status": "skipped",
+        "label": "route /",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/blog",
+        "status": "skipped",
+        "label": "route /blog",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/about",
+        "status": "skipped",
+        "label": "route /about",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/dashboard",
+        "status": "skipped",
+        "label": "route /dashboard",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "lcp:/",
+        "status": "measured",
+        "value": 2019,
+        "unit": "ms",
+        "label": "LCP /",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          2019,
+          2019,
+          2017
+        ]
+      },
+      {
+        "id": "tbt:/",
+        "status": "measured",
+        "value": 15,
+        "unit": "ms",
+        "label": "TBT /",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          16,
+          14,
+          15
+        ]
+      },
+      {
+        "id": "fcp:/",
+        "status": "measured",
+        "value": 754,
+        "unit": "ms",
+        "label": "FCP /",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          754,
+          756,
+          754
+        ]
+      },
+      {
+        "id": "transfer_size:/",
+        "status": "measured",
+        "value": 277636,
+        "unit": "bytes",
+        "label": "transfer size /",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          277635,
+          277638,
+          277636
+        ]
+      },
+      {
+        "id": "lcp:/live",
+        "status": "measured",
+        "value": 2018,
+        "unit": "ms",
+        "label": "LCP /live",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          2018,
+          2018,
+          2017
+        ]
+      },
+      {
+        "id": "tbt:/live",
+        "status": "measured",
+        "value": 15,
+        "unit": "ms",
+        "label": "TBT /live",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          15,
+          15,
+          15
+        ]
+      },
+      {
+        "id": "fcp:/live",
+        "status": "measured",
+        "value": 754,
+        "unit": "ms",
+        "label": "FCP /live",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          754,
+          754,
+          754
+        ]
+      },
+      {
+        "id": "transfer_size:/live",
+        "status": "measured",
+        "value": 276511,
+        "unit": "bytes",
+        "label": "transfer size /live",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          276511,
+          276512,
+          276510
+        ]
+      },
+      {
+        "id": "lcp:/blog",
+        "status": "measured",
+        "value": 1701,
+        "unit": "ms",
+        "label": "LCP /blog",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          1700,
+          1701,
+          1704
+        ]
+      },
+      {
+        "id": "tbt:/blog",
+        "status": "measured",
+        "value": 1,
+        "unit": "ms",
+        "label": "TBT /blog",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "id": "fcp:/blog",
+        "status": "measured",
+        "value": 754,
+        "unit": "ms",
+        "label": "FCP /blog",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          753,
+          754,
+          755
+        ]
+      },
+      {
+        "id": "transfer_size:/blog",
+        "status": "measured",
+        "value": 281475,
+        "unit": "bytes",
+        "label": "transfer size /blog",
+        "collectedBy": "median of 3 lighthouse runs after 1 discarded warm-up (simulated/desktop/v2, chrome/151.0.7922.140) against the built app",
+        "samples": 3,
+        "sampleValues": [
+          281475,
+          281474,
+          281475
+        ]
+      }
+    ],
+    "protocol": {
+      "version": 1,
+      "workspace": "copy",
+      "cacheState": "cold",
+      "nodeModules": "cloned",
+      "gitMetadata": "absent",
+      "nodeVersion": "v20.20.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "buildCommand": "npm run build",
+      "buildSamples": 3,
+      "warmupSamples": 1,
+      "routeSamples": 5,
+      "routeWarmupSamples": 1,
+      "browser": "chrome/151.0.7922.140",
+      "lighthouseProfile": "simulated/desktop/v2",
+      "hostLabels": [],
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      }
+    },
+    "warnings": [],
+    "elapsedMs": 94996,
+    "layer2aElapsedMs": 54996
+  },
+  "comparison": {
+    "measurementPath": "confirmed",
+    "dependenciesChanged": false,
+    "lockfileStatus": "identical",
+    "protocolsMatch": true,
+    "protocolMismatches": [],
+    "metrics": [
+      {
+        "id": "install_time",
+        "label": "install time",
+        "unit": null,
+        "base": null,
+        "current": null,
+        "delta": null,
+        "verdict": "skipped",
+        "exceedsThreshold": false,
+        "reason": "base: dependencies unchanged between sides — provided by clone, install not measured | current: dependencies unchanged between sides — provided by clone, install not measured"
+      },
+      {
+        "id": "build_time",
+        "label": "build time (cold)",
+        "unit": "ms",
+        "base": 9007,
+        "current": 9409,
+        "delta": {
+          "absolute": 402,
+          "percent": 4.46
+        },
+        "verdict": "regressed",
+        "exceedsThreshold": false,
+        "reason": null
+      },
+      {
+        "id": "bundle_size",
+        "label": "bundle size",
+        "unit": "bytes",
+        "base": 2322637,
+        "current": 2626586,
+        "delta": {
+          "absolute": 303949,
+          "percent": 13.09
+        },
+        "verdict": "regressed",
+        "exceedsThreshold": true,
+        "reason": null
+      },
+      {
+        "id": "route_latency:/",
+        "label": "route /",
+        "unit": null,
+        "base": null,
+        "current": null,
+        "delta": null,
+        "verdict": "skipped",
+        "exceedsThreshold": false,
+        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/about",
+        "label": "route /about",
+        "unit": null,
+        "base": null,
+        "current": null,
+        "delta": null,
+        "verdict": "skipped",
+        "exceedsThreshold": false,
+        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/blog",
+        "label": "route /blog",
+        "unit": null,
+        "base": null,
+        "current": null,
+        "delta": null,
+        "verdict": "skipped",
+        "exceedsThreshold": false,
+        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/blog/[slug]",
+        "label": "route /blog/[slug]",
+        "unit": null,
+        "base": null,
+        "current": null,
+        "delta": null,
+        "verdict": "skipped",
+        "exceedsThreshold": false,
+        "reason": "base: dynamic segment — no concrete URL to measure | current: dynamic segment — no concrete URL to measure",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/dashboard",
+        "label": "route /dashboard",
+        "unit": null,
+        "base": null,
+        "current": null,
+        "delta": null,
+        "verdict": "skipped",
+        "exceedsThreshold": false,
+        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/live",
+        "label": "route /live",
+        "unit": "ms",
+        "base": 4,
+        "current": 5,
+        "delta": null,
+        "verdict": "no_change",
+        "exceedsThreshold": false,
+        "reason": "delta is under this metric class's 5ms resolution"
+      },
+      {
+        "id": "lcp:/",
+        "label": "LCP /",
+        "unit": "ms",
+        "base": 1701,
+        "current": 2019,
+        "delta": {
+          "absolute": 318,
+          "percent": 18.69
+        },
+        "verdict": "regressed",
+        "exceedsThreshold": true,
+        "reason": null
+      },
+      {
+        "id": "lcp:/blog",
+        "label": "LCP /blog",
+        "unit": "ms",
+        "base": 1702,
+        "current": 1701,
+        "delta": null,
+        "verdict": "no_change",
+        "exceedsThreshold": false,
+        "reason": "delta is under the 2% noise floor"
+      },
+      {
+        "id": "lcp:/live",
+        "label": "LCP /live",
+        "unit": "ms",
+        "base": 1700,
+        "current": 2018,
+        "delta": {
+          "absolute": 318,
+          "percent": 18.71
+        },
+        "verdict": "regressed",
+        "exceedsThreshold": true,
+        "reason": null
+      },
+      {
+        "id": "tbt:/",
+        "label": "TBT /",
+        "unit": "ms",
+        "base": 1,
+        "current": 15,
+        "delta": null,
+        "verdict": "no_change",
+        "exceedsThreshold": false,
+        "reason": "delta is under this metric class's 50ms resolution"
+      },
+      {
+        "id": "tbt:/blog",
+        "label": "TBT /blog",
+        "unit": "ms",
+        "base": 1,
+        "current": 1,
+        "delta": null,
+        "verdict": "no_change",
+        "exceedsThreshold": false,
+        "reason": "delta is under the 2% noise floor"
+      },
+      {
+        "id": "tbt:/live",
+        "label": "TBT /live",
+        "unit": "ms",
+        "base": 1,
+        "current": 15,
+        "delta": null,
+        "verdict": "no_change",
+        "exceedsThreshold": false,
+        "reason": "delta is under this metric class's 50ms resolution"
+      },
+      {
+        "id": "fcp:/",
+        "label": "FCP /",
+        "unit": "ms",
+        "base": 756,
+        "current": 754,
+        "delta": null,
+        "verdict": "no_change",
+        "exceedsThreshold": false,
+        "reason": "delta is under the 2% noise floor"
+      },
+      {
+        "id": "fcp:/blog",
+        "label": "FCP /blog",
+        "unit": "ms",
+        "base": 754,
+        "current": 754,
+        "delta": null,
+        "verdict": "no_change",
+        "exceedsThreshold": false,
+        "reason": "delta is under the 2% noise floor"
+      },
+      {
+        "id": "fcp:/live",
+        "label": "FCP /live",
+        "unit": "ms",
+        "base": 754,
+        "current": 754,
+        "delta": null,
+        "verdict": "no_change",
+        "exceedsThreshold": false,
+        "reason": "delta is under the 2% noise floor"
+      },
+      {
+        "id": "transfer_size:/",
+        "label": "transfer size /",
+        "unit": "bytes",
+        "base": 231571,
+        "current": 277636,
+        "delta": {
+          "absolute": 46065,
+          "percent": 19.89
+        },
+        "verdict": "regressed",
+        "exceedsThreshold": true,
+        "reason": null
+      },
+      {
+        "id": "transfer_size:/blog",
+        "label": "transfer size /blog",
+        "unit": "bytes",
+        "base": 235500,
+        "current": 281475,
+        "delta": {
+          "absolute": 45975,
+          "percent": 19.52
+        },
+        "verdict": "regressed",
+        "exceedsThreshold": true,
+        "reason": null
+      },
+      {
+        "id": "transfer_size:/live",
+        "label": "transfer size /live",
+        "unit": "bytes",
+        "base": 230461,
+        "current": 276511,
+        "delta": {
+          "absolute": 46050,
+          "percent": 19.98
+        },
+        "verdict": "regressed",
+        "exceedsThreshold": true,
+        "reason": null
+      }
+    ]
+  },
+  "verdict": "regression",
+  "warnings": []
+}

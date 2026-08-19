@@ -1,0 +1,11 @@
+{
+  "outcome": "analysed",
+  "suspectsInclude": ["fixtures/next-app/app/reading-time.tsx"],
+  "causeMustContain": ["lodash"],
+  "causeAnyOf": ["client", "bundle"],
+  "confidence": { "min": 0.5, "max": 1.0 },
+  "fix": {
+    "mustMentionAnyOf": ["lodash/groupBy", "lodash/sumBy", "modular", "individual", "native"],
+    "diffMayOnlyTouch": ["fixtures/next-app/app/reading-time.tsx"]
+  }
+}

@@ -81,4 +81,6 @@ reported as exactly that.
 
 ## Requirements
 
-Node 20+, git. M1/M2 support Next.js projects; more frameworks as milestones land.
+Node 20+, git. Next.js projects are supported today; more frameworks as milestones land.
+Lighthouse metrics additionally need Chrome — in CI the generated workflow pins one
+(see the workflow comments for why the pin exists and how to bump it deliberately).

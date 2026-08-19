@@ -25,6 +25,9 @@ permissions:
 jobs:
   driftwatch:
     runs-on: ubuntu-latest
+    # A hung setup step (observed: apt inside setup-chrome stalling for an hour) must never eat
+    # the 6-hour default. A full run is ~10 minutes; anything past this is wedged, not slow.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:

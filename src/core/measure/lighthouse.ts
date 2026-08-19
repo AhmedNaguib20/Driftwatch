@@ -13,7 +13,7 @@ import type { BrowserInfo } from './browser.js'
  */
 
 /** Bumped when any determinism choice changes — it rides in the protocol hash. */
-export const LIGHTHOUSE_PROFILE = 'simulated/desktop/v4'
+export const LIGHTHOUSE_PROFILE = 'simulated/desktop/v5'
 
 /**
  * The warm-up law (spec v24): every fresh execution context runs its first iteration slow —
@@ -36,6 +36,8 @@ const CHROME_FLAGS = [
   // unprivileged user namespaces — the sandbox cannot start. One flag set everywhere (part of
   // LIGHTHOUSE_PROFILE): the browser only ever loads the app we just built, on localhost.
   '--no-sandbox',
+  '--disable-gpu',
+  '--disable-dev-shm-usage',
   '--no-first-run',
   '--no-default-browser-check',
   '--disable-extensions',
@@ -149,10 +151,24 @@ async function runOnce(
   browser: BrowserInfo,
   route: string,
 ): Promise<RouteAudit | { error: string }> {
+  const { mkdtemp, readFile, rm } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const path = await import('node:path')
+  // Our own user-data-dir so chrome-err.log is readable on failure — a dead browser must
+  // explain itself in the skip reason, not just leave a refused connection.
+  const userDataDir = await mkdtemp(path.join(tmpdir(), 'driftwatch-chrome-'))
+  const chromeErrTail = async () => {
+    try {
+      const log = await readFile(path.join(userDataDir, 'chrome-err.log'), 'utf8')
+      return log.trim().split('\n').slice(-6).join('\n')
+    } catch {
+      return '(no chrome-err.log)'
+    }
+  }
   let chrome: { kill: () => Promise<void> | void; port: number } | null = null
   try {
     const { launch } = await import('chrome-launcher')
-    chrome = await launch({ chromePath: browser.path, chromeFlags: CHROME_FLAGS })
+    chrome = await launch({ chromePath: browser.path, chromeFlags: CHROME_FLAGS, userDataDir, logLevel: 'silent' })
 
     const { default: lighthouse } = await import('lighthouse')
     const result = await lighthouse(`${server.url}${route}`, {
@@ -184,9 +200,10 @@ async function runOnce(
       transferBytes: Math.round(transfer!),
     }
   } catch (error) {
-    return { error: `lighthouse run failed: ${(error as Error).message}` }
+    return { error: `lighthouse run failed: ${(error as Error).message}; chrome stderr:\n${await chromeErrTail()}` }
   } finally {
     await chrome?.kill()
+    await rm(userDataDir, { recursive: true, force: true }).catch(() => {})
   }
 }
 

@@ -103,13 +103,15 @@ async function resolveVerification(
   progress: (message: string) => void,
 ): Promise<ResultJson> {
   if (!flags.verify) return result
-  if (!verificationEligible(result)) return result
+
+  // The seam substitutes before eligibility so a prose-only take cannot silently bypass it —
+  // eligibility is judged on what verification will actually measure.
+  const { result: subject, devOverride } = await applyDevFixOverride(result)
+  if (!verificationEligible(subject)) return result
 
   const profile = await detectProject({ cwd: flags.cwd })
   const config = await loadConfig(profile.projectRoot, configFromProfile(profile))
   if (!config.verify) return result
-
-  const { result: subject, devOverride } = await applyDevFixOverride(result)
 
   const verification = await verifyFix(profile, subject, {
     installIfAbsent: true,

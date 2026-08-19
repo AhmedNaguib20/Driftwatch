@@ -46,7 +46,7 @@ jobs:
       - uses: browser-actions/setup-chrome@v2
         id: chrome
         with:
-          chrome-version: 151.0.7922.138  # a Chrome-for-Testing known-good build (not every stable build is published)
+          chrome-version: 151.0.7922.77  # a Chrome-for-Testing known-good build (not every stable build is published)
           install-dependencies: true      # CfT builds need shared libraries the bare runner lacks
 
       # Developing driftwatch in this repo: build the local action and run it.

@@ -1,6 +1,8 @@
 import { execFile } from 'node:child_process'
+import path from 'node:path'
 import { promisify } from 'node:util'
 import { loadConfig } from './detect/config-load.js'
+import { exists } from './detect/fs-probe.js'
 import { configFromProfile } from './detect/config-schema.js'
 import { detectProject } from './detect/detect.js'
 import { measureWorkingTree } from './measure/measure.js'
@@ -32,7 +34,12 @@ export async function recordRun(options: RecordOptions = {}): Promise<ResultJson
   const sha = profile.gitRoot ? await headSha(profile.gitRoot) : null
   const branch = profile.gitRoot ? await headBranch(profile.gitRoot) : null
 
+  // No lockfile rule in record mode (there is no other side): clone node_modules when present,
+  // fresh-install when absent — a bare CI checkout must still produce a full trend point.
+  const hasNodeModules = await exists(path.join(profile.projectRoot, 'node_modules'))
   const current = await measureWorkingTree(profile, (m) => progress(`current: ${m}`), {
+    dependencies: hasNodeModules ? 'clone' : 'install',
+    installIfAbsent: true,
     serve: (options.serve ?? true) && config.serve,
     browser: (options.browser ?? true) && config.browser,
   })

@@ -67,6 +67,17 @@ interface RouteAudit {
   readonly tbtMs: number
   readonly fcpMs: number
   readonly transferBytes: number
+  readonly benchmarkIndex: number | null
+}
+
+export interface LighthouseOutcome {
+  readonly metrics: MetricResult[]
+  /**
+   * Median of Lighthouse's benchmarkIndex across all runs — a CPU-speed proxy for THIS runner
+   * assignment. Normalization data, NOT protocol identity: identical runner labels hide real
+   * machine-to-machine variance (the runner lottery), and this number is where it shows.
+   */
+  readonly benchmarkIndex: number | null
 }
 
 export async function measureLighthouse(
@@ -74,21 +85,24 @@ export async function measureLighthouse(
   browser: BrowserInfo,
   routes: readonly string[],
   progress: (message: string) => void = () => {},
-): Promise<MetricResult[]> {
+): Promise<LighthouseOutcome> {
   const metrics: MetricResult[] = []
+  const benchmarks: number[] = []
 
   for (const route of routes) {
     progress(`lighthouse ${route}: warm-up + ${LIGHTHOUSE_SAMPLES} runs…`)
-    metrics.push(...(await auditRoute(server, browser, route)))
+    const audited = await auditRoute(server, browser, route)
+    metrics.push(...audited.metrics)
+    benchmarks.push(...audited.benchmarks)
   }
-  return metrics
+  return { metrics, benchmarkIndex: benchmarks.length > 0 ? median(benchmarks) : null }
 }
 
 async function auditRoute(
   server: ServerHandle,
   browser: BrowserInfo,
   route: string,
-): Promise<MetricResult[]> {
+): Promise<{ metrics: MetricResult[]; benchmarks: number[] }> {
   const samples: RouteAudit[] = []
 
   // Per-route warm-up (see LIGHTHOUSE_WARMUP) — outcome deliberately discarded.
@@ -97,12 +111,15 @@ async function auditRoute(
   for (let i = 0; i < LIGHTHOUSE_SAMPLES; i += 1) {
     const outcome = await runOnce(server, browser, route)
     if ('error' in outcome) {
-      return ['lcp', 'tbt', 'fcp', 'transfer_size'].map((kind) => ({
-        id: `${kind as 'lcp'}:${route}` as MetricResult['id'],
-        status: 'skipped' as const,
-        label: `${kind.toUpperCase().replace('_SIZE', ' size')} ${route}`,
-        reason: outcome.error,
-      }))
+      return {
+        benchmarks: samples.map((a) => a.benchmarkIndex).filter((b): b is number => b !== null),
+        metrics: ['lcp', 'tbt', 'fcp', 'transfer_size'].map((kind) => ({
+          id: `${kind as 'lcp'}:${route}` as MetricResult['id'],
+          status: 'skipped' as const,
+          label: `${kind.toUpperCase().replace('_SIZE', ' size')} ${route}`,
+          reason: outcome.error,
+        })),
+      }
     }
     samples.push(outcome)
   }
@@ -111,7 +128,9 @@ async function auditRoute(
   const raw = (pick: (a: RouteAudit) => number) => samples.map(pick)
   const collectedBy = `median of ${LIGHTHOUSE_SAMPLES} lighthouse runs after ${LIGHTHOUSE_WARMUP} discarded per-route warm-up (${LIGHTHOUSE_PROFILE}, ${browser.signature}) against the built app`
 
-  return [
+  return {
+    benchmarks: samples.map((a) => a.benchmarkIndex).filter((b): b is number => b !== null),
+    metrics: [
     metric(`lcp:${route}`, `LCP ${route}`, med((a) => a.lcpMs), 'ms', raw((a) => a.lcpMs), collectedBy),
     metric(`tbt:${route}`, `TBT ${route}`, med((a) => a.tbtMs), 'ms', raw((a) => a.tbtMs), collectedBy),
     metric(`fcp:${route}`, `FCP ${route}`, med((a) => a.fcpMs), 'ms', raw((a) => a.fcpMs), collectedBy),
@@ -123,7 +142,8 @@ async function auditRoute(
       raw((a) => a.transferBytes),
       collectedBy,
     ),
-  ]
+  ],
+  }
 }
 
 function metric(
@@ -214,11 +234,13 @@ async function runOnce(
         : undefined
       return { error: `lighthouse produced no numeric value${failed ? `: ${failed}` : ''}` }
     }
+    const benchmark = result?.lhr?.environment?.benchmarkIndex
     return {
       lcpMs: Math.round(lcp!),
       tbtMs: Math.round(tbt!),
       fcpMs: Math.round(fcp!),
       transferBytes: Math.round(transfer!),
+      benchmarkIndex: typeof benchmark === 'number' ? Math.round(benchmark) : null,
     }
   } catch (error) {
     return {

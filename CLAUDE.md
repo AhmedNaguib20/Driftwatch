@@ -146,8 +146,12 @@ spec §5. (stderr streaming: fixed, `74d74af`.)
   - [x] static dashboard (`9c38bf1`) — one file, zero network, zero executable JS (inert JSON
         island + generation-time SVG), §5.1 rendered (separate polylines, named breaks, gaps never
         interpolated). Chrome churn finding → pin browser in generated workflow (spec §6.3).
-  - [ ] live proof: pin Chrome, accumulate points, Pages on (Ahmed flips the setting), real drift
-        verdicts → M5 close
+  - [x] live proof (bar Pages): pinned segment green (chrome .77 — .138 is broken upstream,
+        validated pins only), 3× 16-metric points, first real drift verdicts, break history
+        rendered, local↔branch byte-identity proven. Runner lottery finding → record
+        benchmarkIndex as normalization data (not identity). 16 entries on the branch.
+  - [ ] Pages leg: blocked on repo visibility (private repos need a paid plan) — Ahmed's call:
+        public now, or close M5 on the CLI path and defer Pages to launch.
 
 Do not start a milestone before the previous one's definition of done is met.
 

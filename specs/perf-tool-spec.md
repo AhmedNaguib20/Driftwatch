@@ -611,6 +611,22 @@ Covers what a PR comment can't: trends over time, Git History Replay charts, bra
 - "Render it and look at it" caught what structural tests couldn't: short-vs-full sha mismatch
   pinned break markers to the left edge; latest-value labels clipped at the right boundary.
 
+#### Runner lottery in trend data (found at M5 step 4 — DECIDED: measure first)
+
+Three comment-only pushes reported `build_time +65.3%`, `tbt +536%` — not drift, **machine
+lottery**: identical hostLabels, different physical VMs (19.9s vs 32.9s builds). PR comparisons are
+immune *by design* (same invocation, same machine — the §5 mitigation working); trend points are
+structurally exposed, and labels can't capture physical-VM variance. **Decision: record
+Lighthouse's `benchmarkIndex` (a CPU-speed proxy it already computes) into every trend point as
+normalization data — NOT into the identity hash** (that would fragment segments by VM). Collect
+passively; decide normalization vs rolling-median vs document-and-accept from real data. Byte
+metrics and FCP read stable through the same points — the lottery is a time-metric problem.
+
+**Chrome pinning postscript:** pinned versions must be *validated*, not just chosen — CfT
+`.138`'s DevTools endpoint resets connections; the pin is `.77` (works). The five-rung debugging
+ladder was diagnosed entirely from skip reasons recorded in the trend points — the observability
+explaining its own failures.
+
 #### Shared-runner browser churn (found live, M5 step 3 → decided step 4)
 
 The runner's Chrome moved three builds in one day (.108 → .137 → …), splitting trend segments

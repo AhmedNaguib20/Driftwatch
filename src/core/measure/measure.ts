@@ -84,6 +84,7 @@ export async function measureWorkspace(
     warnings: [...workspace.warnings],
     elapsedMs: Math.round(performance.now() - started),
     layer2aElapsedMs: layer2a.elapsedMs,
+    benchmarkIndex: layer2a.benchmarkIndex,
   }
 }
 
@@ -92,6 +93,8 @@ interface Layer2aOutcome {
   readonly elapsedMs: number
   readonly browser: string
   readonly lighthouseProfile: string
+  /** Runner-lottery normalization data (see LighthouseOutcome) — never identity. */
+  readonly benchmarkIndex: number | null
 }
 
 /**
@@ -113,6 +116,7 @@ async function collectLayer2a(
     elapsedMs: Math.round(performance.now() - started),
     browser: 'none',
     lighthouseProfile: 'none',
+    benchmarkIndex: null,
   })
 
   if (!profile.commands.serve || profile.routes.length === 0) return none() // unservable: not promised
@@ -171,6 +175,7 @@ async function collectLayer2a(
 
     let browser = 'none'
     let lighthouseProfile = 'none'
+    let benchmarkIndex: number | null = null
     if (!browserWanted) {
       metrics.push(
         ...skipLighthouse('browser metrics disabled (--no-browser / browser: false)').map(
@@ -182,7 +187,9 @@ async function collectLayer2a(
     } else {
       browser = browserInfo.signature
       lighthouseProfile = LIGHTHOUSE_PROFILE
-      metrics.push(...(await measureLighthouse(boot.server, browserInfo, lighthouseRoutes, progress)))
+      const lighthouse = await measureLighthouse(boot.server, browserInfo, lighthouseRoutes, progress)
+      metrics.push(...lighthouse.metrics)
+      benchmarkIndex = lighthouse.benchmarkIndex
     }
 
     return {
@@ -190,6 +197,7 @@ async function collectLayer2a(
       elapsedMs: Math.round(performance.now() - started),
       browser,
       lighthouseProfile,
+      benchmarkIndex,
     }
   } finally {
     await boot.server.stop()

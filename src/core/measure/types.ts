@@ -89,6 +89,11 @@ export interface SideMeasurement {
   readonly elapsedMs: number
   /** Wall-clock the serve+routes+lighthouse layer added to this side (CI-budget guardrail). */
   readonly layer2aElapsedMs: number
+  /**
+   * Lighthouse's benchmarkIndex median for this side — a CPU-speed proxy for the actual machine
+   * (runner lottery). Normalization data ONLY: never part of protocol identity or any hash.
+   */
+  readonly benchmarkIndex?: number | null
 }
 
 export interface CommandOutcome {

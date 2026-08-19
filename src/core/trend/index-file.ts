@@ -16,6 +16,9 @@ export interface IndexEntry {
   readonly branch: string | null
   /** Key metric medians only — the chart's data; full results live in results/<short-sha>.json. */
   readonly metrics: Readonly<Record<string, { readonly value: number; readonly unit: 'ms' | 'bytes' }>>
+  /** CPU-speed proxy for the machine that measured this point (runner lottery) — normalization
+   *  data, deliberately OUTSIDE the protocol identity so it never splits segments. */
+  readonly benchmarkIndex?: number | null
   /** Protocol hash-relevant identity: consumers refuse cross-protocol trend segments (§5.1). */
   readonly protocol: {
     readonly nodeVersion: string
@@ -63,6 +66,7 @@ export function entryFromResult(result: ResultJson, sha: string, branch: string 
     shortSha: sha.slice(0, 12),
     timestamp: result.createdAt,
     branch,
+    benchmarkIndex: ('benchmarkIndex' in result.current ? result.current.benchmarkIndex : null) ?? null,
     metrics,
     protocol: {
       nodeVersion: protocol?.nodeVersion ?? 'unknown',

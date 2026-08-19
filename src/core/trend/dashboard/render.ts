@@ -30,7 +30,8 @@ export function renderDashboard(input: DashboardInput): string {
     .map(({ timeline, drift }) => renderCard(timeline, drift, entryIndexOf, entryShas.length))
     .join('\n')
 
-  const latestProtocol = input.index.entries.at(-1)?.protocol ?? null
+  const latest = input.index.entries.at(-1) ?? null
+  const latestProtocol = latest?.protocol ?? null
   const dataIsland = escapeJsonForScript(
     JSON.stringify({ generatedAt: input.generatedAt, reports: input.reports }),
   )
@@ -48,7 +49,7 @@ export function renderDashboard(input: DashboardInput): string {
   <h1>Driftwatch <span class="dim">— where has ${escapeHtml(input.sourceLabel ?? 'this project')} been going?</span></h1>
   <p class="dim">${input.index.entries.length} recorded commit(s) · data through ${escapeHtml(input.generatedAt)} · trend language is <em>drift</em>, never a verdict</p>
 </header>
-${latestProtocol ? protocolLegend(latestProtocol) : ''}
+${latestProtocol ? protocolLegend(latestProtocol, latest?.benchmarkIndex ?? null) : ''}
 <main>
 ${cards}
 </main>
@@ -125,14 +126,17 @@ function driftChip(drift: DriftReport): string {
   }
 }
 
-function protocolLegend(protocol: {
-  nodeVersion: string
-  platform: string
-  arch: string
-  browser: string
-  hostLabels: readonly string[]
-  driftwatchVersion: string
-}): string {
+function protocolLegend(
+  protocol: {
+    nodeVersion: string
+    platform: string
+    arch: string
+    browser: string
+    hostLabels: readonly string[]
+    driftwatchVersion: string
+  },
+  benchmarkIndex: number | null,
+): string {
   const items: [string, string][] = [
     ['node', protocol.nodeVersion],
     ['platform', `${protocol.platform}/${protocol.arch}`],
@@ -140,9 +144,13 @@ function protocolLegend(protocol: {
     ['host', protocol.hostLabels.length > 0 ? protocol.hostLabels.join(', ') : '(unlabelled)'],
     ['driftwatch', protocol.driftwatchVersion],
   ]
+  const benchmark =
+    benchmarkIndex !== null
+      ? ` <span class="pill"><b>benchmark</b> ${escapeHtml(String(benchmarkIndex))} <span class="dim">(machine speed — informational, never splits segments)</span></span>`
+      : ''
   return `<aside class="protocol"><span class="dim">current protocol</span> ${items
     .map(([k, v]) => `<span class="pill"><b>${escapeHtml(k)}</b> ${escapeHtml(v)}</span>`)
-    .join(' ')}<span class="dim"> — a change in any of these starts a new segment</span></aside>`
+    .join(' ')}<span class="dim"> — a change in any of these starts a new segment</span>${benchmark}</aside>`
 }
 
 /** Palette per the dataviz reference instance: single series hue, status chips, selected dark steps. */

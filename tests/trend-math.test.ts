@@ -240,3 +240,14 @@ describe('identityDiff', () => {
     ])
   })
 })
+
+describe('benchmarkIndex — normalization data, never identity', () => {
+  it('a wildly different benchmarkIndex does NOT split a segment', () => {
+    const a = entry({ build_time: 20000 })
+    const b = { ...entry({ build_time: 33000 }), benchmarkIndex: 900 }
+    const c = { ...entry({ build_time: 20500 }), benchmarkIndex: 2600 }
+    const [t] = buildTimelines(index([a, b, c]))
+    expect(t!.segments).toHaveLength(1) // same protocol identity throughout
+    expect(t!.breaks).toHaveLength(0)
+  })
+})

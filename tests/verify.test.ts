@@ -129,7 +129,11 @@ async function project(): Promise<{ profile: ProjectProfile; dir: string }> {
   return { profile, dir }
 }
 
-function regressionResult(analysis: AnalysisReport, currentProto = protocol()): ResultJson {
+function regressionResult(
+  analysis: AnalysisReport,
+  currentProto = protocol(),
+  sides?: { base: MetricResult[]; current: MetricResult[] },
+): ResultJson {
   const config = {
     detect: 'nextjs' as const, measure: ['bundle_size'], serve: true, browser: true, verify: true, auto_fix: 'off' as const,
     threshold: '5%', block_merge: false, base: 'main', provider: 'deepseek', model: 'm',
@@ -143,7 +147,7 @@ function regressionResult(analysis: AnalysisReport, currentProto = protocol()): 
     warnings: [], evidence: [],
   }
   const base = {
-    side: side([measured('build_time', 300, 'ms'), measured('bundle_size', 45, 'bytes')]),
+    side: side(sides?.base ?? [measured('build_time', 300, 'ms'), measured('bundle_size', 45, 'bytes')]),
     sha: 'a'.repeat(40), fromCache: false, measuredAt: null, cachePath: null,
   }
   const plan = {
@@ -153,7 +157,7 @@ function regressionResult(analysis: AnalysisReport, currentProto = protocol()): 
   }
   const result = buildResult({
     profile, config, plan, base,
-    current: side([measured('build_time', 305, 'ms'), measured('bundle_size', 5041, 'bytes')], currentProto),
+    current: side(sides?.current ?? [measured('build_time', 305, 'ms'), measured('bundle_size', 5041, 'bytes')], currentProto),
     now: () => new Date('2026-08-19T12:00:00Z'),
   })
   return attachAnalysis(result, analysis)
@@ -170,6 +174,31 @@ describe('verifyFix — gates', () => {
 
     const ok = { ...regressionResult(analysed()), verdict: 'ok' as const }
     expect((await verifyFix(profile, ok)).outcome).toBe('skipped')
+  })
+
+  it('assesses only threshold-crossers: a noise-band timing wobble cannot buy a worthless fix a partial', async () => {
+    const { profile } = await project()
+
+    // build_time +3.3% is over the noise floor+quantum (regressed row) but UNDER the 5%
+    // threshold; bundle_size is the actual regression. The "fix" leaves bundle untouched
+    // while build time wobbles back near base — the live Run B sabotage shape.
+    const result = regressionResult(analysed(), protocol(), {
+      base: [measured('build_time', 30_000, 'ms'), measured('bundle_size', 45, 'bytes')],
+      current: [measured('build_time', 31_000, 'ms'), measured('bundle_size', 5041, 'bytes')],
+    })
+    const buildRow = result.comparison.metrics.find((m) => m.id === 'build_time')!
+    expect(buildRow.verdict).toBe('regressed')
+    expect(buildRow.exceedsThreshold).toBe(false)
+
+    const report = await verifyFix(profile, result, {
+      serve: false,
+      browser: false,
+      measureFn: async () =>
+        side([measured('build_time', 30_200, 'ms'), measured('bundle_size', 5041, 'bytes')]),
+    })
+
+    expect(report.metrics.map((m) => m.id)).toEqual(['bundle_size'])
+    expect(report.outcome).toBe('no-recovery')
   })
 
   it('verifies a low-confidence diff and a prose-displayed diff — the display bar is not a measurement gate', async () => {

@@ -47,8 +47,14 @@ export async function verifyFix(
   if (!analysis || analysis.outcome !== 'analysed') return skipped('no completed analysis to verify')
   const diff = machineDiff(analysis.fix)
   if (diff === null) return skipped('the fix carries no machine-applicable diff')
-  const regressed = result.comparison.metrics.filter((m) => m.verdict === 'regressed')
-  if (regressed.length === 0) return skipped('no regressed metrics to verify against')
+  // Only threshold-crossers: THEY are the regression the verdict named. Sub-threshold
+  // "regressed" rows (bold, "under threshold") are informational — a 2.4% timing delta can
+  // wobble "restored" on re-measurement and must never buy a worthless fix a 'partial'
+  // (M6 acceptance Run B caught exactly that).
+  const regressed = result.comparison.metrics.filter(
+    (m) => m.verdict === 'regressed' && m.exceedsThreshold,
+  )
+  if (regressed.length === 0) return skipped('no threshold-crossing regressed metrics to verify against')
   if (!('metrics' in result.current) || !('protocol' in result.current)) {
     return skipped('no measured current side to verify against')
   }

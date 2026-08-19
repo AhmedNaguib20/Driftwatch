@@ -562,6 +562,26 @@ serve a statically-exported dashboard (Next.js → GitHub Pages) that reads it.
 
 Covers what a PR comment can't: trends over time, Git History Replay charts, branch comparison.
 
+#### perf-data branch (M5 step 1 — DONE, `5f9f72f`/`8e190b8`, validated live)
+
+- **Two modes in the contract** (schema 1.2): `compare` (PR runs — ephemeral comparisons) vs
+  `record` (push to default branch — the absolute measurement of each landed commit). Record's
+  verdict is **`recorded`, not `ok`** — no comparison happened, so "ok" would report a judgement
+  never made (rule 3). Prose leaves in the contract (reasons, labels) are existence-locked, not
+  wording-locked; machine fields stay value-locked.
+- Orphan `perf-data` branch, `results/<short-sha>.json` + `index.json` (append-only; per-entry key
+  medians **+ protocol identity** — node, platform, browser, hostLabels, version — so a chart can
+  refuse cross-protocol segments without fetching result files). `"tool": "driftwatch"` ownership
+  marker; a foreign perf-data branch → refusal, never overwrite. Races: pre-push fetch serializes
+  the common case, one refetch-reapply retry, then warn and give up (a missing trend point is
+  recoverable; a corrupted index is not).
+- Record-mode install rule: no base lockfile to consult → clone `node_modules` when present,
+  install when absent (found live: a bare CI checkout produced an empty trend point).
+- Live data is already exercising the design: runner Chrome 151.0.7922.**108** vs local **.140** —
+  same major, different build — the exact segmentation case step 2 exists for. The empty first
+  entry is preserved deliberately: truthful history, and real test data for sparse-entry handling.
+- `driftwatch record [--json]` locally (no push — publishing is CI's job).
+
 ### 6.4 Hosted dashboard — later
 
 Build only when monetizing teams (multi-repo, alerting, permissions), with paying users to justify it.

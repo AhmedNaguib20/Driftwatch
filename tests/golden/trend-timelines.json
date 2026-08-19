@@ -1,0 +1,328 @@
+[
+  {
+    "timeline": {
+      "id": "build_time",
+      "unit": "ms",
+      "segments": [
+        {
+          "protocol": {
+            "nodeVersion": "v24.18.0",
+            "platform": "linux",
+            "arch": "x64",
+            "browser": "chrome/151.0.7922.108",
+            "hostLabels": [
+              "os:Linux"
+            ],
+            "driftwatchVersion": "0.5.0"
+          },
+          "points": [
+            {
+              "sha": "1021021021021021021021021021021021021021",
+              "shortSha": "102102102102",
+              "timestamp": "2026-08-102T00:00:00.000Z",
+              "value": 30000,
+              "unit": "ms"
+            },
+            {
+              "sha": "1031031031031031031031031031031031031031",
+              "shortSha": "103103103103",
+              "timestamp": "2026-08-103T00:00:00.000Z",
+              "value": 30240,
+              "unit": "ms"
+            }
+          ]
+        },
+        {
+          "protocol": {
+            "nodeVersion": "v24.18.0",
+            "platform": "linux",
+            "arch": "x64",
+            "browser": "chrome/151.0.7922.140",
+            "hostLabels": [
+              "os:Linux"
+            ],
+            "driftwatchVersion": "0.5.0"
+          },
+          "points": [
+            {
+              "sha": "1041041041041041041041041041041041041041",
+              "shortSha": "104104104104",
+              "timestamp": "2026-08-104T00:00:00.000Z",
+              "value": 30480,
+              "unit": "ms"
+            },
+            {
+              "sha": "1051051051051051051051051051051051051051",
+              "shortSha": "105105105105",
+              "timestamp": "2026-08-105T00:00:00.000Z",
+              "value": 30900,
+              "unit": "ms"
+            },
+            {
+              "sha": "1061061061061061061061061061061061061061",
+              "shortSha": "106106106106",
+              "timestamp": "2026-08-106T00:00:00.000Z",
+              "value": 31200,
+              "unit": "ms"
+            }
+          ]
+        }
+      ],
+      "breaks": [
+        {
+          "beforeSha": "103103103103",
+          "afterSha": "104104104104",
+          "changes": [
+            "browser: chrome/151.0.7922.108 → chrome/151.0.7922.140"
+          ]
+        }
+      ]
+    },
+    "drift": {
+      "id": "build_time",
+      "unit": "ms",
+      "latest": {
+        "sha": "1061061061061061061061061061061061061061",
+        "shortSha": "106106106106",
+        "timestamp": "2026-08-106T00:00:00.000Z",
+        "value": 31200,
+        "unit": "ms"
+      },
+      "segmentPoints": 3,
+      "segmentStart": {
+        "sha": "1041041041041041041041041041041041041041",
+        "shortSha": "104104104104",
+        "timestamp": "2026-08-104T00:00:00.000Z",
+        "value": 30480,
+        "unit": "ms"
+      },
+      "breaks": [
+        {
+          "beforeSha": "103103103103",
+          "afterSha": "104104104104",
+          "changes": [
+            "browser: chrome/151.0.7922.108 → chrome/151.0.7922.140"
+          ]
+        }
+      ],
+      "cumulative": {
+        "absolute": 720,
+        "percent": 2.36
+      },
+      "verdict": "drifting-up"
+    }
+  },
+  {
+    "timeline": {
+      "id": "bundle_size",
+      "unit": "bytes",
+      "segments": [
+        {
+          "protocol": {
+            "nodeVersion": "v24.18.0",
+            "platform": "linux",
+            "arch": "x64",
+            "browser": "chrome/151.0.7922.108",
+            "hostLabels": [
+              "os:Linux"
+            ],
+            "driftwatchVersion": "0.5.0"
+          },
+          "points": [
+            {
+              "sha": "1021021021021021021021021021021021021021",
+              "shortSha": "102102102102",
+              "timestamp": "2026-08-102T00:00:00.000Z",
+              "value": 2313028,
+              "unit": "bytes"
+            },
+            {
+              "sha": "1031031031031031031031031031031031031031",
+              "shortSha": "103103103103",
+              "timestamp": "2026-08-103T00:00:00.000Z",
+              "value": 2313030,
+              "unit": "bytes"
+            }
+          ]
+        },
+        {
+          "protocol": {
+            "nodeVersion": "v24.18.0",
+            "platform": "linux",
+            "arch": "x64",
+            "browser": "chrome/151.0.7922.140",
+            "hostLabels": [
+              "os:Linux"
+            ],
+            "driftwatchVersion": "0.5.0"
+          },
+          "points": [
+            {
+              "sha": "1051051051051051051051051051051051051051",
+              "shortSha": "105105105105",
+              "timestamp": "2026-08-105T00:00:00.000Z",
+              "value": 2410000,
+              "unit": "bytes"
+            },
+            {
+              "sha": "1061061061061061061061061061061061061061",
+              "shortSha": "106106106106",
+              "timestamp": "2026-08-106T00:00:00.000Z",
+              "value": 2410500,
+              "unit": "bytes"
+            }
+          ]
+        }
+      ],
+      "breaks": [
+        {
+          "beforeSha": "103103103103",
+          "afterSha": "105105105105",
+          "changes": [
+            "browser: chrome/151.0.7922.108 → chrome/151.0.7922.140"
+          ]
+        }
+      ]
+    },
+    "drift": {
+      "id": "bundle_size",
+      "unit": "bytes",
+      "latest": {
+        "sha": "1061061061061061061061061061061061061061",
+        "shortSha": "106106106106",
+        "timestamp": "2026-08-106T00:00:00.000Z",
+        "value": 2410500,
+        "unit": "bytes"
+      },
+      "segmentPoints": 2,
+      "segmentStart": {
+        "sha": "1051051051051051051051051051051051051051",
+        "shortSha": "105105105105",
+        "timestamp": "2026-08-105T00:00:00.000Z",
+        "value": 2410000,
+        "unit": "bytes"
+      },
+      "breaks": [
+        {
+          "beforeSha": "103103103103",
+          "afterSha": "105105105105",
+          "changes": [
+            "browser: chrome/151.0.7922.108 → chrome/151.0.7922.140"
+          ]
+        }
+      ],
+      "cumulative": null,
+      "verdict": "insufficient-data"
+    }
+  },
+  {
+    "timeline": {
+      "id": "route_latency:/live",
+      "unit": "ms",
+      "segments": [
+        {
+          "protocol": {
+            "nodeVersion": "v24.18.0",
+            "platform": "linux",
+            "arch": "x64",
+            "browser": "chrome/151.0.7922.108",
+            "hostLabels": [
+              "os:Linux"
+            ],
+            "driftwatchVersion": "0.5.0"
+          },
+          "points": [
+            {
+              "sha": "1021021021021021021021021021021021021021",
+              "shortSha": "102102102102",
+              "timestamp": "2026-08-102T00:00:00.000Z",
+              "value": 15,
+              "unit": "ms"
+            },
+            {
+              "sha": "1031031031031031031031031031031031031031",
+              "shortSha": "103103103103",
+              "timestamp": "2026-08-103T00:00:00.000Z",
+              "value": 14,
+              "unit": "ms"
+            }
+          ]
+        },
+        {
+          "protocol": {
+            "nodeVersion": "v24.18.0",
+            "platform": "linux",
+            "arch": "x64",
+            "browser": "chrome/151.0.7922.140",
+            "hostLabels": [
+              "os:Linux"
+            ],
+            "driftwatchVersion": "0.5.0"
+          },
+          "points": [
+            {
+              "sha": "1041041041041041041041041041041041041041",
+              "shortSha": "104104104104",
+              "timestamp": "2026-08-104T00:00:00.000Z",
+              "value": 16,
+              "unit": "ms"
+            },
+            {
+              "sha": "1051051051051051051051051051051051051051",
+              "shortSha": "105105105105",
+              "timestamp": "2026-08-105T00:00:00.000Z",
+              "value": 15,
+              "unit": "ms"
+            },
+            {
+              "sha": "1061061061061061061061061061061061061061",
+              "shortSha": "106106106106",
+              "timestamp": "2026-08-106T00:00:00.000Z",
+              "value": 15,
+              "unit": "ms"
+            }
+          ]
+        }
+      ],
+      "breaks": [
+        {
+          "beforeSha": "103103103103",
+          "afterSha": "104104104104",
+          "changes": [
+            "browser: chrome/151.0.7922.108 → chrome/151.0.7922.140"
+          ]
+        }
+      ]
+    },
+    "drift": {
+      "id": "route_latency:/live",
+      "unit": "ms",
+      "latest": {
+        "sha": "1061061061061061061061061061061061061061",
+        "shortSha": "106106106106",
+        "timestamp": "2026-08-106T00:00:00.000Z",
+        "value": 15,
+        "unit": "ms"
+      },
+      "segmentPoints": 3,
+      "segmentStart": {
+        "sha": "1041041041041041041041041041041041041041",
+        "shortSha": "104104104104",
+        "timestamp": "2026-08-104T00:00:00.000Z",
+        "value": 16,
+        "unit": "ms"
+      },
+      "breaks": [
+        {
+          "beforeSha": "103103103103",
+          "afterSha": "104104104104",
+          "changes": [
+            "browser: chrome/151.0.7922.108 → chrome/151.0.7922.140"
+          ]
+        }
+      ],
+      "cumulative": null,
+      "verdict": "stable"
+    }
+  }
+]

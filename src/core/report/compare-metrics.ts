@@ -38,7 +38,7 @@ function orderedIds(base: readonly MetricResult[], current: readonly MetricResul
  *  - tbt 50ms: values quantize near zero; real TBT regressions are tens-to-hundreds of ms.
  *  - transfer_size 1KB (bytes): ±2 bytes observed; ≥1KB is a real asset change.
  */
-function quantumFor(id: MetricId, unit: 'ms' | 'bytes' | null): number {
+export function quantumFor(id: MetricId, unit: 'ms' | 'bytes' | null): number {
   if (unit === 'bytes') return id.startsWith('transfer_size:') ? 1024 : 0
   if (id.startsWith('route_latency:')) return 5
   if (id.startsWith('lcp:') || id.startsWith('fcp:')) return 25

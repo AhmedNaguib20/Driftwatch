@@ -38,6 +38,17 @@ program
   })
 
 program
+  .command('trend')
+  .description('Where has main been going? Reads the perf-data branch (read-only)')
+  .option('--json', 'print the trend structures as JSON', false)
+  .option('--no-fetch', 'use the local perf-data ref without fetching origin')
+  .option('--cwd <dir>', 'project directory', process.cwd())
+  .action(async (flags: { json: boolean; fetch: boolean; cwd: string }) => {
+    const { trendCommand } = await import('./trend-command.js')
+    await trendCommand(flags)
+  })
+
+program
   .command('eval', { hidden: true })
   .description('dev: run the eval cases against the live provider and judge the prompts')
   .option('--cases <dir>', 'cases directory', 'eval/cases')

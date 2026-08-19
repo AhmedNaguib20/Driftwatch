@@ -135,9 +135,12 @@ mismatch.
         predictProtocol parity (cache was silently dead with browser on). Per-route LH warm-up +
         SAMPLES 3→2 (net zero). run-d in the eval set.
 **M5 — Trends + static dashboard (current).** JSON in a `perf-data` branch; static site reads it.
-Carried-in backlog: stream the action child's stderr live (CI log looks hung for 7 minutes, and
-per-phase timestamps are lost — fix first); LCP-jitter watch-item (collect CI spread passively);
-TBT machine-class note recorded in spec §5.
+Carried-in backlog: LCP-jitter watch-item (collect CI spread passively); TBT machine-class note in
+spec §5. (stderr streaming: fixed, `74d74af`.)
+  - [x] perf-data branch + record mode (`5f9f72f`, install fix `8e190b8`) — validated live on the
+        real repo: 2 entries, 16 metrics incl. Layer 2a, protocol identity per entry. Schema 1.2,
+        verdict `recorded`.
+  - [ ] trend math + §5.1-aware timeline → static dashboard → live proof
 
 Do not start a milestone before the previous one's definition of done is met.
 

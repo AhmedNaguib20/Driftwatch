@@ -85,6 +85,31 @@ async function scenario(name: string): Promise<ResultJson> {
         },
         analysis: { outcome: 'skipped', reason: 'analysis runs only on a regression verdict' },
       }
+    case 'regression-verified-upgrade': {
+      // Spec v35: confidence held the diff back from display; measurement earned it back.
+      if (result.analysis?.outcome !== 'analysed') throw new Error('fixture must be analysed')
+      const diff = result.analysis.fix.content
+      return {
+        ...result,
+        analysis: {
+          ...result.analysis,
+          confidence: 0.7,
+          fix: {
+            kind: 'prose',
+            content: diff,
+            note: 'downgraded from a diff: confidence 0.7 is below the 0.8 bar for ready-to-apply patches',
+            diff,
+          },
+        },
+        verification: {
+          outcome: 'restored',
+          reason: null,
+          metrics: [{ id: 'bundle_size', label: 'bundle size', unit: 'bytes', base: 2305491, current: 2453493, fixed: 2306980, verdict: 'restored' }],
+          diff,
+          elapsedMs: 41000,
+        },
+      }
+    }
     case 'regression-verify-failed':
       return {
         ...result,
@@ -123,6 +148,7 @@ async function scenario(name: string): Promise<ResultJson> {
 
 const SCENARIOS = [
   'regression-analysed',
+  'regression-verified-upgrade',
   'regression-verify-failed',
   'regression-no-key',
   'regression-analysis-skipped',
@@ -217,6 +243,15 @@ describe('PR comment renderer — golden contract', () => {
     const file = golden('summary-regression-analysed.md')
     if (process.env.UPDATE_GOLDEN === '1') await writeFile(file, summary, 'utf8')
     expect(summary).toBe(await readFile(file, 'utf8'))
+  })
+
+  it('a prose-displayed diff that verifies gets the diff display back with its measured numbers', async () => {
+    const rendered = renderComment(await scenario('regression-verified-upgrade'))
+    expect(rendered).toContain('**Suggested fix** (diff verified by measurement: restored)')
+    expect(rendered).toContain('measurement verified it: bundle size 2.34 MB → 2.20 MB (restored)')
+    expect(rendered).toContain('```diff')
+    // The confidence-downgrade note is superseded by the measured outcome — not repeated.
+    expect(rendered).not.toContain('below the 0.8 bar')
   })
 
   it('a failed verification reports honestly and stamps the dev override', async () => {

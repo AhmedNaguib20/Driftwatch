@@ -5,6 +5,7 @@ import type { MeasureOptions, ProgressReporter } from '../measure/measure.js'
 import type { SideMeasurement } from '../measure/types.js'
 import { createWorkingTreeWorkspace } from '../measure/workspace.js'
 import type { WorkspaceOptions } from '../measure/workspace.js'
+import { machineDiff } from '../report/analysis.js'
 import { protocolMismatches } from '../report/protocol-match.js'
 import type { ResultJson } from '../report/types.js'
 import type { VerificationReport } from '../report/verification.js'
@@ -13,13 +14,12 @@ import { assessMetric, overallOutcome } from './assess.js'
 
 /**
  * The verification stage (M6): measurement proves the AI's own suggestion. Gates first — cost
- * control means verification runs ONLY on a confirmed regression carrying a diff fix at the same
- * confidence bar enforceFixRules applies (≥ 0.8) — then: fresh copy, apply, measure as a third
- * side, three-way verdict per regressed metric. Every §5.1 discipline holds; a protocol mismatch
- * on the third side refuses the verification itself.
+ * control means verification runs ONLY on a confirmed regression carrying a machine-applicable
+ * diff — then: fresh copy, apply, measure as a third side, three-way verdict per regressed
+ * metric. Confidence is NOT consulted (spec v35, second de-gating): it is the model's
+ * self-report and governs display; a measured outcome is the stronger evidence either way.
+ * Every §5.1 discipline holds; a protocol mismatch on the third side refuses the verification.
  */
-
-export const VERIFY_CONFIDENCE_BAR = 0.8
 
 export interface VerifyOptions extends WorkspaceOptions, MeasureOptions {
   readonly progress?: ProgressReporter
@@ -41,21 +41,17 @@ export async function verifyFix(
   const skipped = (reason: string) =>
     done({ outcome: 'skipped', reason, metrics: [], diff: null })
 
-  // Gates (cost control) — the same bar enforceFixRules applies to ready diffs.
+  // Gates (cost control): confirmed regression + a machine-applicable diff. No confidence gate.
   if (result.verdict !== 'regression') return skipped('verification runs only on a confirmed regression')
   const analysis = result.analysis
   if (!analysis || analysis.outcome !== 'analysed') return skipped('no completed analysis to verify')
-  if (analysis.fix.kind !== 'diff') return skipped('the fix is a prose suggestion, not a ready diff')
-  if (analysis.confidence < VERIFY_CONFIDENCE_BAR) {
-    return skipped(`confidence ${analysis.confidence} is under the ${VERIFY_CONFIDENCE_BAR} verification bar`)
-  }
+  const diff = machineDiff(analysis.fix)
+  if (diff === null) return skipped('the fix carries no machine-applicable diff')
   const regressed = result.comparison.metrics.filter((m) => m.verdict === 'regressed')
   if (regressed.length === 0) return skipped('no regressed metrics to verify against')
   if (!('metrics' in result.current) || !('protocol' in result.current)) {
     return skipped('no measured current side to verify against')
   }
-
-  const diff = analysis.fix.content
 
   progress('verify: copying the current tree for the fixed side…')
   const workspace = await createWorkingTreeWorkspace(profile, options)

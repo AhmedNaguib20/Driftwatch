@@ -41,6 +41,19 @@ export interface AnalysisFix {
   readonly content: string
   /** Set when driftwatch downgraded a diff to prose (confidence bar or unknown files). */
   readonly note?: string
+  /**
+   * The machine-applicable diff, kept regardless of display kind (spec v35, second de-gating):
+   * the confidence bar decides how a fix is SHOWN, never what verification may measure — a
+   * measured outcome is stronger evidence than the model's self-confidence. Absent when the
+   * model gave prose, or when its diff touched files it was never shown: confinement is a
+   * safety guarantee, not a display choice, so such a diff is never measured either.
+   */
+  readonly diff?: string
+}
+
+/** The diff verification may measure, wherever the display rules put the fix. */
+export function machineDiff(fix: AnalysisFix): string | null {
+  return fix.diff ?? (fix.kind === 'diff' ? fix.content : null)
 }
 
 /**

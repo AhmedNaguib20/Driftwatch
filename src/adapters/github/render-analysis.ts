@@ -1,5 +1,5 @@
 import type { AnalysisReport, ResultJson } from '../../core/index.js'
-import { confidenceLabel, formatTokens } from './format.js'
+import { confidenceLabel, formatTokens, formatValue } from './format.js'
 
 /** The AI section of the PR comment. Honesty rules match the CLI renderer: number + calibrated
  * word, downgrade notes shown, inconclusive framed as information. */
@@ -29,11 +29,14 @@ export function renderAnalysisSection(result: ResultJson): string[] {
         '_That is the model\'s own conclusion after reading the patches — likely places to look: dependencies, configuration, build environment._',
       ]
     case 'analysed':
-      return renderAnalysed(analysis)
+      return renderAnalysed(analysis, result.verification)
   }
 }
 
-function renderAnalysed(analysis: Extract<AnalysisReport, { outcome: 'analysed' }>): string[] {
+function renderAnalysed(
+  analysis: Extract<AnalysisReport, { outcome: 'analysed' }>,
+  verification: ResultJson['verification'],
+): string[] {
   const lines: string[] = []
 
   lines.push('')
@@ -46,22 +49,39 @@ function renderAnalysed(analysis: Extract<AnalysisReport, { outcome: 'analysed' 
     lines.push(`- ${item}`)
   }
 
+  // Spec v35: a diff displayed as prose (confidence bar) that then VERIFIES gets the diff
+  // display back, carrying its measured numbers — measurement earned it what confidence couldn't.
+  const upgraded = verifiedUpgrade(analysis, verification)
+
   lines.push('')
-  lines.push(analysis.fix.kind === 'diff' ? '**Suggested fix** (ready diff)' : '**Suggested fix**')
-  if (analysis.fix.note) {
+  if (upgraded) {
+    const outcome = verification!.outcome === 'restored' ? 'restored' : 'partial recovery'
+    lines.push(`**Suggested fix** (diff verified by measurement: ${outcome})`)
     lines.push('')
-    lines.push(`> note: ${analysis.fix.note}`)
-  }
-  lines.push('')
-  if (analysis.fix.kind === 'diff') {
+    lines.push(
+      `> shown as a ready diff although model confidence is below the display bar — measurement verified it: ${measuredSummary(verification!)}.`,
+    )
+    lines.push('')
     lines.push('```diff')
-    lines.push(analysis.fix.content.trimEnd())
+    lines.push(analysis.fix.diff!.trimEnd())
     lines.push('```')
   } else {
-    lines.push(analysis.fix.content.trim())
+    lines.push(analysis.fix.kind === 'diff' ? '**Suggested fix** (ready diff)' : '**Suggested fix**')
+    if (analysis.fix.note) {
+      lines.push('')
+      lines.push(`> note: ${analysis.fix.note}`)
+    }
+    lines.push('')
+    if (analysis.fix.kind === 'diff') {
+      lines.push('```diff')
+      lines.push(analysis.fix.content.trimEnd())
+      lines.push('```')
+    } else {
+      lines.push(analysis.fix.content.trim())
+    }
   }
 
-  const whyNot = whyNotHigher(analysis)
+  const whyNot = whyNotHigher(analysis, upgraded)
   if (whyNot.length > 0) {
     lines.push('')
     lines.push('<details>')
@@ -75,13 +95,37 @@ function renderAnalysed(analysis: Extract<AnalysisReport, { outcome: 'analysed' 
   return lines
 }
 
+/** The upgrade applies only when the display was held back by the confidence bar (diff survives
+ * in fix.diff) AND measurement then proved the fix — restored or partial. */
+function verifiedUpgrade(
+  analysis: Extract<AnalysisReport, { outcome: 'analysed' }>,
+  verification: ResultJson['verification'],
+): boolean {
+  return (
+    analysis.fix.kind === 'prose' &&
+    analysis.fix.diff !== undefined &&
+    (verification?.outcome === 'restored' || verification?.outcome === 'partial')
+  )
+}
+
+function measuredSummary(verification: NonNullable<ResultJson['verification']>): string {
+  return verification.metrics
+    .map(
+      (m) =>
+        `${m.label} ${formatValue(m.current, m.unit ?? 'bytes')} → ${formatValue(m.fixed, m.unit ?? 'bytes')} (${
+          m.verdict === 'restored' ? 'restored' : m.verdict === 'partial' ? 'partial' : 'no recovery'
+        })`,
+    )
+    .join(', ')
+}
+
 /**
  * §6.1 asks for a collapsed "why not higher" naming what we could not isolate. Only facts we
  * actually hold are listed — other ranked suspects, truncated context, a downgraded fix. If the
  * data gives no reason (or confidence is already in the top band), the block is omitted rather
  * than padded with boilerplate.
  */
-function whyNotHigher(analysis: Extract<AnalysisReport, { outcome: 'analysed' }>): string[] {
+function whyNotHigher(analysis: Extract<AnalysisReport, { outcome: 'analysed' }>, upgraded = false): string[] {
   if (analysis.confidence >= 0.9) return []
   const reasons: string[] = []
 
@@ -96,7 +140,7 @@ function whyNotHigher(analysis: Extract<AnalysisReport, { outcome: 'analysed' }>
   if (analysis.context.deep.truncated) {
     reasons.push('Some patches were truncated to fit the context budget — the model did not see every changed line.')
   }
-  if (analysis.fix.note) {
+  if (analysis.fix.note && !upgraded) {
     reasons.push(`The proposed fix was downgraded: ${analysis.fix.note}.`)
   }
   return reasons

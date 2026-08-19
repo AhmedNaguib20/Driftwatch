@@ -19,7 +19,7 @@ export const RESULT_SCHEMA_VERSION = 1
  * Minor: additive changes only — new fields, new optional blocks. A 1.0 consumer reading a 1.1
  * result must keep working; anything that would break one bumps the major instead.
  */
-export const RESULT_SCHEMA_MINOR = 3
+export const RESULT_SCHEMA_MINOR = 4
 
 export interface ResultJson {
   readonly schemaVersion: typeof RESULT_SCHEMA_VERSION

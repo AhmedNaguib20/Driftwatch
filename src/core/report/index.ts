@@ -13,6 +13,7 @@ export type {
   VerificationOutcome,
   VerificationReport,
 } from './verification.js'
+export { machineDiff } from './analysis.js'
 export type {
   AnalysisFix,
   AnalysisReport,

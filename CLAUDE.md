@@ -172,8 +172,12 @@ Launch planning (npm publish, name/license/visibility, onboarding) remains queue
   - [x] step 2 — GitHub side (`ef74e8c`): gates make zero API calls, exact-bytes commit re-gated
         at push, PR into the PR branch, upsert + stale-self-close, fork honesty. contents:write
         dual-purpose documented (already required by record mode).
-  - [ ] step 3 — live acceptance: fix PR end-to-end + merge flips the comment + a sabotaged fix
-        that must NOT produce a PR
+  - [x] DECIDED mid-acceptance (the second de-gating): verification runs on any structurally
+        valid diff fix on a confirmed regression, regardless of confidence; the fix-PR gate is
+        verification outcome only. 0.8 stays as a display rule; confidence is self-report shown
+        beside measured outcome, never a gate on measured evidence.
+  - [ ] step 3 — live acceptance under rule B: fix PR end-to-end + merge flips the comment + the
+        sabotaged fix that must NOT produce a PR
 
 Do not start a milestone before the previous one's definition of done is met.
 

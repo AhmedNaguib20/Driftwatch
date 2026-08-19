@@ -43,7 +43,11 @@ export function renderFixPrBody(result: ResultJson, verification: VerificationRe
   lines.push('')
 
   if (result.analysis?.outcome === 'analysed') {
-    lines.push(`**Cause** (\`confidence ${confidenceLabel(result.analysis.confidence)}\`): ${result.analysis.cause}`)
+    // Confidence is the model's self-report; the measured outcome is the evidence (spec v35).
+    const measured = verification.outcome === 'partial' ? 'partial recovery' : 'restored'
+    lines.push(
+      `**Cause** (\`model confidence ${confidenceLabel(result.analysis.confidence)} — measured: ${measured}\`): ${result.analysis.cause}`,
+    )
     lines.push('')
   }
 

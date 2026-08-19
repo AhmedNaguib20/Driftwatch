@@ -26,6 +26,7 @@ export interface RunFlags {
   readonly cache: boolean
   readonly ai: boolean
   readonly serve: boolean
+  readonly browser: boolean
   readonly cwd?: string
 }
 
@@ -41,6 +42,7 @@ export async function runCommand(flags: RunFlags): Promise<void> {
       baseLabel: flags.baseLabel,
       readCache: flags.cache,
       serve: flags.serve,
+      browser: flags.browser,
       progress,
     })
 

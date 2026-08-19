@@ -58,6 +58,8 @@ export function hostLabelsFromEnv(env: NodeJS.ProcessEnv = process.env): string[
 export function buildProtocol(
   profile: ProjectProfile,
   workspace: Workspace,
+  browser = 'none',
+  lighthouseProfile = 'none',
 ): MeasurementProtocol {
   return {
     version: 1,
@@ -73,6 +75,8 @@ export function buildProtocol(
     warmupSamples: WARMUP_SAMPLES,
     routeSamples: ROUTE_SAMPLES,
     routeWarmupSamples: ROUTE_WARMUP_SAMPLES,
+    browser,
+    lighthouseProfile,
     hostLabels: hostLabelsFromEnv(),
     env: MEASUREMENT_ENV,
   }

@@ -31,6 +31,8 @@ export interface MeasureBaseOptions {
   readonly readCache?: boolean
   /** Boot + route metrics on the base side too (same flag as current — §5.1 symmetry). */
   readonly serve?: boolean
+  /** Lighthouse on the base side too. */
+  readonly browser?: boolean
 }
 
 export async function measureBaseSide(
@@ -88,7 +90,7 @@ export async function measureBaseSide(
       baseProfile,
       { ...workspace, warnings },
       progress,
-      { installIfAbsent: plan.dependencies === 'install', serve: options.serve },
+      { installIfAbsent: plan.dependencies === 'install', serve: options.serve, browser: options.browser },
     )
 
     // Cache only a side whose build was actually measured: a transient failure (OOM, disk full)
@@ -113,7 +115,11 @@ export async function measureBaseSide(
  * environment (known now) or decided by the plan; nothing is a guess about measurement outcomes.
  * The fields the hash actually uses are selected in `protocolHashInput`.
  */
-export function predictProtocol(plan: BaselinePlan): MeasurementProtocol {
+export function predictProtocol(
+  plan: BaselinePlan,
+  browser = 'none',
+  lighthouseProfile = 'none',
+): MeasurementProtocol {
   return {
     version: 1,
     workspace: 'worktree',
@@ -128,6 +134,8 @@ export function predictProtocol(plan: BaselinePlan): MeasurementProtocol {
     warmupSamples: WARMUP_SAMPLES,
     routeSamples: ROUTE_SAMPLES,
     routeWarmupSamples: ROUTE_WARMUP_SAMPLES,
+    browser,
+    lighthouseProfile,
     hostLabels: hostLabelsFromEnv(),
     env: MEASUREMENT_ENV,
   }

@@ -100,6 +100,8 @@ function fakeProtocol(overrides: Partial<MeasurementProtocol> = {}): Measurement
     warmupSamples: 1,
     routeSamples: 5,
     routeWarmupSamples: 1,
+    browser: 'none',
+    lighthouseProfile: 'none',
     hostLabels: [],
     env: { NEXT_TELEMETRY_DISABLED: '1' },
     ...overrides,
@@ -123,6 +125,7 @@ function fakeSide(protocol: MeasurementProtocol): SideMeasurement {
     protocol,
     warnings: [],
     elapsedMs: 1,
+    layer2aElapsedMs: 0,
   }
 }
 

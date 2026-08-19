@@ -50,6 +50,8 @@ export function protocolHashInput(protocol: MeasurementProtocol): Record<string,
     warmupSamples: protocol.warmupSamples,
     routeSamples: protocol.routeSamples,
     routeWarmupSamples: protocol.routeWarmupSamples,
+    browser: protocol.browser,
+    lighthouseProfile: protocol.lighthouseProfile,
     hostLabels: protocol.hostLabels,
     env: protocol.env,
   }

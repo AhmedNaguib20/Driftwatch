@@ -91,13 +91,16 @@
       "warmupSamples": 1,
       "routeSamples": 5,
       "routeWarmupSamples": 1,
+      "browser": "none",
+      "lighthouseProfile": "none",
       "hostLabels": [],
       "env": {
         "NEXT_TELEMETRY_DISABLED": "1"
       }
     },
     "warnings": [],
-    "elapsedMs": 31900
+    "elapsedMs": 31900,
+    "layer2aElapsedMs": 0
   },
   "current": {
     "workingTree": true,
@@ -146,13 +149,16 @@
       "warmupSamples": 1,
       "routeSamples": 5,
       "routeWarmupSamples": 1,
+      "browser": "none",
+      "lighthouseProfile": "none",
       "hostLabels": [],
       "env": {
         "NEXT_TELEMETRY_DISABLED": "1"
       }
     },
     "warnings": [],
-    "elapsedMs": 33100
+    "elapsedMs": 33100,
+    "layer2aElapsedMs": 0
   },
   "comparison": {
     "measurementPath": "fresh",

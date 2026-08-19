@@ -13,8 +13,16 @@ export type Framework = 'nextjs' | 'unknown'
 
 export type Language = 'javascript' | 'unknown'
 
-/** Metric identifiers. Route metrics are a class: one per measured route (M4, Layer 2a). */
-export type MetricId = 'build_time' | 'bundle_size' | 'install_time' | `route_latency:${string}`
+/** Metric identifiers. Per-route classes carry the route in the id (M4, Layer 2a). */
+export type MetricId =
+  | 'build_time'
+  | 'bundle_size'
+  | 'install_time'
+  | `route_latency:${string}`
+  | `lcp:${string}`
+  | `tbt:${string}`
+  | `fcp:${string}`
+  | `transfer_size:${string}`
 
 /** A command to run, kept as bin + args so it is executed without a shell. */
 export interface Command {

@@ -3,6 +3,8 @@ import type { ProjectProfile } from '../detect/types.js'
 import { collectBuildTime } from './build.js'
 import { collectBundleSize } from './bundle.js'
 import { collectInstallTime } from './install.js'
+import { NO_BROWSER_HINT, resolveBrowser } from './browser.js'
+import { LIGHTHOUSE_PROFILE, measureLighthouse, selectLighthouseRoutes } from './lighthouse.js'
 import { MEASUREMENT_ENV, buildProtocol } from './protocol.js'
 import { measureRoutes, prerenderedRoutes, selectRoutes } from './route-latency.js'
 import { startServer, sweepStaleServers } from './serve.js'
@@ -34,6 +36,8 @@ export interface MeasureOptions {
   readonly installIfAbsent?: boolean
   /** Boot the built app and measure route latency (M4 Layer 2a). Default true when servable. */
   readonly serve?: boolean
+  /** Lighthouse browser metrics (independent of serve). Default true when Chrome is found. */
+  readonly browser?: boolean
 }
 
 export async function measureWorkspace(
@@ -71,41 +75,72 @@ export async function measureWorkspace(
   progress('weighing build output…')
   metrics.push(await collectBundleSize(profile, effective, build.succeeded))
 
-  metrics.push(...(await collectRouteLatency(profile, effective, build.succeeded, progress, options)))
+  const layer2a = await collectLayer2a(profile, effective, build.succeeded, progress, options)
+  metrics.push(...layer2a.metrics)
 
   return {
     metrics,
-    protocol: buildProtocol(profile, effective),
+    protocol: buildProtocol(profile, effective, layer2a.browser, layer2a.lighthouseProfile),
     warnings: [...workspace.warnings],
     elapsedMs: Math.round(performance.now() - started),
+    layer2aElapsedMs: layer2a.elapsedMs,
   }
 }
 
+interface Layer2aOutcome {
+  readonly metrics: MetricResult[]
+  readonly elapsedMs: number
+  readonly browser: string
+  readonly lighthouseProfile: string
+}
+
 /**
- * Route latency for the servable routes. Every route the profile promised appears in the output
- * — measured, or skipped with the reason (disabled / unservable / build failed / boot failed).
+ * Layer 2a: boot the built app ONCE, measure request-level route latency, then Lighthouse
+ * browser metrics against the same server. Every promised metric appears — measured, or skipped
+ * with the reason (disabled / build failed / boot failed / no Chrome). The wall-clock cost of
+ * the whole layer is reported per side (the CI-budget guardrail).
  */
-async function collectRouteLatency(
+async function collectLayer2a(
   profile: ProjectProfile,
   workspace: Workspace,
   buildSucceeded: boolean,
   progress: ProgressReporter,
   options: MeasureOptions,
-): Promise<MetricResult[]> {
-  if (!profile.commands.serve || profile.routes.length === 0) return [] // unservable: not promised
+): Promise<Layer2aOutcome> {
+  const started = performance.now()
+  const none = (metrics: MetricResult[] = []): Layer2aOutcome => ({
+    metrics,
+    elapsedMs: Math.round(performance.now() - started),
+    browser: 'none',
+    lighthouseProfile: 'none',
+  })
+
+  if (!profile.commands.serve || profile.routes.length === 0) return none() // unservable: not promised
 
   const prerendered = buildSucceeded
     ? await prerenderedRoutes(workspace.dir, profile.buildOutputDirs)
     : new Set<string>()
   const { selected, skipped } = selectRoutes(profile.routes, prerendered)
-  const skipAll = (reason: string): MetricResult[] =>
+  const browserWanted = options.browser !== false
+  const browserInfo = browserWanted ? await resolveBrowser() : null
+  const lighthouseRoutes = selectLighthouseRoutes(profile.routes, prerendered)
+
+  const skipRoutes = (reason: string): MetricResult[] =>
     selected.map((route) => ({
       id: `route_latency:${route}` as const,
       status: 'skipped' as const,
       label: `route ${route}`,
       reason,
     }))
-
+  const skipLighthouse = (reason: string): MetricResult[] =>
+    lighthouseRoutes.flatMap((route) =>
+      (['lcp', 'tbt', 'fcp', 'transfer_size'] as const).map((kind) => ({
+        id: `${kind}:${route}` as MetricResult['id'],
+        status: 'skipped' as const,
+        label: `${kind === 'transfer_size' ? 'transfer size' : kind.toUpperCase()} ${route}`,
+        reason,
+      })),
+    )
   const excluded: MetricResult[] = skipped.map(({ route, reason }) => ({
     id: `route_latency:${route}` as const,
     status: 'skipped' as const,
@@ -113,18 +148,43 @@ async function collectRouteLatency(
     reason,
   }))
 
-  if (options.serve === false) return [...skipAll('serving disabled (--no-serve / serve: false)'), ...excluded]
-  if (!buildSucceeded) return skipAll('no server to boot (build did not succeed)')
+  if (options.serve === false) {
+    const reason = 'serving disabled (--no-serve / serve: false)'
+    return none([...skipRoutes(reason), ...skipLighthouse(reason), ...excluded])
+  }
+  if (!buildSucceeded) {
+    const reason = 'no server to boot (build did not succeed)'
+    return none([...skipRoutes(reason), ...skipLighthouse(reason)])
+  }
 
   await sweepStaleServers().catch(() => [])
 
   progress('booting the built app…')
   const boot = await startServer(workspace.dir, profile.commands.serve, MEASUREMENT_ENV)
-  if (!boot.ok) return skipAll(boot.reason)
+  if (!boot.ok) return none([...skipRoutes(boot.reason), ...skipLighthouse(boot.reason)])
 
   try {
     progress(`serving on :${boot.server.port} — measuring ${selected.length} route(s)…`)
-    return [...(await measureRoutes(boot.server, selected, progress)), ...excluded]
+    const metrics = [...(await measureRoutes(boot.server, selected, progress)), ...excluded]
+
+    let browser = 'none'
+    let lighthouseProfile = 'none'
+    if (!browserWanted) {
+      metrics.push(...skipLighthouse('browser metrics disabled (--no-browser / browser: false)'))
+    } else if (!browserInfo) {
+      metrics.push(...skipLighthouse(NO_BROWSER_HINT))
+    } else {
+      browser = browserInfo.signature
+      lighthouseProfile = LIGHTHOUSE_PROFILE
+      metrics.push(...(await measureLighthouse(boot.server, browserInfo, lighthouseRoutes, progress)))
+    }
+
+    return {
+      metrics,
+      elapsedMs: Math.round(performance.now() - started),
+      browser,
+      lighthouseProfile,
+    }
   } finally {
     await boot.server.stop()
   }

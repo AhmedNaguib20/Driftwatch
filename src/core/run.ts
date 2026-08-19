@@ -36,6 +36,8 @@ export interface RunOptions {
   readonly readCache?: boolean
   /** Skip booting the app / route metrics (--no-serve). perf.yml `serve: false` also disables. */
   readonly serve?: boolean
+  /** Skip Lighthouse browser metrics (--no-browser). perf.yml `browser: false` also disables. */
+  readonly browser?: boolean
   readonly progress?: ProgressReporter
 }
 
@@ -56,7 +58,7 @@ export async function runDriftwatch(options: RunOptions = {}): Promise<ResultJso
   const first = await measureOnce(profile, config, plan, progress, {
     readCache: options.readCache ?? true,
     pathWhenFresh: 'fresh',
-  }, serveEnabled(config, options))
+  }, serveEnabled(config, options), browserEnabled(config, options))
   if (!first.fromCache || !requiresConfirmation(first.result)) return first.result
 
   progress(
@@ -65,7 +67,7 @@ export async function runDriftwatch(options: RunOptions = {}): Promise<ResultJso
   const confirmed = await measureOnce(profile, config, plan, progress, {
     readCache: false,
     pathWhenFresh: 'confirmed',
-  }, serveEnabled(config, options))
+  }, serveEnabled(config, options), browserEnabled(config, options))
   return confirmed.result
 }
 
@@ -79,6 +81,10 @@ function serveEnabled(config: ResolvedConfig, options: RunOptions): boolean {
   return (options.serve ?? true) && config.serve
 }
 
+function browserEnabled(config: ResolvedConfig, options: RunOptions): boolean {
+  return (options.browser ?? true) && config.browser
+}
+
 async function measureOnce(
   profile: ProjectProfile,
   config: ResolvedConfig,
@@ -86,12 +92,14 @@ async function measureOnce(
   progress: ProgressReporter,
   options: MeasureOnceOptions,
   serve: boolean,
+  browser: boolean,
 ): Promise<{ result: ResultJson; fromCache: boolean }> {
   let base: BaseSideResult | null = null
   if (plan.available) {
     base = await measureBaseSide(profile, plan, (m) => progress(`base: ${m}`), {
       readCache: options.readCache,
       serve,
+      browser,
     })
   }
 
@@ -99,6 +107,7 @@ async function measureOnce(
     dependencies: plan.available ? plan.dependencies : 'clone',
     installIfAbsent: plan.available && plan.dependencies === 'install',
     serve,
+    browser,
   })
 
   const fromCache = base?.fromCache ?? false

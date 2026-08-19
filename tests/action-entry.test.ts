@@ -149,7 +149,7 @@ describe('host labels — cross-runner comparisons stay refusable', () => {
     const proto = (hostLabels: string[]): MeasurementProtocol => ({
       version: 1, workspace: 'worktree', cacheState: 'cold', nodeModules: 'cloned',
       gitMetadata: 'absent', nodeVersion: 'v20', platform: 'linux', arch: 'x64',
-      buildCommand: 'b', buildSamples: 3, warmupSamples: 1, routeSamples: 5, routeWarmupSamples: 1, hostLabels, env: {},
+      buildCommand: 'b', buildSamples: 3, warmupSamples: 1, routeSamples: 5, routeWarmupSamples: 1, browser: 'none', lighthouseProfile: 'none', hostLabels, env: {},
     })
 
     const diffs = protocolMismatches(proto(['os:Linux']), proto(['os:macOS']))

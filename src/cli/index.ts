@@ -19,8 +19,9 @@ program
   .option('--no-cache', 'ignore the baseline cache for this run (results are still written)')
   .option('--no-ai', 'skip AI analysis entirely — fully offline run (also: DRIFTWATCH_NO_AI=1)')
   .option('--no-serve', 'skip booting the app and route-latency metrics')
+  .option('--no-browser', 'skip Lighthouse browser metrics')
   .option('--cwd <dir>', 'project directory', process.cwd())
-  .action(async (flags: { base?: string; baseLabel?: string; json: boolean; cache: boolean; ai: boolean; serve: boolean; cwd: string }) => {
+  .action(async (flags: { base?: string; baseLabel?: string; json: boolean; cache: boolean; ai: boolean; serve: boolean; browser: boolean; cwd: string }) => {
     await runCommand(flags)
   })
 

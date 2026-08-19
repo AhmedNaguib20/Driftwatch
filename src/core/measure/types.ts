@@ -35,6 +35,11 @@ export interface MeasurementProtocol {
   /** Sequential requests per route; median reported (M4 Layer 2a). */
   readonly routeSamples: number
   readonly routeWarmupSamples: number
+  /** e.g. "chrome/139.0.7258.67", or "none" when browser metrics are off/unavailable. Differing
+   *  versions between sides are a protocol mismatch (§5.1). */
+  readonly browser: string
+  /** Lighthouse determinism profile id, or "none". */
+  readonly lighthouseProfile: string
   /**
    * Labels describing the machine class, from DRIFTWATCH_HOST_LABELS (comma-separated) — a
    * generic contract: CI adapters set it (runner OS, image), core never knows who did. Part of
@@ -77,6 +82,8 @@ export interface SideMeasurement {
   readonly warnings: readonly string[]
   /** Wall-clock time the whole side took, for progress reporting — not a metric. */
   readonly elapsedMs: number
+  /** Wall-clock the serve+routes+lighthouse layer added to this side (CI-budget guardrail). */
+  readonly layer2aElapsedMs: number
 }
 
 export interface CommandOutcome {

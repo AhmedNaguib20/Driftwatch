@@ -20,6 +20,8 @@ export interface PerfConfig {
   readonly measure: readonly MetricId[]
   /** Boot the built app and measure routes (Layer 2a). CLI --no-serve overrides per run. */
   readonly serve: boolean
+  /** Lighthouse browser metrics (needs Chrome). CLI --no-browser overrides per run. */
+  readonly browser: boolean
   readonly threshold: string
   readonly block_merge: boolean
   readonly base: string
@@ -31,6 +33,7 @@ export const DEFAULT_CONFIG: PerfConfig = {
   detect: 'unknown',
   measure: [],
   serve: true,
+  browser: true,
   threshold: '5%',
   block_merge: false,
   base: 'main',

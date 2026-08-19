@@ -43,6 +43,8 @@ function protocol(overrides: Partial<MeasurementProtocol> = {}): MeasurementProt
     warmupSamples: 1,
     routeSamples: 5,
     routeWarmupSamples: 1,
+    browser: 'none',
+    lighthouseProfile: 'none',
     hostLabels: [],
     env: { NEXT_TELEMETRY_DISABLED: '1' },
     ...overrides,
@@ -77,6 +79,7 @@ const config: ResolvedConfig = {
   detect: 'nextjs',
   measure: ['build_time', 'bundle_size'],
   serve: true,
+  browser: true,
   threshold: '5%',
   block_merge: false,
   base: 'main',
@@ -130,6 +133,7 @@ const baseSide: SideMeasurement = {
   protocol: protocol(),
   warnings: [],
   elapsedMs: 31900,
+  layer2aElapsedMs: 0,
 }
 
 const currentSide: SideMeasurement = {
@@ -163,6 +167,7 @@ const currentSide: SideMeasurement = {
   protocol: protocol({ workspace: 'copy' }),
   warnings: [],
   elapsedMs: 33100,
+  layer2aElapsedMs: 0,
 }
 
 const base: BaseSideResult = {

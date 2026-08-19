@@ -36,6 +36,9 @@ threshold: ${config.threshold}
 # Boot the built app and measure route latency (Layer 2a). --no-serve skips per run.
 serve: ${config.serve}
 
+# Lighthouse browser metrics against the served app (needs Chrome). --no-browser skips per run.
+browser: ${config.browser}
+
 # Warn only. Set to true once you trust the numbers and want failing checks to block merges.
 block_merge: ${config.block_merge}
 

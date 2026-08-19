@@ -28,7 +28,9 @@
     "check": "npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {
+    "chrome-launcher": "^1.2.1",
     "commander": "^12.1.0",
+    "lighthouse": "^12.8.2",
     "picocolors": "^1.1.1",
     "yaml": "^2.6.1"
   },

@@ -156,3 +156,20 @@ describe('route measurement', () => {
     if (broken.status === 'skipped') expect(broken.reason).toMatch(/HTTP 500/)
   })
 })
+
+describe('lighthouse route selection', () => {
+  it('always includes /, dynamic-first after it, capped at 3', async () => {
+    const { selectLighthouseRoutes } = await import('../src/core/measure/lighthouse.js')
+    const routes = ['/', '/about', '/blog', '/live', '/feed', '/blog/[slug]']
+    const selected = selectLighthouseRoutes(routes, new Set(['/', '/about', '/blog']))
+
+    expect(selected).toEqual(['/', '/feed', '/live']) // / kept although static; dynamic next
+    expect(selected).toHaveLength(3)
+  })
+
+  it('fills remaining slots with static routes when dynamics run out', async () => {
+    const { selectLighthouseRoutes } = await import('../src/core/measure/lighthouse.js')
+    const selected = selectLighthouseRoutes(['/', '/about', '/blog'], new Set(['/', '/about', '/blog']))
+    expect(selected).toEqual(['/', '/blog', '/about']) // shortest-first within the static group
+  })
+})

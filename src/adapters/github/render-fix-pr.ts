@@ -9,7 +9,10 @@ export const FIX_PR_MARKER = '<!-- driftwatch:fix-pr -->'
  * measurement, same run.
  */
 export function renderFixPrTitle(result: ResultJson, verification: VerificationReport): string {
-  const worst = verification.metrics[0]
+  // Headline a metric that actually recovered — never an indistinguishable or unrecovered row.
+  const worst =
+    verification.metrics.find((m) => m.verdict === 'restored' || m.verdict === 'partial') ??
+    verification.metrics[0]
   const what = worst ? `${worst.label} ${formatValue(worst.current, worst.unit ?? 'bytes')} → ${formatValue(worst.fixed, worst.unit ?? 'bytes')}` : 'regression'
   return verification.outcome === 'partial'
     ? `perf: partially recovers ${what} (measured)`
@@ -35,7 +38,14 @@ export function renderFixPrBody(result: ResultJson, verification: VerificationRe
   lines.push('|---|---|---|---|---|')
   for (const m of verification.metrics) {
     const base = m.base !== null ? formatValue(m.base, m.unit ?? 'bytes') : '—'
-    const verdict = m.verdict === 'restored' ? 'restored' : m.verdict === 'partial' ? 'partial' : 'no recovery'
+    const verdict =
+      m.verdict === 'restored'
+        ? 'restored'
+        : m.verdict === 'partial'
+          ? 'partial'
+          : m.verdict === 'indistinguishable'
+            ? 'within noise resolution — cannot certify'
+            : 'no recovery'
     lines.push(
       `| ${m.label} | ${base} | ${formatValue(m.current, m.unit ?? 'bytes')} | ${formatValue(m.fixed, m.unit ?? 'bytes')} | ${verdict} |`,
     )

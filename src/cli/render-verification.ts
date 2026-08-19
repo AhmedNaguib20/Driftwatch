@@ -32,7 +32,13 @@ export function renderVerification(verification: VerificationReport): string {
       lines.push(pc.bold(`fix verified (measured, same invocation): ${badge}`))
       for (const m of verification.metrics) {
         const verdict =
-          m.verdict === 'restored' ? pc.green('restored') : m.verdict === 'partial' ? pc.yellow('partial') : pc.red('no recovery')
+          m.verdict === 'restored'
+            ? pc.green('restored')
+            : m.verdict === 'partial'
+              ? pc.yellow('partial')
+              : m.verdict === 'indistinguishable'
+                ? pc.dim('within noise resolution — cannot certify')
+                : pc.red('no recovery')
         const base = m.base !== null ? formatValue(m.base, m.unit) : '—'
         lines.push(
           `  ${m.label}: ${formatValue(m.current, m.unit)} → ${formatValue(m.fixed, m.unit)} (base ${base}) — ${verdict}`,

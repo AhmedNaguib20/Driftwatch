@@ -113,7 +113,13 @@ function measuredSummary(verification: NonNullable<ResultJson['verification']>):
     .map(
       (m) =>
         `${m.label} ${formatValue(m.current, m.unit ?? 'bytes')} → ${formatValue(m.fixed, m.unit ?? 'bytes')} (${
-          m.verdict === 'restored' ? 'restored' : m.verdict === 'partial' ? 'partial' : 'no recovery'
+          m.verdict === 'restored'
+            ? 'restored'
+            : m.verdict === 'partial'
+              ? 'partial'
+              : m.verdict === 'indistinguishable'
+                ? 'within noise resolution'
+                : 'no recovery'
         })`,
     )
     .join(', ')

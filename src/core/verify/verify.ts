@@ -117,7 +117,12 @@ export async function verifyFix(
       })
     }
 
-    return done({ outcome: overallOutcome(metrics), reason: null, metrics, diff })
+    const outcome = overallOutcome(metrics)
+    const reason =
+      outcome === 'no-recovery' && metrics.every((m) => m.verdict === 'indistinguishable')
+        ? 'every regressed metric is within measurement resolution — recovery cannot be certified either way'
+        : null
+    return done({ outcome, reason, metrics, diff })
   } finally {
     await workspace.cleanup()
   }

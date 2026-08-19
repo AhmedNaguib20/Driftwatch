@@ -106,6 +106,91 @@
         ],
         "driftwatchVersion": "0.5.0"
       }
+    },
+    {
+      "sha": "1b89d6afaa11c7fb8278b3edfd814c2d5283cdce",
+      "shortSha": "1b89d6afaa11",
+      "timestamp": "2026-08-19T08:30:26.540Z",
+      "branch": "main",
+      "metrics": {
+        "install_time": {
+          "value": 15103,
+          "unit": "ms"
+        },
+        "build_time": {
+          "value": 31521,
+          "unit": "ms"
+        },
+        "bundle_size": {
+          "value": 2313024,
+          "unit": "bytes"
+        },
+        "route_latency:/live": {
+          "value": 14,
+          "unit": "ms"
+        },
+        "lcp:/": {
+          "value": 1897,
+          "unit": "ms"
+        },
+        "tbt:/": {
+          "value": 143,
+          "unit": "ms"
+        },
+        "fcp:/": {
+          "value": 785,
+          "unit": "ms"
+        },
+        "transfer_size:/": {
+          "value": 231561,
+          "unit": "bytes"
+        },
+        "lcp:/live": {
+          "value": 1897,
+          "unit": "ms"
+        },
+        "tbt:/live": {
+          "value": 139,
+          "unit": "ms"
+        },
+        "fcp:/live": {
+          "value": 778,
+          "unit": "ms"
+        },
+        "transfer_size:/live": {
+          "value": 230457,
+          "unit": "bytes"
+        },
+        "lcp:/blog": {
+          "value": 1924,
+          "unit": "ms"
+        },
+        "tbt:/blog": {
+          "value": 177,
+          "unit": "ms"
+        },
+        "fcp:/blog": {
+          "value": 779,
+          "unit": "ms"
+        },
+        "transfer_size:/blog": {
+          "value": 235490,
+          "unit": "bytes"
+        }
+      },
+      "protocol": {
+        "nodeVersion": "v24.18.0",
+        "platform": "linux",
+        "arch": "x64",
+        "browser": "chrome/151.0.7922.137",
+        "hostLabels": [
+          "arch:X64",
+          "env:github-hosted",
+          "image:ubuntu24",
+          "os:Linux"
+        ],
+        "driftwatchVersion": "0.5.0"
+      }
     }
   ]
 }

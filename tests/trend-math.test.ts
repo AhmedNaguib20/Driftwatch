@@ -204,6 +204,54 @@ describe('drift detection', () => {
   })
 })
 
+describe('history ordering (M7) — topology first, date fallback, append order for legacy', () => {
+  const at = (e: IndexEntry, extra: Partial<IndexEntry>): IndexEntry => ({ ...e, ...extra })
+
+  it('replay-appended older commits sort before newer live entries by commit date', () => {
+    const newer = at(entry({ build_time: 310 }), { committedAt: '2026-08-10T00:00:00Z', parentSha: null })
+    const older = at(entry({ build_time: 300 }), { committedAt: '2026-08-01T00:00:00Z', parentSha: null, replayed: true })
+    // Append order: newer first (live), older appended later by replay.
+    const [timeline] = buildTimelines(index([newer, older]))
+    expect(timeline!.segments[0]!.points.map((p) => p.sha)).toEqual([older.sha, newer.sha])
+  })
+
+  it('parent linkage wins over a wrong date: the child never precedes its parent', () => {
+    const parent = at(entry({ build_time: 300 }), { committedAt: '2026-08-05T00:00:00Z', parentSha: null })
+    // Author date OLDER than the parent (rebases do this) — topology must still order it after.
+    const child = at(entry({ build_time: 310 }), { committedAt: '2026-08-02T00:00:00Z', parentSha: parent.sha })
+    const [timeline] = buildTimelines(index([child, parent]))
+    expect(timeline!.segments[0]!.points.map((p) => p.sha)).toEqual([parent.sha, child.sha])
+  })
+
+  it('legacy entries (no commit fields) order stably: equal keys keep append order', () => {
+    // Pre-M7 entries fall back to their measurement timestamp; live appends are chronological,
+    // so ordering is the identity on real legacy data (the unchanged goldens prove that on the
+    // real-branch shape). This pins the tie-break: identical keys never reorder.
+    const same = '2026-08-01T00:00:00.000Z'
+    const t1 = { ...entry({ build_time: 300 }), timestamp: same }
+    const t2 = { ...entry({ build_time: 310 }), timestamp: same }
+    const t3 = { ...entry({ build_time: 320 }), timestamp: same }
+    const [timeline] = buildTimelines(index([t1, t2, t3]))
+    expect(timeline!.segments[0]!.points.map((p) => p.sha)).toEqual([t1.sha, t2.sha, t3.sha])
+  })
+
+  it('a replay batch under one protocol is ONE segment by construction, distinct from live points', () => {
+    const todayProto = protocol({ driftwatchVersion: '0.7.0' })
+    const live = at(entry({ build_time: 320 }, protocol()), { committedAt: '2026-08-10T00:00:00Z', parentSha: null })
+    const r1 = at(entry({ build_time: 300 }, todayProto), { committedAt: '2026-08-01T00:00:00Z', parentSha: null, replayed: true })
+    const r2 = at(entry({ build_time: 305 }, todayProto), { committedAt: '2026-08-02T00:00:00Z', parentSha: r1.sha, replayed: true })
+    const r3 = at(entry({ build_time: 310 }, todayProto), { committedAt: '2026-08-03T00:00:00Z', parentSha: r2.sha, replayed: true })
+
+    const [timeline] = buildTimelines(index([live, r1, r2, r3]))
+    // Replayed points: one clean segment (shared protocol), ordered by topology, BEFORE the live
+    // point, separated from it by a protocol break — never joined across.
+    expect(timeline!.segments).toHaveLength(2)
+    expect(timeline!.segments[0]!.points.map((p) => p.sha)).toEqual([r1.sha, r2.sha, r3.sha])
+    expect(timeline!.segments[1]!.points.map((p) => p.sha)).toEqual([live.sha])
+    expect(timeline!.breaks[0]!.changes.join()).toContain('driftwatch')
+  })
+})
+
 describe('golden timeline', () => {
   it('the full structure over a mixed index matches its golden file', async () => {
     counter = 100

@@ -1,5 +1,6 @@
 import type { DriftReport } from '../drift.js'
 import type { IndexFile } from '../index-file.js'
+import { orderEntries } from '../order.js'
 import type { MetricTimeline } from '../timeline.js'
 import { renderChart } from './chart.js'
 import { escapeHtml, escapeJsonForScript, formatValue } from './format.js'
@@ -22,7 +23,9 @@ export interface DashboardInput {
 const KEY_ORDER = ['build_time', 'bundle_size', 'install_time']
 
 export function renderDashboard(input: DashboardInput): string {
-  const entryShas = input.index.entries.map((e) => e.sha)
+  // History order, not append order (M7): x-positions and "latest" follow commit topology.
+  const entries = orderEntries(input.index.entries)
+  const entryShas = entries.map((e) => e.sha)
   const entryIndexOf = (sha: string) => Math.max(0, entryShas.indexOf(sha))
   const ordered = orderReports(input.reports)
 
@@ -30,7 +33,7 @@ export function renderDashboard(input: DashboardInput): string {
     .map(({ timeline, drift }) => renderCard(timeline, drift, entryIndexOf, entryShas.length))
     .join('\n')
 
-  const latest = input.index.entries.at(-1) ?? null
+  const latest = entries.at(-1) ?? null
   const latestProtocol = latest?.protocol ?? null
   const dataIsland = escapeJsonForScript(
     JSON.stringify({ generatedAt: input.generatedAt, reports: input.reports }),

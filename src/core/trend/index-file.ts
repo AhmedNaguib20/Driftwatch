@@ -14,6 +14,17 @@ export interface IndexEntry {
   readonly shortSha: string
   readonly timestamp: string
   readonly branch: string | null
+  /** The commit's AUTHOR date — commit time ≠ measurement time (`timestamp`). Entries written
+   *  before M7 lack it; ordering falls back to `timestamp` for them (live-recorded points are
+   *  measured moments after they land, so the approximation holds). */
+  readonly committedAt?: string
+  /** First parent (full sha) — the topology link timeline ordering follows (M7). */
+  readonly parentSha?: string | null
+  /** True when this point was measured by `driftwatch replay`, not by a push-time record run. */
+  readonly replayed?: true
+  /** Present when replay could not measure this commit (build/detect/install failure). The
+   *  reason carries a log tail; the entry stays — a skipped commit is honest history. */
+  readonly skipped?: { readonly reason: string }
   /** Key metric medians only — the chart's data; full results live in results/<short-sha>.json. */
   readonly metrics: Readonly<Record<string, { readonly value: number; readonly unit: 'ms' | 'bytes' }>>
   /** CPU-speed proxy for the machine that measured this point (runner lottery) — normalization
@@ -51,7 +62,19 @@ export function parseIndex(raw: string): IndexFile | null {
   }
 }
 
-export function entryFromResult(result: ResultJson, sha: string, branch: string | null): IndexEntry {
+/** Commit metadata attached to an entry when the writer knows it (all writers do from M7 on). */
+export interface EntryCommitInfo {
+  readonly committedAt: string
+  readonly parentSha: string | null
+  readonly replayed?: true
+}
+
+export function entryFromResult(
+  result: ResultJson,
+  sha: string,
+  branch: string | null,
+  commit?: EntryCommitInfo,
+): IndexEntry {
   const metrics: Record<string, { value: number; unit: 'ms' | 'bytes' }> = {}
   if ('metrics' in result.current) {
     for (const metric of result.current.metrics) {
@@ -66,6 +89,8 @@ export function entryFromResult(result: ResultJson, sha: string, branch: string 
     shortSha: sha.slice(0, 12),
     timestamp: result.createdAt,
     branch,
+    ...(commit ? { committedAt: commit.committedAt, parentSha: commit.parentSha } : {}),
+    ...(commit?.replayed ? { replayed: true as const } : {}),
     benchmarkIndex: ('benchmarkIndex' in result.current ? result.current.benchmarkIndex : null) ?? null,
     metrics,
     protocol: {

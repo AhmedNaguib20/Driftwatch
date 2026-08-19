@@ -158,8 +158,8 @@ spec §5. (stderr streaming: fixed, `74d74af`.)
 metric methodology, comment=readable / summary=accounting role split, verdict line is the email
 preview and stays self-sufficient. Details blocks render EXPANDED in mail clients — design for it.
 
-**M6 — Verified Auto-fix PR — COMPLETE (Run A: PR #9 merged, comment flipped in place; Run B:
-no-recovery, zero fix-PR calls, deterministic under v36 CI quanta; 275 tests).** The differentiator: no fix PR opens without being
+**M6 — Verified Auto-fix PR — CLOSED (`dbd9973`; eval snapshot recorded verbatim as baseline;
+run-a FAIL is transport — TRIAGE_MAX_OUTPUT vs served-model verbosity drift — pre-launch item).** The differentiator: no fix PR opens without being
 MEASURED first. Flow: confirmed regression + high-confidence diff fix → apply the diff in a fresh
 temp copy → measure it same-invocation → three-way verdict (fixed vs current vs base):
 `restored` (within floor/quantum of base) / `partial` / `no-recovery` / `build-broken`. Only
@@ -182,28 +182,23 @@ Launch planning (npm publish, name/license/visibility, onboarding) remains queue
   - [x] Resolution gate (from B4): noise-radius-indistinguishable rows never certify recovery.
   - [x] DECIDED: environment-conditional browser quanta — LCP/FCP 200ms, TBT 100ms on CI
         (hostLabels present), local values unchanged. Protocol change, version bump.
-  - [x] CI quanta implemented (v0.6.0; trend drift reads the SEGMENT's recorded hostLabels, never
-        the reading machine) + Actions repo-setting prereq documented in the generated workflow.
-  - [x] Run B CLOSED, deterministic: sabotage → no-recovery (bundle 2.34→2.34 vs base 2.21),
-        fix PR skipped at the outcome gate (zero API calls), devOverride stamped, banner carried
-        only the true lodash signature — no browser-noise rows crossed under the CI quanta.
-  - [x] cleanup: PRs #7/#8 closed with evidence notes, #10/#11 (the two sabotage-caught wrong
-        fix PRs) closed en route, all acceptance branches deleted, fixture perf.yml aligned on
-        main.
-  - [x] eval snapshot (M6-close baseline): **3/4**. run-b PASS 0.9, lodash named, diff confined
-        ($0.0021); run-c PASS 0.7, lodash ($0.0022); run-d PASS 0.7, reading-time.tsx +
-        client-bundle mechanism ($0.0034). run-a FAIL — transport, not analysis: triage JSON
-        truncated twice (response cut mid-string; deepseek-v4-flash verbosity vs the 1000-token
-        triage output cap — run-a passed 4/4 at the M5-close snapshot, so this is served-model
-        drift). Pre-launch item: revisit TRIAGE_MAX_OUTPUT against current model verbosity.
+  - [x] CI quanta implemented (v0.6.0), repo-setting prereq documented, Run B deterministic green
+        (zero fix-PR API calls, honest did-not-verify line), cleanup complete — M6 CLOSED.
 
-M6 story (takes as data): seven takes, every failure a finding. A1 auto_fix-off gate; A2
-not-applicable honesty → `git apply --recount`; A3/A4 the confidence-vs-rubric conflict → the
-second de-gating (measurement gates, confidence is self-report); A6 the 403 → repo-setting
-prereq documented + honest fix-PR-failure comment line; B4 a TBT wobble bought a worthless diff
-a 'partial' → threshold-crossers-only + the resolution gate (indistinguishable rows never
-certify); B5 LCP jitter certified a rename → environment-conditional quanta (the machine is part
-of the instrument, spec v36). The sabotage seam earned its keep twice before it ever went green.
+**Pre-launch items:** TRIAGE_MAX_OUTPUT vs current model verbosity; Pages leg (visibility);
+verdict-line length cap watch-item; LCP/TBT CI quanta values revisit as passive data accumulates.
+
+**M7 — Git History Replay (current).** `driftwatch replay --last N`: measure the default branch's
+recent history retroactively in record mode (no AI), append to perf-data, and surface where
+performance actually moved. The onboarding wow ("your perf degraded at commit X") + the eval-case
+factory (every real historical regression is a candidate case). Spec §10 constraints hold: user
+picks N, cost estimate + confirmation upfront, old commits that fail to build are `skipped` with
+reason and NEVER abort the run. Local-first: replay runs on the developer's machine (it's
+expensive), one batched perf-data push at the end. Replayed entries are marked (`replayed: true`)
+— measurement time ≠ commit time — and all share today's protocol, which makes them one clean
+segment by construction. KNOWN DESIGN ISSUE to solve in step 1: timelines currently build in
+APPEND order; replay inserts older commits after newer entries, so timeline ordering must move to
+commit topology/date, not append order.
 
 Do not start a milestone before the previous one's definition of done is met.
 

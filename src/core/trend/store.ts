@@ -7,6 +7,7 @@ import type { ResultJson } from '../report/types.js'
 import { assessDrift } from './drift.js'
 import { renderDashboard } from './dashboard/index.js'
 import { appendEntry, emptyIndex, entryFromResult, parseIndex } from './index-file.js'
+import type { EntryCommitInfo } from './index-file.js'
 import { buildTimelines } from './timeline.js'
 
 const exec = promisify(execFile)
@@ -107,7 +108,7 @@ async function tryAppend(
       JSON.stringify(result, null, 2) + '\n',
       'utf8',
     )
-    const updated = appendEntry(index, entryFromResult(result, sha, branch))
+    const updated = appendEntry(index, entryFromResult(result, sha, branch, await commitInfo(gitRoot, sha)))
     await writeFile(indexPath, JSON.stringify(updated, null, 2) + '\n', 'utf8')
 
     // The dashboard is regenerated on every append: point GitHub Pages at this branch and the
@@ -149,6 +150,21 @@ async function tryAppend(
   } finally {
     await rm(parent, { recursive: true, force: true })
     await git(gitRoot, ['worktree', 'prune']).catch(() => {})
+  }
+}
+
+/**
+ * Author date + first parent for the entry's topology fields (M7 ordering). Null when the sha is
+ * unknown to this clone (shallow checkout) — the entry then orders by its measurement timestamp.
+ */
+export async function commitInfo(gitRoot: string, sha: string): Promise<EntryCommitInfo | undefined> {
+  try {
+    const raw = (await git(gitRoot, ['show', '-s', '--format=%aI %P', sha])).trim()
+    const [committedAt, ...parents] = raw.split(/\s+/)
+    if (!committedAt) return undefined
+    return { committedAt, parentSha: parents[0] ?? null }
+  } catch {
+    return undefined
   }
 }
 

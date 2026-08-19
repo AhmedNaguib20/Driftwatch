@@ -848,7 +848,7 @@ recurring opinion into a number, permanently.
 - JS/TS adapter (build time, bundle size, Lighthouse)
 
 ### Post-MVP — ranked by expected impact
-1. **Auto-fix PR — M6, IN PROGRESS.** *Step 1 (core verification, `c46eef9`) done:* `git apply
+1. **Auto-fix PR — M6, CLOSED (2026-08-19).** *Step 1 (core verification, `c46eef9`) done:* `git apply
    --check` gates (never fuzzy-matched — a fix we had to bend is not the fix that was suggested);
    the fixed copy is a **third side** through the same measurement path, protocol-compared
    field-by-field — §5.1 applies to itself; three-way verdicts reuse the same floor+quanta
@@ -868,7 +868,7 @@ recurring opinion into a number, permanently.
 3. **Cost translation** — express regressions in money, not milliseconds. Milliseconds don't get
    budget approved; dollars do.
 4. **Pre-merge prediction** — flag likely regressions before merge.
-5. **Git History Replay** — see §10.
+5. **Git History Replay** — see §10. **← M7, in progress.**
 6. **Layer 3 instruction counting** — precision tier.
 
 ---
@@ -883,16 +883,36 @@ recurring opinion into a number, permanently.
 
 ---
 
-## 10. Git History Replay (onboarding feature for existing projects)
+## 10. Git History Replay — M7, IN PROGRESS (opened 2026-08-19)
 
 Checkout, build, and measure the last N commits to reconstruct a performance timeline
 retroactively. Delivers a "wow" moment in the first hour instead of after a month of data
-collection: *"Your performance started degrading 6 months ago, at commit abc123."*
+collection: *"Your performance started degrading 6 months ago, at commit abc123."* Second payoff,
+recognized at M2: **the eval-case factory** — every real historical regression found by replay is
+a candidate eval case, converting the hand-built 4-case set into dozens from reality.
 
-**Constraints to design for:**
-- Expensive (hours of CI minutes) → keep it **optional**, let the user pick N
-- Old commits may fail to build (stale deps, different runtime versions) → mark as `skipped` and
-  continue; never abort the run
+**Original constraints (v1 of this spec — all still hold):**
+- Expensive → **optional**, user picks N, cost estimate + confirmation upfront (estimated from the
+  machine's own last record run)
+- Old commits may fail to build (stale deps, different runtime versions) → mark as `skipped` with
+  reason + log tail and continue; **never abort the run**
+
+**M7 design decisions:**
+- `driftwatch replay --last N | --since <ref>`, **first-parent only** — the merge-commit mainline
+  is the project's real history; measuring every feature-branch commit doubles cost for no meaning.
+- **Local-first**: replay runs on the developer's machine (record mode, no AI); ONE batched
+  perf-data update at the end, local by default, `--push` to publish. Interrupt-safe: partial
+  results land in `.perf/replay-pending/`, a rerun resumes.
+- Entries carry `replayed: true` + the commit's **author date** — measurement time ≠ commit time,
+  and consumers must see the distinction. All replay points share today's protocol → **one clean
+  segment by construction** (asserted in tests) — the M5 churn problem solved for free.
+- **Forced ordering fix**: timelines built in append order break the moment replay inserts older
+  commits after newer entries. Timeline ordering moves to commit topology (author-date fallback);
+  index entries gain commit timestamp + parent linkage. Existing branch data must render
+  identically after the migration.
+- Dedup: commits already in the index are skipped.
+- Step 2 scope: dashboard renders replayed points visually distinct; a regression-finding report
+  names the commits where metrics moved — the wow moment and the eval harvest in one surface.
 
 ---
 

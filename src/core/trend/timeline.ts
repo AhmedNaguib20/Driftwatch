@@ -1,4 +1,5 @@
 import type { IndexEntry, IndexFile } from './index-file.js'
+import { orderEntries } from './order.js'
 
 /**
  * Per-metric timelines over the perf-data index, segmented on protocol identity — §5.1 for
@@ -55,14 +56,16 @@ export function identityDiff(a: ProtocolIdentity, b: ProtocolIdentity): string[]
 }
 
 /**
- * Builds every metric's timeline in index (append = chronological) order. Sparse tolerance: an
- * entry missing a metric simply contributes no point to that metric — including entirely empty
- * entries (a run that measured nothing is honest history, not a chart feature).
+ * Builds every metric's timeline in HISTORY order — commit topology with a date fallback
+ * (order.ts; M7 replay appends older commits after newer entries, so append order stopped
+ * meaning history order). Sparse tolerance: an entry missing a metric simply contributes no
+ * point to that metric — including entirely empty entries (a run that measured nothing is
+ * honest history, not a chart feature).
  */
 export function buildTimelines(index: IndexFile): MetricTimeline[] {
   const byMetric = new Map<string, { unit: 'ms' | 'bytes'; carriers: { entry: IndexEntry; value: number }[] }>()
 
-  for (const entry of index.entries) {
+  for (const entry of orderEntries(index.entries)) {
     for (const [id, metric] of Object.entries(entry.metrics)) {
       if (!byMetric.has(id)) byMetric.set(id, { unit: metric.unit, carriers: [] })
       byMetric.get(id)!.carriers.push({ entry, value: metric.value })

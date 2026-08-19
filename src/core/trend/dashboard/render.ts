@@ -46,7 +46,7 @@ export function renderDashboard(input: DashboardInput): string {
 <body>
 <header>
   <h1>Driftwatch <span class="dim">— where has ${escapeHtml(input.sourceLabel ?? 'this project')} been going?</span></h1>
-  <p class="dim">${input.index.entries.length} recorded commit(s) · generated ${escapeHtml(input.generatedAt)} · trend language is <em>drift</em>, never a verdict</p>
+  <p class="dim">${input.index.entries.length} recorded commit(s) · data through ${escapeHtml(input.generatedAt)} · trend language is <em>drift</em>, never a verdict</p>
 </header>
 ${latestProtocol ? protocolLegend(latestProtocol) : ''}
 <main>

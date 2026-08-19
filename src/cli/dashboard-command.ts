@@ -29,10 +29,12 @@ export async function dashboardCommand(flags: {
   }
 
   const reports = buildTimelines(read.index).map((timeline) => ({ timeline, drift: assessDrift(timeline) }))
+  // generatedAt is DATA time (latest entry), not wall clock: the same branch state renders
+  // byte-identically here and in CI — one renderer, two paths, provably the same artifact.
   const html = renderDashboard({
     reports,
     index: read.index,
-    generatedAt: new Date().toISOString(),
+    generatedAt: read.index.entries.at(-1)?.timestamp ?? 'no data',
     sourceLabel: read.index.entries.at(-1)?.branch ?? null,
   })
 

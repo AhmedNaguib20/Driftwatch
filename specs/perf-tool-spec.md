@@ -597,6 +597,30 @@ Covers what a PR comment can't: trends over time, Git History Replay charts, bra
 - `driftwatch trend [--json]`: read-only (remote-tracking ref only). Today's honest output on the
   real branch: all 16 metrics `insufficient data (1 < 3 points)` — correct.
 
+#### Static dashboard (M5 step 3 — DONE, `9c38bf1`)
+
+- One self-contained HTML, zero network, **zero executable script** — the only `<script>` is an
+  inert JSON island; charts are generation-time inline SVG with native `<title>` tooltips (hover
+  works from `file://` with no JS). Renders step-2 structures verbatim; there is no browser
+  computation to drift from the math layer.
+- §5.1 rendered: segments as separate polylines, dashed break markers naming the changed fields,
+  sparse gaps split the line (lone points draw as dots, never interpolated), drift chips with the
+  number only when it exists, "drift" language throughout ("regression" test-asserted absent).
+- CI regenerates `index.html` at the branch root per append; `driftwatch dashboard [--open]`
+  locally. Pages setup is documented in workflow comments — repo settings are the user's.
+- "Render it and look at it" caught what structural tests couldn't: short-vs-full sha mismatch
+  pinned break markers to the left edge; latest-value labels clipped at the right boundary.
+
+#### Shared-runner browser churn (found live, M5 step 3 → decided step 4)
+
+The runner's Chrome moved three builds in one day (.108 → .137 → …), splitting trend segments
+faster than they can reach 3 points — strict §5.1 identity would leave CI trend data permanently
+"insufficient". **Decision: pin the browser in the generated workflow** (a setup action with a
+fixed Chrome version, bumped deliberately) — protocol stability by construction, segmentation
+stays strict. Relaxing identity to browser-major was rejected: build-level rendering changes are
+exactly what §5.1 exists to refuse, and we have no spread data licensing the assumption they're
+inert.
+
 ### 6.4 Hosted dashboard — later
 
 Build only when monetizing teams (multi-repo, alerting, permissions), with paying users to justify it.

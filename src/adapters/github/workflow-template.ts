@@ -36,6 +36,15 @@ jobs:
         with:
           node-version: 20
 
+      # Chrome is PINNED (spec §5.1): the browser build is part of the measurement protocol, and
+      # shared runners churn Chrome builds mid-day — three builds were observed in one day, each
+      # one a protocol break that splits the trend. Bumping this version is a deliberate,
+      # one-break upgrade: change it, expect exactly one break marker in the dashboard.
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: 151.0.7922.140
+
       # Developing driftwatch in this repo: build the local action and run it.
       # Once driftwatch is published, these two steps become a single
       #   - uses: driftwatch/action@v1

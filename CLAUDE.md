@@ -143,7 +143,11 @@ spec §5. (stderr streaming: fixed, `74d74af`.)
   - [x] trend math (`1b89d6a`) — five-field segmentation between consecutive points, drift vs the
         shared quantumFor table, drift never crosses breaks, cumulative:null under 3 points,
         "drift"/"regression" language split. Real branch self-accumulating points per push.
-  - [ ] static dashboard (renders step-2 structures only) → live proof
+  - [x] static dashboard (`9c38bf1`) — one file, zero network, zero executable JS (inert JSON
+        island + generation-time SVG), §5.1 rendered (separate polylines, named breaks, gaps never
+        interpolated). Chrome churn finding → pin browser in generated workflow (spec §6.3).
+  - [ ] live proof: pin Chrome, accumulate points, Pages on (Ahmed flips the setting), real drift
+        verdicts → M5 close
 
 Do not start a milestone before the previous one's definition of done is met.
 

@@ -34,6 +34,8 @@ jobs:
       - run: npm ci && npm run build
 
       - uses: ./
+        with:
+          project-dir: fixtures/next-app
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # AI analysis (optional, BYOK). Add your DeepSeek or OpenAI key under

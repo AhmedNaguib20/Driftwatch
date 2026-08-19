@@ -118,19 +118,20 @@ describe('base preflight', () => {
 })
 
 describe('exit codes', () => {
-  const config = (block_merge: boolean) =>
-    ({ config: { block_merge } }) as never
+  type ExitInput = Parameters<typeof exitCodeFor>[0]
+  const input = (verdict: ExitInput['verdict'], block_merge: boolean): ExitInput =>
+    ({ verdict, config: { block_merge } }) as ExitInput
 
   it('exit 0 for every verdict while block_merge is false', () => {
     for (const verdict of ['ok', 'regression', 'inconclusive'] as const) {
-      expect(exitCodeFor({ verdict, ...config(false) })).toBe(0)
+      expect(exitCodeFor(input(verdict, false))).toBe(0)
     }
   })
 
   it('exit 1 only for block_merge:true + regression', () => {
-    expect(exitCodeFor({ verdict: 'regression', ...config(true) })).toBe(1)
-    expect(exitCodeFor({ verdict: 'ok', ...config(true) })).toBe(0)
-    expect(exitCodeFor({ verdict: 'inconclusive', ...config(true) })).toBe(0)
+    expect(exitCodeFor(input('regression', true))).toBe(1)
+    expect(exitCodeFor(input('ok', true))).toBe(0)
+    expect(exitCodeFor(input('inconclusive', true))).toBe(0)
   })
 })
 
@@ -145,16 +146,13 @@ describe('host labels — cross-runner comparisons stay refusable', () => {
   })
 
   it('differing host labels are a protocol mismatch', () => {
-    const base = { hostLabels: ['os:Linux'] } as unknown as MeasurementProtocol
-    const current = { hostLabels: ['os:macOS'] } as unknown as MeasurementProtocol
-    const proto = (p: MeasurementProtocol): MeasurementProtocol =>
-      ({
-        version: 1, workspace: 'worktree', cacheState: 'cold', nodeModules: 'cloned',
-        gitMetadata: 'absent', nodeVersion: 'v20', platform: 'linux', arch: 'x64',
-        buildCommand: 'b', buildSamples: 3, warmupSamples: 1, env: {}, ...p,
-      }) as MeasurementProtocol
+    const proto = (hostLabels: string[]): MeasurementProtocol => ({
+      version: 1, workspace: 'worktree', cacheState: 'cold', nodeModules: 'cloned',
+      gitMetadata: 'absent', nodeVersion: 'v20', platform: 'linux', arch: 'x64',
+      buildCommand: 'b', buildSamples: 3, warmupSamples: 1, hostLabels, env: {},
+    })
 
-    const diffs = protocolMismatches(proto(base), proto(current))
+    const diffs = protocolMismatches(proto(['os:Linux']), proto(['os:macOS']))
     expect(diffs).toEqual(['hostLabels: os:Linux (base) vs os:macOS (current)'])
   })
 })

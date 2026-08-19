@@ -108,7 +108,10 @@ lint-enforced; keep it that way.
         (`76a8723`)
   - [x] API client — upsert w/ self-heal, checks + status fallback, publishResult never fails the
         user's CI (`73e4830`)
-  - [ ] action entry + init --github → live PR proof
+  - [x] action entry + init --github (`8e1adcd`) — setup errors exit 1 with the fix stanza
+        (warn-only covers verdicts, not misconfiguration); base = pinned event SHA; runner labels
+        via DRIFTWATCH_HOST_LABELS join the protocol hash
+  - [ ] live PR proof (needs GitHub remote + DRIFTWATCH_API_KEY repo secret) → M3 close
   - [x] markdown renderer (`76a8723`) — five goldens are the adapter contract; pipe-escaping in
         table cells; "why not higher" renders only held facts (omitted over padded — fabricated
         uncertainty is rule 3 in reverse); dead links omitted until their features exist.

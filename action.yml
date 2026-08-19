@@ -9,6 +9,12 @@ branding:
 
 # No inputs carry secrets. GITHUB_TOKEN and DRIFTWATCH_API_KEY arrive as env from the workflow's
 # secrets block — a secret with an input default would end up in logs and forks.
+inputs:
+  project-dir:
+    description: 'Path to the project to measure, relative to the repository root'
+    required: false
+    default: '.'
+
 runs:
   using: 'node20'
   main: 'dist/adapters/github/action-entry.js'

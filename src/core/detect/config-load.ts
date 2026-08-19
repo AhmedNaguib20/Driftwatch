@@ -49,6 +49,7 @@ export async function loadConfig(
     measure: pickMetrics(record.measure, fallback.measure, warnings),
     serve: pickBoolean(record.serve, fallback.serve, 'serve', warnings),
     browser: pickBoolean(record.browser, fallback.browser, 'browser', warnings),
+    verify: pickBoolean(record.verify, fallback.verify, 'verify', warnings),
     threshold: pickString(record.threshold, fallback.threshold, 'threshold', warnings),
     block_merge: pickBoolean(record.block_merge, fallback.block_merge, 'block_merge', warnings),
     base: pickString(record.base, fallback.base, 'base', warnings),

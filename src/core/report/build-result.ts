@@ -7,6 +7,7 @@ import type { SideMeasurement } from '../measure/types.js'
 import { compareMetrics } from './compare-metrics.js'
 import { protocolMismatches } from './protocol-match.js'
 import type { AnalysisReport } from './analysis.js'
+import type { VerificationReport } from './verification.js'
 import type { Comparison, MeasurementPath, MetricComparison, ResultJson, RunVerdict } from './types.js'
 import { RESULT_SCHEMA_MINOR, RESULT_SCHEMA_VERSION } from './types.js'
 
@@ -79,6 +80,11 @@ export function buildResult(input: BuildResultInput): ResultJson {
 /** Attaches the analysis block — the only way an analysis enters the contract. */
 export function attachAnalysis(result: ResultJson, analysis: AnalysisReport): ResultJson {
   return { ...result, analysis }
+}
+
+/** Attaches the verification block — measured evidence about the analysis's own fix. */
+export function attachVerification(result: ResultJson, verification: VerificationReport): ResultJson {
+  return { ...result, verification }
 }
 
 function buildComparison(input: BuildResultInput): Comparison {

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "schemaMinorVersion": 2,
+  "schemaMinorVersion": 3,
   "driftwatchVersion": "<driftwatch-version>",
   "mode": "compare",
   "createdAt": "2026-08-19T12:00:00.000Z",

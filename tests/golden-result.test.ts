@@ -80,6 +80,7 @@ const config: ResolvedConfig = {
   measure: ['build_time', 'bundle_size'],
   serve: true,
   browser: true,
+  verify: true,
   threshold: '5%',
   block_merge: false,
   base: 'main',

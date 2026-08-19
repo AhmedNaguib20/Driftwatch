@@ -39,6 +39,9 @@ serve: ${config.serve}
 # Lighthouse browser metrics against the served app (needs Chrome). --no-browser skips per run.
 browser: ${config.browser}
 
+# Measure the AI's suggested diff fix in a fresh copy before showing it (M6). --no-verify skips.
+verify: ${config.verify}
+
 # Warn only. Set to true once you trust the numbers and want failing checks to block merges.
 block_merge: ${config.block_merge}
 

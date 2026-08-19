@@ -1,0 +1,20 @@
+{
+  "schemaMinorVersion": 3,
+  "verification": {
+    "outcome": "restored",
+    "reason": null,
+    "metrics": [
+      {
+        "id": "bundle_size",
+        "label": "bundle_size",
+        "unit": "bytes",
+        "base": 45,
+        "current": 5041,
+        "fixed": 45,
+        "verdict": "restored"
+      }
+    ],
+    "diff": "--- a/app.js\n+++ b/app.js\n@@ -1,2 +1,2 @@\n const size = 'small'\n-const payload = 'HEAVY'.repeat(1000)\n+const payload = 'light'\n",
+    "elapsedMs": 1234
+  }
+}

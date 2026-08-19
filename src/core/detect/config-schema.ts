@@ -23,6 +23,8 @@ export interface PerfConfig {
   readonly serve: boolean
   /** Lighthouse browser metrics (needs Chrome). CLI --no-browser overrides per run. */
   readonly browser: boolean
+  /** Measure the AI's diff fix as a third side (M6). CLI --no-verify overrides per run. */
+  readonly verify: boolean
   readonly threshold: string
   readonly block_merge: boolean
   readonly base: string
@@ -35,6 +37,7 @@ export const DEFAULT_CONFIG: PerfConfig = {
   measure: [],
   serve: true,
   browser: true,
+  verify: true,
   threshold: '5%',
   block_merge: false,
   base: 'main',

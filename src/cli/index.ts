@@ -20,8 +20,9 @@ program
   .option('--no-ai', 'skip AI analysis entirely — fully offline run (also: DRIFTWATCH_NO_AI=1)')
   .option('--no-serve', 'skip booting the app and route-latency metrics')
   .option('--no-browser', 'skip Lighthouse browser metrics')
+  .option('--no-verify', 'skip measuring the AI\'s suggested diff fix')
   .option('--cwd <dir>', 'project directory', process.cwd())
-  .action(async (flags: { base?: string; baseLabel?: string; json: boolean; cache: boolean; ai: boolean; serve: boolean; browser: boolean; cwd: string }) => {
+  .action(async (flags: { base?: string; baseLabel?: string; json: boolean; cache: boolean; ai: boolean; serve: boolean; browser: boolean; verify: boolean; cwd: string }) => {
     await runCommand(flags)
   })
 
@@ -31,6 +32,7 @@ program
   .option('--json', 'print the schema result JSON to stdout instead of the table', false)
   .option('--no-serve', 'skip booting the app and route-latency metrics')
   .option('--no-browser', 'skip Lighthouse browser metrics')
+  .option('--no-verify', 'skip measuring the AI\'s suggested diff fix')
   .option('--cwd <dir>', 'project directory', process.cwd())
   .action(async (flags: { json: boolean; serve: boolean; browser: boolean; cwd: string }) => {
     const { recordCommand } = await import('./record-command.js')

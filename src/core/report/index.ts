@@ -1,4 +1,4 @@
-export { attachAnalysis, buildResult } from './build-result.js'
+export { attachAnalysis, attachVerification, buildResult } from './build-result.js'
 export { buildRecordResult } from './record-result.js'
 export type { BuildRecordInput } from './record-result.js'
 export type { BuildResultInput } from './build-result.js'
@@ -7,6 +7,12 @@ export type { CompareOptions } from './compare-metrics.js'
 export { protocolMismatches } from './protocol-match.js'
 export { requiresConfirmation } from './escalation.js'
 export { RESULT_SCHEMA_MINOR, RESULT_SCHEMA_VERSION } from './types.js'
+export type {
+  VerificationMetric,
+  VerificationMetricVerdict,
+  VerificationOutcome,
+  VerificationReport,
+} from './verification.js'
 export type {
   AnalysisFix,
   AnalysisReport,

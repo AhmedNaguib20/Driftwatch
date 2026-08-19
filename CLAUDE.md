@@ -134,7 +134,7 @@ mismatch.
         it, SSG-exclusion bet paid, TBT correctly under quantum. Fixes: excluded-vs-failed skips,
         predictProtocol parity (cache was silently dead with browser on). Per-route LH warm-up +
         SAMPLES 3→2 (net zero). run-d in the eval set.
-**M5 — Trends + static dashboard (current).** JSON in a `perf-data` branch; static site reads it.
+**M5 — Trends + static dashboard — COMPLETE (M1–M5 all closed; MVP spine done, 236 tests).** JSON in a `perf-data` branch; static site reads it.
 Carried-in backlog: LCP-jitter watch-item (collect CI spread passively); TBT machine-class note in
 spec §5. (stderr streaming: fixed, `74d74af`.)
   - [x] perf-data branch + record mode (`5f9f72f`, install fix `8e190b8`) — validated live on the
@@ -150,8 +150,22 @@ spec §5. (stderr streaming: fixed, `74d74af`.)
         validated pins only), 3× 16-metric points, first real drift verdicts, break history
         rendered, local↔branch byte-identity proven. Runner lottery finding → record
         benchmarkIndex as normalization data (not identity). 16 entries on the branch.
-  - [ ] Pages leg: blocked on repo visibility (private repos need a paid plan) — Ahmed's call:
-        public now, or close M5 on the CLI path and defer Pages to launch.
+  - [x] M5 closed on the CLI path (`230e0ce`): benchmarkIndex in every trend point (informational,
+        test-asserted never-identity), eval snapshot 4/4, Pages deferred to the launch checklist.
+        Branch: 16 entries / 6 segments / pin chrome .77 / first real drift verdicts.
+
+**Rendering redesign — DONE (`692156d`):** email-evidence-driven; grouped policy skips, once-per-
+metric methodology, comment=readable / summary=accounting role split, verdict line is the email
+preview and stays self-sufficient. Details blocks render EXPANDED in mail clients — design for it.
+
+**M6 — Verified Auto-fix PR (current).** The differentiator: no fix PR opens without being
+MEASURED first. Flow: confirmed regression + high-confidence diff fix → apply the diff in a fresh
+temp copy → measure it same-invocation → three-way verdict (fixed vs current vs base):
+`restored` (within floor/quantum of base) / `partial` / `no-recovery` / `build-broken`. Only
+`restored`/`partial` may open a PR, and the PR body carries the measured numbers; failures are
+reported in the comment honestly. All §5.1 disciplines apply to the third side. Opt-in via
+`auto_fix` in perf.yml; local parity first (the CLI verifies before any GitHub mechanics exist).
+Launch planning (npm publish, name/license/visibility, onboarding) remains queued after M6.
 
 Do not start a milestone before the previous one's definition of done is met.
 

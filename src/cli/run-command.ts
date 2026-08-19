@@ -1,7 +1,8 @@
 import pc from 'picocolors'
-import { attachAnalysis, runDriftwatch } from '../core/index.js'
+import { attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, runDriftwatch, verifyFix } from '../core/index.js'
 import type { AnalysisReport, ResultJson, StageStats } from '../core/index.js'
 import { renderAnalysis } from './render-analysis.js'
+import { renderVerification, verificationEligible } from './render-verification.js'
 import { renderResult } from './render-table.js'
 
 /**
@@ -27,6 +28,7 @@ export interface RunFlags {
   readonly ai: boolean
   readonly serve: boolean
   readonly browser: boolean
+  readonly verify: boolean
   readonly cwd?: string
 }
 
@@ -46,7 +48,8 @@ export async function runCommand(flags: RunFlags): Promise<void> {
       progress,
     })
 
-    const result = attachAnalysis(measured, await resolveAnalysis(measured, flags, progress))
+    let result = attachAnalysis(measured, await resolveAnalysis(measured, flags, progress))
+    result = await resolveVerification(result, flags, progress)
 
     if (flags.json) {
       console.log(JSON.stringify(result, null, 2))
@@ -56,6 +59,10 @@ export async function runCommand(flags: RunFlags): Promise<void> {
     console.log(renderResult(result))
     if (result.analysis) {
       const rendered = renderAnalysis(result.analysis, await costEstimator(result.analysis))
+      if (rendered) console.log(rendered)
+    }
+    if (result.verification) {
+      const rendered = renderVerification(result.verification)
       if (rendered) console.log(rendered)
     }
   } catch (error) {
@@ -82,6 +89,33 @@ async function resolveAnalysis(
   // The ONLY entry into the ai/ module graph.
   const ai = await import('../ai/index.js')
   return ai.analyseRegression(result, progress)
+}
+
+/**
+ * Verification (M6): measure the AI's diff as a third side. Gated here on the flag + perf.yml;
+ * verifyFix applies the confidence/diff gates itself. Skipped gate-outs stay out of the JSON —
+ * an absent block means "not attempted", and rule 3 asks us to report attempts, not non-events.
+ */
+async function resolveVerification(
+  result: ResultJson,
+  flags: RunFlags,
+  progress: (message: string) => void,
+): Promise<ResultJson> {
+  if (!flags.verify) return result
+  if (!verificationEligible(result)) return result
+
+  const profile = await detectProject({ cwd: flags.cwd })
+  const config = await loadConfig(profile.projectRoot, configFromProfile(profile))
+  if (!config.verify) return result
+
+  const verification = await verifyFix(profile, result, {
+    installIfAbsent: true,
+    serve: flags.serve && config.serve,
+    browser: flags.browser && config.browser,
+    progress,
+  })
+  if (verification.outcome === 'skipped') return result
+  return attachVerification(result, verification)
 }
 
 /** Cost rates live in the ai graph; when it never loaded, there is no cost to estimate. */

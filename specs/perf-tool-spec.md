@@ -504,6 +504,18 @@ own; marker `<!-- driftwatch:comment -->` leads every rendering for upsert targe
 - `publishResult()` never throws: comment 403 → check-only; check 403 → status fallback; all down →
   warnings, exit unchanged. **The user's CI run cannot be failed by our publishing.**
 
+#### Rendering redesign (email evidence, 2026-08-19 — DONE, `692156d`)
+
+Real-email evidence (Gmail, PR #5 before / PR #6 after) drove four changes, all improving the PR
+page too: **policy-skip rows grouped** (one row + an Excluded-rows details block — five identical
+SSG sentences had blown up the table); **methodology stated once per metric** in the accounting
+(identical across sides *by construction* — §5.1; per-side lines carry only values + samples);
+**role split** — the comment is the readable surface (verdict, table, AI, slim details), the
+step summary is the accounting surface (full per-side collectedBy, linking back to comment and
+check; "How measured" in the comment is two sentences + a link); **verdict line untouched** — it
+is the proven email preview and must stay self-sufficient. Details blocks arrive *expanded* in
+mail clients; design for that always.
+
 ### 6.2 CI check
 
 A status check carrying the same verdict, so teams can block merges on it.
@@ -821,8 +833,13 @@ recurring opinion into a number, permanently.
 - JS/TS adapter (build time, bundle size, Lighthouse)
 
 ### Post-MVP — ranked by expected impact
-1. **Auto-fix PR** — don't just describe the fix, open a reviewable PR with it. Turns the tool from
-   a report into a teammate.
+1. **Auto-fix PR — M6, IN PROGRESS, with the differentiator: measurement-proven fixes.** Before
+   opening any fix PR, apply the AI's diff in a fresh temp copy and MEASURE it — same protocol,
+   same invocation, three-way comparison (fixed vs current vs base). The PR opens carrying its own
+   measured evidence ("this fix was measured: bundle returns 2.33→2.20MB") or does not open at all,
+   with the failure reported honestly. Every other AI tool proposes hoped-for fixes; we have the
+   one thing they don't — a trusted measurement machine to prove ours. Measurement proves the AI's
+   own suggestions: the trust principle closing its own loop.
 2. **Trend detection** — catch slow decay (1% per commit, 30% over three months). Nobody does this
    well; highest-value insight.
 3. **Cost translation** — express regressions in money, not milliseconds. Milliseconds don't get

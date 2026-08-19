@@ -1,4 +1,5 @@
 import type { AnalysisReport } from './analysis.js'
+import type { VerificationReport } from './verification.js'
 import type { Evidence, Framework, MetricId, PackageManager } from '../detect/types.js'
 import type { LockfileStatus } from '../baseline/lockfile-compare.js'
 import type { MetricResult, SideMeasurement } from '../measure/types.js'
@@ -18,7 +19,7 @@ export const RESULT_SCHEMA_VERSION = 1
  * Minor: additive changes only — new fields, new optional blocks. A 1.0 consumer reading a 1.1
  * result must keep working; anything that would break one bumps the major instead.
  */
-export const RESULT_SCHEMA_MINOR = 2
+export const RESULT_SCHEMA_MINOR = 3
 
 export interface ResultJson {
   readonly schemaVersion: typeof RESULT_SCHEMA_VERSION
@@ -43,6 +44,8 @@ export interface ResultJson {
    * disabled/no_key outcomes). Absent only when a caller used core directly without analysis.
    */
   readonly analysis?: AnalysisReport
+  /** Present when the fix-verification stage ran (M6) — measured evidence about the AI's diff. */
+  readonly verification?: VerificationReport
   /** Run-level warnings that belong to no single side (config problems, plan warnings). */
   readonly warnings: readonly string[]
 }

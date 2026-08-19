@@ -1,5 +1,5 @@
 import pc from 'picocolors'
-import { attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, machineDiff, runDriftwatch, verifyFix } from '../core/index.js'
+import { attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, runDriftwatch, verifyFix } from '../core/index.js'
 import type { AnalysisReport, ResultJson, StageStats } from '../core/index.js'
 import { renderAnalysis } from './render-analysis.js'
 import { renderVerification, verificationEligible } from './render-verification.js'
@@ -139,7 +139,9 @@ async function applyDevFixOverride(
     )
     return { result, devOverride: false }
   }
-  if (result.analysis?.outcome !== 'analysed' || machineDiff(result.analysis.fix) === null) {
+  // Any completed analysis will do — the seam exists to test the verification machinery with
+  // a controlled diff, so it must not depend on which fix kind the model rolled this take.
+  if (result.analysis?.outcome !== 'analysed') {
     return { result, devOverride: false }
   }
 
@@ -149,7 +151,7 @@ async function applyDevFixOverride(
   return {
     result: {
       ...result,
-      analysis: { ...result.analysis, fix: { ...result.analysis.fix, content: diff, diff } },
+      analysis: { ...result.analysis, fix: { kind: 'diff', content: diff, diff } },
     },
     devOverride: true,
   }

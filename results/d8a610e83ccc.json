@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 1,
+  "schemaMinorVersion": 2,
+  "driftwatchVersion": "0.5.0",
+  "mode": "record",
+  "createdAt": "2026-08-19T09:07:29.244Z",
+  "project": {
+    "root": "/home/runner/work/Driftwatch/Driftwatch/fixtures/next-app",
+    "gitRoot": "/home/runner/work/Driftwatch/Driftwatch",
+    "pathInRepo": "fixtures/next-app",
+    "framework": "nextjs",
+    "frameworkVersion": "15.1.3",
+    "packageManager": "npm",
+    "lockfile": "package-lock.json",
+    "routes": [
+      "/",
+      "/about",
+      "/blog",
+      "/blog/[slug]",
+      "/dashboard",
+      "/live"
+    ],
+    "evidence": [
+      {
+        "fact": "language: javascript",
+        "source": "package.json",
+        "detail": "package \"driftwatch-fixture-next-app\""
+      },
+      {
+        "fact": "git repository: /home/runner/work/Driftwatch/Driftwatch",
+        "source": "git",
+        "detail": "project sits at fixtures/next-app"
+      },
+      {
+        "fact": "package manager: npm",
+        "source": "package-lock.json"
+      },
+      {
+        "fact": "framework: nextjs",
+        "source": "package.json",
+        "detail": "depends on next@15.1.3"
+      },
+      {
+        "fact": "framework: nextjs",
+        "source": "next.config.mjs",
+        "detail": "Next.js config file"
+      },
+      {
+        "fact": "6 route(s) detected",
+        "source": "app",
+        "detail": "app router"
+      },
+      {
+        "fact": "build command: npm run build",
+        "source": "package.json",
+        "detail": "scripts.build = \"next build\""
+      },
+      {
+        "fact": "recorded: main @ d8a610e83ccc",
+        "source": "git"
+      }
+    ],
+    "warnings": [
+      "Dependencies are not installed, so the exact Next.js version is unknown — only the declared range is available."
+    ]
+  },
+  "config": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "thresholdPercent": 5,
+    "noiseFloorPercent": 2,
+    "base": "main",
+    "block_merge": false,
+    "sourcePath": "/home/runner/work/Driftwatch/Driftwatch/fixtures/next-app/perf.yml"
+  },
+  "base": {
+    "available": false,
+    "reason": "record mode — this run measures one commit; there is no baseline comparison"
+  },
+  "current": {
+    "workingTree": true,
+    "metrics": [
+      {
+        "id": "install_time",
+        "status": "measured",
+        "value": 14373,
+        "unit": "ms",
+        "label": "install time",
+        "collectedBy": "wall clock around `npm ci` in a copy; single sample, package-manager cache shared with the machine",
+        "samples": 1
+      },
+      {
+        "id": "build_time",
+        "status": "measured",
+        "value": 31327,
+        "unit": "ms",
+        "label": "build time (cold)",
+        "collectedBy": "median of 3 cold builds after 1 discarded warm-up, wall clock around `npm run build` in a copy",
+        "samples": 3,
+        "sampleValues": [
+          31579,
+          31327,
+          30795
+        ]
+      },
+      {
+        "id": "bundle_size",
+        "status": "measured",
+        "value": 2313025,
+        "unit": "bytes",
+        "label": "bundle size",
+        "collectedBy": "sum of file sizes in .next (117 files), excluding internal caches and diagnostics",
+        "samples": 1
+      },
+      {
+        "id": "route_latency:/live",
+        "status": "measured",
+        "value": 13,
+        "unit": "ms",
+        "label": "route /live",
+        "collectedBy": "median of 5 sequential requests after 1 discarded warm-up, full response time against the built app",
+        "samples": 5,
+        "sampleValues": [
+          29,
+          18,
+          13,
+          12,
+          11
+        ]
+      },
+      {
+        "id": "route_latency:/blog/[slug]",
+        "status": "skipped",
+        "label": "route /blog/[slug]",
+        "reason": "dynamic segment — no concrete URL to measure",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/",
+        "status": "skipped",
+        "label": "route /",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/blog",
+        "status": "skipped",
+        "label": "route /blog",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/about",
+        "status": "skipped",
+        "label": "route /about",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/dashboard",
+        "status": "skipped",
+        "label": "route /dashboard",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "lcp:/",
+        "status": "skipped",
+        "label": "LCP /",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:41905"
+      },
+      {
+        "id": "tbt:/",
+        "status": "skipped",
+        "label": "TBT /",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:41905"
+      },
+      {
+        "id": "fcp:/",
+        "status": "skipped",
+        "label": "FCP /",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:41905"
+      },
+      {
+        "id": "transfer_size:/",
+        "status": "skipped",
+        "label": "TRANSFER size /",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:41905"
+      },
+      {
+        "id": "lcp:/live",
+        "status": "skipped",
+        "label": "LCP /live",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:36283"
+      },
+      {
+        "id": "tbt:/live",
+        "status": "skipped",
+        "label": "TBT /live",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:36283"
+      },
+      {
+        "id": "fcp:/live",
+        "status": "skipped",
+        "label": "FCP /live",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:36283"
+      },
+      {
+        "id": "transfer_size:/live",
+        "status": "skipped",
+        "label": "TRANSFER size /live",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:36283"
+      },
+      {
+        "id": "lcp:/blog",
+        "status": "skipped",
+        "label": "LCP /blog",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:33291"
+      },
+      {
+        "id": "tbt:/blog",
+        "status": "skipped",
+        "label": "TBT /blog",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:33291"
+      },
+      {
+        "id": "fcp:/blog",
+        "status": "skipped",
+        "label": "FCP /blog",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:33291"
+      },
+      {
+        "id": "transfer_size:/blog",
+        "status": "skipped",
+        "label": "TRANSFER size /blog",
+        "reason": "lighthouse run failed: connect ECONNREFUSED 127.0.0.1:33291"
+      }
+    ],
+    "protocol": {
+      "version": 1,
+      "workspace": "copy",
+      "cacheState": "cold",
+      "nodeModules": "fresh-install",
+      "gitMetadata": "absent",
+      "nodeVersion": "v24.18.0",
+      "platform": "linux",
+      "arch": "x64",
+      "buildCommand": "npm run build",
+      "buildSamples": 3,
+      "warmupSamples": 1,
+      "routeSamples": 5,
+      "routeWarmupSamples": 1,
+      "browser": "chrome/151.0.7922.138",
+      "lighthouseProfile": "simulated/desktop/v3",
+      "hostLabels": [
+        "arch:X64",
+        "env:github-hosted",
+        "image:ubuntu24",
+        "os:Linux"
+      ],
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      }
+    },
+    "warnings": [],
+    "elapsedMs": 291018,
+    "layer2aElapsedMs": 151308
+  },
+  "comparison": {
+    "measurementPath": "fresh",
+    "dependenciesChanged": null,
+    "lockfileStatus": null,
+    "protocolsMatch": true,
+    "protocolMismatches": [],
+    "metrics": []
+  },
+  "verdict": "recorded",
+  "analysis": {
+    "outcome": "skipped",
+    "reason": "record mode — no comparison to analyse"
+  },
+  "warnings": []
+}

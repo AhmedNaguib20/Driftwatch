@@ -54,6 +54,8 @@ jobs:
         with:
           project-dir: ${projectDir}
         env:
+          # Both modes (PR compare and record) measure with the same pinned browser.
+          CHROME_PATH: \${{ steps.chrome.outputs.chrome-path }}
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           # AI analysis (optional, BYOK). Add your DeepSeek or OpenAI key under
           # Settings → Secrets and variables → Actions → "DRIFTWATCH_API_KEY".

@@ -1,5 +1,5 @@
 import pc from 'picocolors'
-import { attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, runDriftwatch, verifyFix } from '../core/index.js'
+import { attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, machineDiff, runDriftwatch, verifyFix } from '../core/index.js'
 import type { AnalysisReport, ResultJson, StageStats } from '../core/index.js'
 import { renderAnalysis } from './render-analysis.js'
 import { renderVerification, verificationEligible } from './render-verification.js'
@@ -93,7 +93,8 @@ async function resolveAnalysis(
 
 /**
  * Verification (M6): measure the AI's diff as a third side. Gated here on the flag + perf.yml;
- * verifyFix applies the confidence/diff gates itself. Skipped gate-outs stay out of the JSON —
+ * verifyFix applies the regression/diff gates itself (no confidence gate — spec v35).
+ * Skipped gate-outs stay out of the JSON —
  * an absent block means "not attempted", and rule 3 asks us to report attempts, not non-events.
  */
 async function resolveVerification(
@@ -138,7 +139,7 @@ async function applyDevFixOverride(
     )
     return { result, devOverride: false }
   }
-  if (result.analysis?.outcome !== 'analysed' || result.analysis.fix.kind !== 'diff') {
+  if (result.analysis?.outcome !== 'analysed' || machineDiff(result.analysis.fix) === null) {
     return { result, devOverride: false }
   }
 
@@ -148,7 +149,7 @@ async function applyDevFixOverride(
   return {
     result: {
       ...result,
-      analysis: { ...result.analysis, fix: { ...result.analysis.fix, content: diff } },
+      analysis: { ...result.analysis, fix: { ...result.analysis.fix, content: diff, diff } },
     },
     devOverride: true,
   }

@@ -200,6 +200,8 @@ describe('runAnalysis — two-stage flow', () => {
     expect(analysis.fix.kind).toBe('prose')
     expect(analysis.fix.note).toMatch(/below the 0.8 bar/)
     expect(analysis.fix.content).toContain('+++ b/lib/posts.ts')
+    // Spec v35: the display downgrade keeps the machine diff for verification.
+    expect(analysis.fix.diff).toBe(analysis.fix.content)
   })
 
   it('downgrades a diff that touches files the model was never shown', async () => {
@@ -218,6 +220,8 @@ describe('runAnalysis — two-stage flow', () => {
     if (analysis.outcome !== 'analysed') throw new Error('expected analysed')
     expect(analysis.fix.kind).toBe('prose')
     expect(analysis.fix.note).toMatch(/files not shown.*next\.config\.mjs/)
+    // Confinement is a safety rule, not a display rule: no machine diff survives.
+    expect(analysis.fix.diff).toBeUndefined()
   })
 })
 

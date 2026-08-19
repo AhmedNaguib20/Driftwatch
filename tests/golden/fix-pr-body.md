@@ -10,6 +10,6 @@
 |---|---|---|---|---|
 | bundle size | 2.20 MB | 2.34 MB | 2.20 MB | restored |
 
-**Cause** (`confidence 90% (high)`): lib/posts.ts adds a 300-entry archive consumed by generateStaticParams, adding ~300 statically generated pages to the build.
+**Cause** (`model confidence 90% (high) — measured: restored`): lib/posts.ts adds a 300-entry archive consumed by generateStaticParams, adding ~300 statically generated pages to the build.
 
 <sub>Verification cost 41.2s of measurement. Merging this PR updates the original PR's branch; the regression comment will flip on the next run. The diff is exactly the bytes that were measured — see Files Changed.</sub>

@@ -160,18 +160,31 @@ function regressionResult(analysis: AnalysisReport, currentProto = protocol()): 
 }
 
 describe('verifyFix — gates', () => {
-  it('skips below the confidence bar, on prose fixes, and on non-regressions', async () => {
+  it('skips on prose-only fixes and non-regressions; confidence is never consulted (spec v35)', async () => {
     const { profile } = await project()
 
-    const low = await verifyFix(profile, regressionResult(analysed({ confidence: 0.7 })))
-    expect(low.outcome).toBe('skipped')
-    expect(low.reason).toMatch(/under the 0.8 verification bar/)
-
+    // Model prose with no machine diff: nothing to measure.
     const prose = await verifyFix(profile, regressionResult(analysed({ fix: { kind: 'prose', content: 'x' } })))
     expect(prose.outcome).toBe('skipped')
+    expect(prose.reason).toMatch(/no machine-applicable diff/)
 
     const ok = { ...regressionResult(analysed()), verdict: 'ok' as const }
     expect((await verifyFix(profile, ok)).outcome).toBe('skipped')
+  })
+
+  it('verifies a low-confidence diff and a prose-displayed diff — the display bar is not a measurement gate', async () => {
+    const { profile } = await project()
+
+    const low = await verifyFix(profile, regressionResult(analysed({ confidence: 0.7 })), { serve: false, browser: false })
+    expect(low.outcome).toBe('restored')
+
+    // enforceFixRules' confidence downgrade: shown as prose, diff kept for verification.
+    const downgraded = analysed({
+      confidence: 0.7,
+      fix: { kind: 'prose', content: GOOD_DIFF, note: 'downgraded from a diff: confidence 0.7 is below the 0.8 bar for ready-to-apply patches', diff: GOOD_DIFF },
+    })
+    const report = await verifyFix(profile, regressionResult(downgraded), { serve: false, browser: false })
+    expect(report.outcome).toBe('restored')
   })
 })
 

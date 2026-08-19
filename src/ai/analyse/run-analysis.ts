@@ -21,7 +21,8 @@ const DEEP_TIMEOUT_MS = 180_000
 const TRIAGE_MAX_OUTPUT = 1_000
 const DEEP_MAX_OUTPUT = 2_500
 
-/** Diff-format fixes require at least this confidence; below it we downgrade to prose. */
+/** Below this confidence a diff fix is DISPLAYED as prose; the diff itself survives for
+ * verification (spec v35 — the bar governs presentation, measurement governs proof). */
 const DIFF_FIX_CONFIDENCE_BAR = 0.8
 
 export async function runAnalysis(
@@ -118,20 +119,19 @@ export async function runAnalysis(
 }
 
 /**
- * The prompt states the fix rules; this enforces them. A model that returns a diff below the
- * confidence bar, or one touching files it was never shown, gets downgraded to prose — the
- * content is preserved, the downgrade is named. Guarantees live in code, not in model obedience.
+ * The prompt states the fix rules; this enforces them. Two different rules produce the same
+ * prose display but mean different things (spec v35, second de-gating):
+ *
+ *  - Confinement (files the model was never shown) is a safety guarantee — the diff is dropped
+ *    entirely; verification never measures it.
+ *  - The confidence bar is a DISPLAY rule only — the fix is shown as prose, but the diff
+ *    survives in `diff` for verification to measure. Measurement is better evidence than the
+ *    model's self-confidence; if the fix verifies, measurement earns it the display back.
+ *
+ * Guarantees live in code, not in model obedience.
  */
 function enforceFixRules(deep: DeepOutput, shownFiles: ReadonlySet<string>): AnalysisFix {
   if (deep.fix.kind !== 'diff') return deep.fix
-
-  if (deep.confidence < DIFF_FIX_CONFIDENCE_BAR) {
-    return {
-      kind: 'prose',
-      content: deep.fix.content,
-      note: `downgraded from a diff: confidence ${deep.confidence} is below the ${DIFF_FIX_CONFIDENCE_BAR} bar for ready-to-apply patches`,
-    }
-  }
 
   const touched = [...deep.fix.content.matchAll(/^\+\+\+ b\/(.+)$/gm)].map((m) => m[1]!)
   const unknown = touched.filter((p) => !shownFiles.has(p))
@@ -143,7 +143,16 @@ function enforceFixRules(deep: DeepOutput, shownFiles: ReadonlySet<string>): Ana
     }
   }
 
-  return deep.fix
+  if (deep.confidence < DIFF_FIX_CONFIDENCE_BAR) {
+    return {
+      kind: 'prose',
+      content: deep.fix.content,
+      note: `downgraded from a diff: confidence ${deep.confidence} is below the ${DIFF_FIX_CONFIDENCE_BAR} bar for ready-to-apply patches`,
+      diff: deep.fix.content,
+    }
+  }
+
+  return { ...deep.fix, diff: deep.fix.content }
 }
 
 function filesShown(manifest: { files: readonly { path: string; disposition: string }[] }): Set<string> {

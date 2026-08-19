@@ -1,4 +1,5 @@
 import pc from 'picocolors'
+import { machineDiff } from '../core/index.js'
 import type { ResultJson, VerificationReport } from '../core/index.js'
 import { formatValue } from './format.js'
 
@@ -50,6 +51,6 @@ export function verificationEligible(result: ResultJson): boolean {
   return (
     result.verdict === 'regression' &&
     result.analysis?.outcome === 'analysed' &&
-    result.analysis.fix.kind === 'diff'
+    machineDiff(result.analysis.fix) !== null
   )
 }

@@ -60,7 +60,6 @@ describe('three-way assessment', () => {
   })
   it('overall: all restored → restored; mixed → partial; none → no-recovery', () => {
     const r = bundle(2_205_000)
-    const p = bundle(2_280_000)
     const n = bundle(2_338_000)
     expect(overallOutcome([r, r])).toBe('restored')
     expect(overallOutcome([r, n])).toBe('partial')

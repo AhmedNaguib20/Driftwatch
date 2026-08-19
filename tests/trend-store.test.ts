@@ -9,7 +9,6 @@ import {
   PERF_DATA_BRANCH,
   appendToPerfData,
   emptyIndex,
-  entryFromResult,
   appendEntry,
   parseIndex,
 } from '../src/core/index.js'
@@ -49,7 +48,7 @@ async function repoWithOrigin(): Promise<{ work: string; bare: string }> {
   return { work, bare }
 }
 
-async function recordResult(sha: string): Promise<ResultJson> {
+async function recordResult(_sha: string): Promise<ResultJson> {
   const raw = await readFile(path.join(import.meta.dirname, 'golden', 'result-v1.1.json'), 'utf8')
   const base = JSON.parse(raw.replaceAll('<driftwatch-version>', '0.5.0')) as ResultJson
   return { ...base, mode: 'record', verdict: 'recorded', createdAt: `2026-08-19T12:00:00.000Z` }

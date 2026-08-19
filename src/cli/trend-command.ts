@@ -1,5 +1,3 @@
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
 import pc from 'picocolors'
 import {
   assessDrift,
@@ -10,7 +8,6 @@ import {
 import type { DriftReport } from '../core/index.js'
 import { formatValue, padVisible, visibleLength } from './format.js'
 
-const exec = promisify(execFile)
 
 /**
  * `driftwatch trend` — where has main been going? Reads the perf-data branch (read-only),

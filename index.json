@@ -1,0 +1,26 @@
+{
+  "tool": "driftwatch",
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "sha": "5f9f72fcf0ae38d40e2aa121c5cb5672242980b7",
+      "shortSha": "5f9f72fcf0ae",
+      "timestamp": "2026-08-19T08:14:22.405Z",
+      "branch": "main",
+      "metrics": {},
+      "protocol": {
+        "nodeVersion": "v24.18.0",
+        "platform": "linux",
+        "arch": "x64",
+        "browser": "none",
+        "hostLabels": [
+          "arch:X64",
+          "env:github-hosted",
+          "image:ubuntu24",
+          "os:Linux"
+        ],
+        "driftwatchVersion": "0.5.0"
+      }
+    }
+  ]
+}

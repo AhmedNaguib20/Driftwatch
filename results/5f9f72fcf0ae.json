@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "schemaMinorVersion": 2,
+  "driftwatchVersion": "0.5.0",
+  "mode": "record",
+  "createdAt": "2026-08-19T08:14:22.405Z",
+  "project": {
+    "root": "/home/runner/work/Driftwatch/Driftwatch/fixtures/next-app",
+    "gitRoot": "/home/runner/work/Driftwatch/Driftwatch",
+    "pathInRepo": "fixtures/next-app",
+    "framework": "nextjs",
+    "frameworkVersion": "15.1.3",
+    "packageManager": "npm",
+    "lockfile": "package-lock.json",
+    "routes": [
+      "/",
+      "/about",
+      "/blog",
+      "/blog/[slug]",
+      "/dashboard",
+      "/live"
+    ],
+    "evidence": [
+      {
+        "fact": "language: javascript",
+        "source": "package.json",
+        "detail": "package \"driftwatch-fixture-next-app\""
+      },
+      {
+        "fact": "git repository: /home/runner/work/Driftwatch/Driftwatch",
+        "source": "git",
+        "detail": "project sits at fixtures/next-app"
+      },
+      {
+        "fact": "package manager: npm",
+        "source": "package-lock.json"
+      },
+      {
+        "fact": "framework: nextjs",
+        "source": "package.json",
+        "detail": "depends on next@15.1.3"
+      },
+      {
+        "fact": "framework: nextjs",
+        "source": "next.config.mjs",
+        "detail": "Next.js config file"
+      },
+      {
+        "fact": "6 route(s) detected",
+        "source": "app",
+        "detail": "app router"
+      },
+      {
+        "fact": "build command: npm run build",
+        "source": "package.json",
+        "detail": "scripts.build = \"next build\""
+      },
+      {
+        "fact": "recorded: main @ 5f9f72fcf0ae",
+        "source": "git"
+      }
+    ],
+    "warnings": [
+      "Dependencies are not installed, so the exact Next.js version is unknown — only the declared range is available."
+    ]
+  },
+  "config": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "thresholdPercent": 5,
+    "noiseFloorPercent": 2,
+    "base": "main",
+    "block_merge": false,
+    "sourcePath": "/home/runner/work/Driftwatch/Driftwatch/fixtures/next-app/perf.yml"
+  },
+  "base": {
+    "available": false,
+    "reason": "record mode — this run measures one commit; there is no baseline comparison"
+  },
+  "current": {
+    "workingTree": true,
+    "metrics": [
+      {
+        "id": "install_time",
+        "status": "skipped",
+        "label": "install time",
+        "reason": "dependencies are not installed and no install was requested"
+      },
+      {
+        "id": "build_time",
+        "status": "skipped",
+        "label": "build time (cold)",
+        "reason": "dependencies are not installed in the workspace"
+      },
+      {
+        "id": "bundle_size",
+        "status": "skipped",
+        "label": "bundle size",
+        "reason": "no build output to weigh (build did not succeed)"
+      },
+      {
+        "id": "route_latency:/",
+        "status": "skipped",
+        "label": "route /",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "route_latency:/blog",
+        "status": "skipped",
+        "label": "route /blog",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "route_latency:/live",
+        "status": "skipped",
+        "label": "route /live",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "route_latency:/about",
+        "status": "skipped",
+        "label": "route /about",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "route_latency:/dashboard",
+        "status": "skipped",
+        "label": "route /dashboard",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "lcp:/",
+        "status": "skipped",
+        "label": "LCP /",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "tbt:/",
+        "status": "skipped",
+        "label": "TBT /",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "fcp:/",
+        "status": "skipped",
+        "label": "FCP /",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "transfer_size:/",
+        "status": "skipped",
+        "label": "transfer size /",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "lcp:/blog",
+        "status": "skipped",
+        "label": "LCP /blog",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "tbt:/blog",
+        "status": "skipped",
+        "label": "TBT /blog",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "fcp:/blog",
+        "status": "skipped",
+        "label": "FCP /blog",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "transfer_size:/blog",
+        "status": "skipped",
+        "label": "transfer size /blog",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "lcp:/live",
+        "status": "skipped",
+        "label": "LCP /live",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "tbt:/live",
+        "status": "skipped",
+        "label": "TBT /live",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "fcp:/live",
+        "status": "skipped",
+        "label": "FCP /live",
+        "reason": "no server to boot (build did not succeed)"
+      },
+      {
+        "id": "transfer_size:/live",
+        "status": "skipped",
+        "label": "transfer size /live",
+        "reason": "no server to boot (build did not succeed)"
+      }
+    ],
+    "protocol": {
+      "version": 1,
+      "workspace": "copy",
+      "cacheState": "cold",
+      "nodeModules": "absent",
+      "gitMetadata": "absent",
+      "nodeVersion": "v24.18.0",
+      "platform": "linux",
+      "arch": "x64",
+      "buildCommand": "npm run build",
+      "buildSamples": 3,
+      "warmupSamples": 1,
+      "routeSamples": 5,
+      "routeWarmupSamples": 1,
+      "browser": "none",
+      "lighthouseProfile": "none",
+      "hostLabels": [
+        "arch:X64",
+        "env:github-hosted",
+        "image:ubuntu24",
+        "os:Linux"
+      ],
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      }
+    },
+    "warnings": [],
+    "elapsedMs": 313,
+    "layer2aElapsedMs": 312
+  },
+  "comparison": {
+    "measurementPath": "fresh",
+    "dependenciesChanged": null,
+    "lockfileStatus": null,
+    "protocolsMatch": true,
+    "protocolMismatches": [],
+    "metrics": []
+  },
+  "verdict": "recorded",
+  "analysis": {
+    "outcome": "skipped",
+    "reason": "record mode — no comparison to analyse"
+  },
+  "warnings": []
+}

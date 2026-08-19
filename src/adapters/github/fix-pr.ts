@@ -98,7 +98,10 @@ export async function proposeFixPr(
 }
 
 function summaryLine(verification: NonNullable<ResultJson['verification']>): string {
-  const m = verification.metrics[0]
+  // Summarize with a row that recovered — never an indistinguishable or unrecovered one.
+  const m =
+    verification.metrics.find((x) => x.verdict === 'restored' || x.verdict === 'partial') ??
+    verification.metrics[0]
   if (!m) return 'measured'
   return `${m.label} ${formatValue(m.current, m.unit ?? 'bytes')}→${formatValue(m.fixed, m.unit ?? 'bytes')}, measured`
 }

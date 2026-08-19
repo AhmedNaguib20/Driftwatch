@@ -6,7 +6,7 @@
  * measured facts, not opinions — which is exactly why only they may later justify a fix PR.
  */
 
-export type VerificationMetricVerdict = 'restored' | 'partial' | 'no-recovery'
+export type VerificationMetricVerdict = 'restored' | 'partial' | 'no-recovery' | 'indistinguishable'
 
 export interface VerificationMetric {
   readonly id: string
@@ -18,7 +18,10 @@ export interface VerificationMetric {
   /**
    * restored: fixed within floor/quantum of BASE. no-recovery: fixed within floor/quantum of
    * CURRENT (a fix that made things worse also lands here — the numbers say so). partial:
-   * meaningfully recovered, not to base.
+   * meaningfully recovered, not to base. indistinguishable: the regression's own magnitude is
+   * inside the combined noise radii of base and current, so NO fixed value could be attributed
+   * to the fix rather than to re-measurement noise — such a row can never certify recovery
+   * (M6 acceptance Run B: a TBT wobble must not buy a worthless fix a 'partial').
    */
   readonly verdict: VerificationMetricVerdict
 }

@@ -206,12 +206,20 @@ function verificationLine(result: ResultJson): string | null {
   if (!v) return null
   const three = (m: NonNullable<ResultJson['verification']>['metrics'][number]) =>
     `${m.label} ${formatValue(m.current, m.unit ?? 'bytes')}→${formatValue(m.fixed, m.unit ?? 'bytes')} vs base ${m.base !== null ? formatValue(m.base, m.unit ?? 'bytes') : '—'}`
+  // Illustrate the outcome with a row that carries it — never an indistinguishable one.
+  const carrier = (verdicts: readonly string[]) =>
+    v.metrics.find((m) => verdicts.includes(m.verdict)) ?? v.metrics[0]
   switch (v.outcome) {
     case 'restored':
-    case 'partial':
-      return `✓ _a fix verified (${v.outcome}${v.metrics[0] ? `: ${three(v.metrics[0])}` : ''}, measured) — enable \`auto_fix: propose\` to receive it as a PR._`
-    case 'no-recovery':
-      return `⚠ _a fix was proposed but did not verify (no recovery${v.metrics[0] ? `: ${three(v.metrics[0])}` : ''}) — no fix PR opened._`
+    case 'partial': {
+      const m = carrier(['restored', 'partial'])
+      return `✓ _a fix verified (${v.outcome}${m ? `: ${three(m)}` : ''}, measured) — enable \`auto_fix: propose\` to receive it as a PR._`
+    }
+    case 'no-recovery': {
+      if (v.reason !== null) return `⚠ _a fix was proposed but did not verify (${v.reason}) — no fix PR opened._`
+      const m = carrier(['no-recovery'])
+      return `⚠ _a fix was proposed but did not verify (no recovery${m ? `: ${three(m)}` : ''}) — no fix PR opened._`
+    }
     case 'build-broken':
       return '⚠ _a fix was proposed but did not verify (it breaks the build) — no fix PR opened._'
     case 'not-applicable':

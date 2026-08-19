@@ -66,6 +66,27 @@ describe('three-way assessment', () => {
     expect(overallOutcome([r, n])).toBe('partial')
     expect(overallOutcome([n, n])).toBe('no-recovery')
   })
+
+  // The live Run B4 hole: TBT /live 106→194ms crossed the threshold, the sabotage's third side
+  // landed at 147ms — within the 50ms quantum of BOTH sides — and order-dependent checks called
+  // it "restored", buying a worthless diff a 'partial' and a fix PR.
+  it('resolution gate: a regression inside the combined noise radii can never certify — either way', () => {
+    const tbt = (fixed: number) =>
+      assessMetric({ id: 'tbt:/live', label: 'TBT /live', unit: 'ms', base: 106, current: 194, fixed })
+    expect(tbt(147).verdict).toBe('indistinguishable') // the live wobble
+    expect(tbt(110).verdict).toBe('indistinguishable') // even a base-perfect landing proves nothing
+    expect(tbt(194).verdict).toBe('indistinguishable') // and an unmoved value disproves nothing
+  })
+
+  it('indistinguishable rows never upgrade the overall outcome', () => {
+    const r = bundle(2_205_000)
+    const n = bundle(2_338_000)
+    const i = assessMetric({ id: 'tbt:/live', label: 'TBT /live', unit: 'ms', base: 106, current: 194, fixed: 147 })
+    expect(i.verdict).toBe('indistinguishable')
+    expect(overallOutcome([n, n, i])).toBe('no-recovery') // the Run B shape: sabotage stays refused
+    expect(overallOutcome([r, i])).toBe('partial') // unknowns cap the claim below 'restored'
+    expect(overallOutcome([i])).toBe('no-recovery')
+  })
 })
 
 // ---------- gate + outcome matrix with a mocked measure path ----------

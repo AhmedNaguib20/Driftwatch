@@ -13,7 +13,7 @@ import type { BrowserInfo } from './browser.js'
  */
 
 /** Bumped when any determinism choice changes — it rides in the protocol hash. */
-export const LIGHTHOUSE_PROFILE = 'simulated/desktop/v3'
+export const LIGHTHOUSE_PROFILE = 'simulated/desktop/v4'
 
 /**
  * The warm-up law (spec v24): every fresh execution context runs its first iteration slow —
@@ -32,6 +32,10 @@ export const LIGHTHOUSE_SAMPLES = 2
 
 const CHROME_FLAGS = [
   '--headless=new',
+  // Pinned Chrome-for-Testing binaries carry no AppArmor profile, and Ubuntu 24 runners block
+  // unprivileged user namespaces — the sandbox cannot start. One flag set everywhere (part of
+  // LIGHTHOUSE_PROFILE): the browser only ever loads the app we just built, on localhost.
+  '--no-sandbox',
   '--no-first-run',
   '--no-default-browser-check',
   '--disable-extensions',

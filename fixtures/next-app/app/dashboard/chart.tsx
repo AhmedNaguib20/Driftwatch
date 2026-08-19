@@ -1,5 +1,6 @@
 'use client'
 
+import _ from 'lodash'
 import {
   CartesianGrid,
   Line,
@@ -11,7 +12,10 @@ import {
 } from 'recharts'
 import type { Sample } from '@/lib/metrics'
 
+const logResize = _.debounce(() => console.log('chart resized'), 200)
+
 export default function Chart({ data }: { data: Sample[] }) {
+  if (typeof window !== 'undefined') window.addEventListener('resize', logResize)
   return (
     <div style={{ width: '100%', height: 280 }}>
       <ResponsiveContainer>

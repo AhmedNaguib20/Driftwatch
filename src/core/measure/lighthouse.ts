@@ -169,9 +169,27 @@ async function runOnce(
     }
   }
   let chrome: { kill: () => Promise<void> | void; port: number } | null = null
+  let probe = '(probe not run)'
   try {
     const { launch } = await import('chrome-launcher')
     chrome = await launch({ chromePath: browser.path, chromeFlags: CHROME_FLAGS, userDataDir, logLevel: 'silent' })
+
+    // Diagnostic probe: our own fetch of the endpoint lighthouse is about to use. If we succeed
+    // where lighthouse fails, the browser is fine and the failure is in the client; if we see
+    // ok-then-refused, the browser dies shortly after listening. Rides in the skip reason.
+    const attempts: string[] = []
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const res = await fetch(`http://127.0.0.1:${chrome.port}/json/version`, { signal: AbortSignal.timeout(3000) })
+        const body = (await res.text()).slice(0, 80)
+        attempts.push(`#${attempt} HTTP ${res.status} ${body}`)
+        break
+      } catch (error) {
+        attempts.push(`#${attempt} ${(error as Error).message}: ${((error as Error & { cause?: Error }).cause?.message ?? 'no cause')}`)
+        await new Promise((resolve) => setTimeout(resolve, 500))
+      }
+    }
+    probe = attempts.join(' | ')
 
     const { default: lighthouse } = await import('lighthouse')
     const result = await lighthouse(`${server.url}${route}`, {
@@ -203,7 +221,7 @@ async function runOnce(
       transferBytes: Math.round(transfer!),
     }
   } catch (error) {
-    return { error: `lighthouse run failed: ${(error as Error).message}; chrome stderr:\n${await chromeErrTail()}` }
+    return { error: `lighthouse run failed: ${(error as Error).message}; version probe: ${probe}; chrome stderr:\n${await chromeErrTail()}` }
   } finally {
     await chrome?.kill()
     await rm(userDataDir, { recursive: true, force: true }).catch(() => {})

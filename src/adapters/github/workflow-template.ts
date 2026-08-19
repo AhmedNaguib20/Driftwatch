@@ -44,6 +44,7 @@ jobs:
         id: chrome
         with:
           chrome-version: 151.0.7922.138  # a Chrome-for-Testing known-good build (not every stable build is published)
+          install-dependencies: true      # CfT builds need shared libraries the bare runner lacks
 
       # Developing driftwatch in this repo: build the local action and run it.
       # Once driftwatch is published, these two steps become a single

@@ -69,3 +69,8 @@ jobs:
           # Settings → Secrets and variables → Actions → "DRIFTWATCH_API_KEY".
           # Without it, regressions are still measured and reported — just not explained.
           DRIFTWATCH_API_KEY: ${{ secrets.DRIFTWATCH_API_KEY }}
+          # M6 acceptance Run B (this branch only): the sabotage seam substitutes a
+          # non-fixing diff so the negative case — no recovery, NO fix PR — is proven live.
+          # Loudly logged by the CLI; the verification block is stamped devOverride.
+          DRIFTWATCH_DEV: '1'
+          DRIFTWATCH_DEV_FIX_DIFF: ${{ github.workspace }}/.github/driftwatch-dev/sabotage.diff

@@ -457,6 +457,21 @@ and it runs **inside their own CI**, which is exactly the §5 decision. A GitHub
 necessary for centrally-held state (team dashboards, alerting, subscriptions), all of which is
 post-MVP. Because of the §3.1 split, moving to an App later is adapter work, not a rebuild.
 
+#### Action entry notes (M3 step 3, `8e1adcd`)
+
+- **Warn-only applies to measurement verdicts, not setup failures.** A preflight error (base commit
+  missing from a shallow clone) exits 1 with the exact fix stanza to paste — a misconfigured setup
+  that exits 0 renders a green check forever and nobody learns the tool isn't measuring.
+- Base in CI = the event payload's base **SHA** (pinned; the branch tip may move), labelled with the
+  branch name via `--base-label`. Bug fixed en route: `ConfigReport.base` reported perf.yml's
+  default even when `--base` overrode it.
+- Runner identity via generic `DRIFTWATCH_HOST_LABELS` env — core never learns what a "runner" is
+  (rule 1 preserved). Labels sorted, join the protocol hash → cross-runner deltas refused, stale
+  runner caches strand. `DRIFTWATCH_VERSION` → 0.3.0 accordingly.
+- `init --github` refuses to overwrite an existing workflow without `--force` (rule 2 extends to
+  their workflows), and the generated file states that without the AI key, regressions are still
+  measured — just not explained.
+
 ### 6.3 Static dashboard (no backend)
 
 Store measurement results as JSON in a dedicated branch in the user's own repo (`perf-data`), and

@@ -26,6 +26,10 @@ export async function main(): Promise<void> {
   }
 
   const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd()
+  // Actions passes inputs as INPUT_<NAME>; detection walks UP from cwd, never down, so a nested
+  // project (monorepo, fixtures) must be pointed at explicitly.
+  const projectDir = process.env['INPUT_PROJECT-DIR']?.trim() || '.'
+  const projectCwd = path.resolve(workspace, projectDir)
 
   const preflight = await preflightBase(workspace, event.baseSha)
   if (!preflight.ok) {
@@ -43,7 +47,7 @@ export async function main(): Promise<void> {
     process.env.RUNNER_ENVIRONMENT && `env:${process.env.RUNNER_ENVIRONMENT}`,
   ].filter(Boolean)
 
-  const result = await runCli(workspace, event.baseSha, event.baseRef, hostLabels.join(','))
+  const result = await runCli(projectCwd, event.baseSha, event.baseRef, hostLabels.join(','))
   if (!result) {
     process.exitCode = 1
     return

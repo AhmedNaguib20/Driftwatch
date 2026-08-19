@@ -44,7 +44,7 @@ export async function writeGithubWorkflow(
 ): Promise<void> {
   const root = profile.gitRoot ?? profile.projectRoot
   const target = path.join(root, WORKFLOW_PATH)
-  const rendered = renderWorkflow()
+  const rendered = renderWorkflow(profile.pathInRepo ?? '.')
 
   const existing = await readFile(target, 'utf8').catch(() => null)
   if (existing !== null && !force) {

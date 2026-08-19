@@ -2,7 +2,7 @@ export { attachAnalysis, attachVerification, buildResult } from './build-result.
 export { buildRecordResult } from './record-result.js'
 export type { BuildRecordInput } from './record-result.js'
 export type { BuildResultInput } from './build-result.js'
-export { compareMetrics, quantumFor } from './compare-metrics.js'
+export { compareMetrics, isCiHost, quantumFor } from './compare-metrics.js'
 export type { CompareOptions } from './compare-metrics.js'
 export { protocolMismatches } from './protocol-match.js'
 export { requiresConfirmation } from './escalation.js'

@@ -249,3 +249,17 @@ describe('verification golden', () => {
     expect(rendered).toBe(await readFile(golden, 'utf8'))
   })
 })
+
+describe('apply tolerance — bookkeeping only', () => {
+  it('a miscounted hunk header applies (recount); a content mismatch still refuses', async () => {
+    const { profile } = await project()
+    // Correct content, WRONG old-length in the header (2 real old lines, header claims 5).
+    const miscounted = GOOD_DIFF.replace('@@ -1,2 +1,2 @@', '@@ -1,5 +1,5 @@')
+    const ok = await verifyFix(profile, regressionResult(analysed({ fix: { kind: 'diff', content: miscounted } })), { serve: false, browser: false })
+    expect(ok.outcome).toBe('restored')
+
+    const wrongContent = GOOD_DIFF.replace("const size = 'small'", "const size = 'NOT-IN-FILE'")
+    const bad = await verifyFix(profile, regressionResult(analysed({ fix: { kind: 'diff', content: wrongContent } })), { serve: false, browser: false })
+    expect(bad.outcome).toBe('not-applicable')
+  })
+})

@@ -221,11 +221,31 @@ async function runOnce(
       transferBytes: Math.round(transfer!),
     }
   } catch (error) {
-    return { error: `lighthouse run failed: ${(error as Error).message}; version probe: ${probe}; chrome stderr:\n${await chromeErrTail()}` }
+    return {
+      error: `lighthouse run failed: ${(error as Error).message}; cause chain: ${causeChain(error)}; version probe: ${probe}; chrome stderr:\n${await chromeErrTail()}`,
+    }
   } finally {
     await chrome?.kill()
     await rm(userDataDir, { recursive: true, force: true }).catch(() => {})
   }
+}
+
+/** undici's "fetch failed" hides the real error in a cause chain — walk it all. */
+function causeChain(error: unknown): string {
+  const parts: string[] = []
+  let current: unknown = error
+  for (let depth = 0; depth < 6 && current instanceof Error; depth += 1) {
+    const code = (current as Error & { code?: string }).code
+    if (depth > 0) parts.push(`${current.name}: ${current.message}${code ? ` [${code}]` : ''}`)
+    if (current instanceof AggregateError) {
+      for (const inner of current.errors.slice(0, 4)) {
+        const innerCode = (inner as Error & { code?: string }).code
+        parts.push(`  agg: ${(inner as Error).message}${innerCode ? ` [${innerCode}]` : ''}`)
+      }
+    }
+    current = (current as Error & { cause?: unknown }).cause
+  }
+  return parts.length > 0 ? parts.join(' → ') : '(no cause)'
 }
 
 function median(values: readonly number[]): number {

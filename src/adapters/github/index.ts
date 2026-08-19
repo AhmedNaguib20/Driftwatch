@@ -1,4 +1,5 @@
-export { COMMENT_MARKER, renderCheckSummary, renderCheckTitle, renderComment } from './render-comment.js'
+export { COMMENT_MARKER, comparisonTable, renderCheckSummary, renderCheckTitle, renderComment } from './render-comment.js'
+export { renderSummary } from './render-summary.js'
 export { GithubError, createGithubClient } from './api-client.js'
 export type { GithubClient, GithubClientOptions, GithubErrorKind } from './api-client.js'
 export { upsertComment } from './comments.js'

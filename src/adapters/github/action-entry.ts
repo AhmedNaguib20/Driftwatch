@@ -7,6 +7,7 @@ import { parseActionEvent } from './event.js'
 import { preflightBase } from './preflight.js'
 import { publishResult } from './publish.js'
 import { renderComment } from './render-comment.js'
+import { renderSummary } from './render-summary.js'
 
 /**
  * The Action entry (action.yml → this file). Thin: parse event → preflight → run the CLI with
@@ -57,7 +58,14 @@ export async function main(): Promise<void> {
 
   console.log(`driftwatch: verdict ${result.verdict}`)
 
+  const runUrl =
+    process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID
+      ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+      : null
+
   const token = process.env.GITHUB_TOKEN
+  let commentUrl: string | null = null
+  let checkUrl: string | null = null
   if (token) {
     const outcome = await publishResult(result, {
       owner: event.owner,
@@ -66,7 +74,10 @@ export async function main(): Promise<void> {
       headSha: event.headSha,
       blockMerge: result.config.block_merge,
       token,
+      runUrl,
     })
+    commentUrl = outcome.commentUrl
+    checkUrl = outcome.checkUrl
     if (outcome.commentUrl) console.log(`driftwatch: comment ${outcome.commentUrl}`)
     if (outcome.checkUrl) console.log(`driftwatch: check ${outcome.checkUrl}`)
     for (const warning of outcome.warnings) console.error(`driftwatch: warning: ${warning}`)
@@ -74,9 +85,13 @@ export async function main(): Promise<void> {
     console.error('driftwatch: warning: GITHUB_TOKEN is not set — nothing was posted to the PR')
   }
 
-  // Free visibility even when both surfaces failed: the job's own summary page.
+  // The summary is the accounting surface (the comment links here), not a mirror of the comment.
   if (process.env.GITHUB_STEP_SUMMARY) {
-    await appendFile(process.env.GITHUB_STEP_SUMMARY, renderComment(result) + '\n', 'utf8')
+    await appendFile(
+      process.env.GITHUB_STEP_SUMMARY,
+      renderSummary(result, { commentUrl, checkUrl }) + '\n',
+      'utf8',
+    )
   }
 
   process.exitCode = exitCodeFor(result)

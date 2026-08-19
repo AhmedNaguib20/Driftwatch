@@ -3,31 +3,81 @@ import { formatValue } from './format.js'
 
 /** The collapsed heavy-detail blocks (§6.1: heavy detail inside <details>). */
 
+/**
+ * The exhaustive per-side accounting — step-summary territory (email evidence: Gmail expands
+ * <details>, and this block alone was ~50 lines). Methodology is described ONCE per metric: the
+ * two sides collect identically BY CONSTRUCTION (§5.1 — a real difference refuses the delta), so
+ * repeating the sentence per side was pure duplication. Per-side lines carry values + samples.
+ */
 export function renderAllMetrics(result: ResultJson): string {
-  const lines: string[] = ['<details>', '<summary>All metrics</summary>', '']
-  for (const side of ['base', 'current'] as const) {
-    const report = result[side]
-    if (!('metrics' in report)) continue
-    lines.push(`**${side === 'base' ? 'Base' : 'This PR'}**`)
-    for (const metric of report.metrics) {
-      lines.push(renderMetricLine(metric))
-    }
+  const base = 'metrics' in result.base ? result.base.metrics : []
+  const current = 'metrics' in result.current ? result.current.metrics : []
+  const ids = [...new Set([...base, ...current].map((m) => m.id))]
+
+  const lines: string[] = ['## All metrics', '']
+  for (const id of ids) {
+    const b = base.find((m) => m.id === id) ?? null
+    const c = current.find((m) => m.id === id) ?? null
+    const label = c?.label ?? b?.label ?? id
+
+    const how = dedupedMethodology(b, c)
+    lines.push(`**${label}**${how ? ` — ${how}` : ''}`)
+    lines.push(sideLine('Base', b))
+    lines.push(sideLine('This PR', c))
     lines.push('')
   }
-  lines.push('</details>')
   return lines.join('\n')
 }
 
-function renderMetricLine(metric: MetricResult): string {
+/** Strips the per-side workspace word; identical otherwise by construction. Differing
+ *  methodologies (should be impossible without a refused delta) are both shown, flagged. */
+function dedupedMethodology(base: MetricResult | null, current: MetricResult | null): string {
+  const normalize = (m: MetricResult | null) =>
+    m?.status === 'measured' ? m.collectedBy.replace(/ in a (worktree|copy)/g, '') : null
+  const b = normalize(base)
+  const c = normalize(current)
+  if (b !== null && c !== null && b !== c) return `⚠ sides differ: base "${b}" vs current "${c}"`
+  return b ?? c ?? ''
+}
+
+function sideLine(name: string, metric: MetricResult | null): string {
+  if (!metric) return `- ${name}: not collected`
   if (metric.status === 'skipped') {
-    return `- ${metric.label}: skipped — ${metric.reason.split('\n')[0]}`
+    return `- ${name}: skipped — ${metric.reason.split('\n')[0]}`
   }
   const samples = metric.sampleValues ? ` (samples: ${metric.sampleValues.join(', ')})` : ''
-  return `- ${metric.label}: ${formatValue(metric.value, metric.unit)}${samples} — ${metric.collectedBy}`
+  return `- ${name}: ${formatValue(metric.value, metric.unit)}${samples}`
+}
+
+/** The comment's slim version: two sentences, refusals if any, and a link out to the full
+ *  accounting — which lives in the run's step summary, next to the log where it belongs. */
+export function renderHowMeasuredSlim(result: ResultJson, runUrl: string | null): string {
+  const lines: string[] = ['<details>', '<summary>How this was measured</summary>', '']
+  if ('protocol' in result.current) {
+    const p = result.current.protocol
+    lines.push(
+      `Both sides build cold in disposable copies, ${p.buildSamples} timed builds after ${p.warmupSamples} discarded warm-up, medians reported; deltas under ${result.config.noiseFloorPercent}% (or each class's quantum) are noise.`,
+    )
+  }
+  if (!result.comparison.protocolsMatch) {
+    lines.push('')
+    lines.push('**Protocols differed between the sides — deltas were refused, not computed:**')
+    for (const mismatch of result.comparison.protocolMismatches) {
+      lines.push(`- ${mismatch}`)
+    }
+  }
+  lines.push('')
+  lines.push(
+    runUrl
+      ? `Full per-metric accounting (methodology, raw samples per side): [run summary](${runUrl}).`
+      : 'Full per-metric accounting is in the CI run summary.',
+  )
+  lines.push('', '</details>')
+  return lines.join('\n')
 }
 
 export function renderHowMeasured(result: ResultJson): string {
-  const lines: string[] = ['<details>', '<summary>How this was measured</summary>', '']
+  const lines: string[] = ['## How this was measured', '']
 
   if ('protocol' in result.current) {
     const p = result.current.protocol
@@ -59,7 +109,6 @@ export function renderHowMeasured(result: ResultJson): string {
     }
   }
 
-  lines.push('', '</details>')
   return lines.join('\n')
 }
 

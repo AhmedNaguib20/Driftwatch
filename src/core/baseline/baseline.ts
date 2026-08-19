@@ -7,6 +7,8 @@ import { measureWorkspace } from '../measure/measure.js'
 import type { ProgressReporter } from '../measure/measure.js'
 import type { MeasurementProtocol, SideMeasurement } from '../measure/types.js'
 import { gitReadingWarnings } from '../measure/git-warnings.js'
+import { resolveBrowser } from '../measure/browser.js'
+import { LIGHTHOUSE_PROFILE } from '../measure/lighthouse.js'
 import { protocolHash, readCachedSide, writeCachedSide } from './cache.js'
 import type { BaselinePlan } from './plan.js'
 import { createBaseWorkspace, sweepStaleWorktrees } from './worktree.js'
@@ -51,8 +53,21 @@ export async function measureBaseSide(
     progress(`removed ${swept.length} stale driftwatch worktree(s) from a previous run`)
   }
 
+  // The predicted protocol must include what the measurement WILL record — the browser signature
+  // is resolvable up front, and a wrong prediction silently kills every cache hit.
+  const servable = profile.commands.serve !== null && profile.routes.length > 0
+  let browserSig = 'none'
+  let lighthouseProfile = 'none'
+  if (options.serve !== false && servable && options.browser !== false) {
+    const info = await resolveBrowser()
+    if (info) {
+      browserSig = info.signature
+      lighthouseProfile = LIGHTHOUSE_PROFILE
+    }
+  }
+
   if (readCache) {
-    const expectedHash = protocolHash(predictProtocol(plan))
+    const expectedHash = protocolHash(predictProtocol(plan, browserSig, lighthouseProfile))
     const cached = await readCachedSide(gitRoot, plan.baseSha, expectedHash)
     if (cached) {
       progress(`base ${plan.baseSha.slice(0, 12)} found in cache (protocol ${expectedHash})`)

@@ -460,3 +460,19 @@ describe('measureBaseSide — end to end on a tiny repo', () => {
     expect(protocolHash(result.side.protocol)).toBe(predicted)
   })
 })
+
+describe('cache prediction parity with browser metrics', () => {
+  it('predictProtocol with browser fields hashes identically to a measured protocol carrying them', () => {
+    const plan: BaselinePlan = {
+      available: true, baseRef: 'main', baseSha: 'a'.repeat(40), lockfileStatus: 'identical',
+      dependenciesChanged: false, dependencies: 'clone', warnings: [], evidence: [],
+    }
+    const predicted = predictProtocol(plan, 'chrome/151.0.1', 'simulated/desktop/v2')
+    const measuredLike = { ...predicted, workspace: 'copy' as const, buildCommand: 'npm run build' }
+    expect(protocolHash(measuredLike)).toBe(protocolHash(predicted))
+    // and a browser difference DOES change the hash — chrome upgrades strand caches
+    expect(protocolHash(predictProtocol(plan, 'chrome/152.0.0', 'simulated/desktop/v2'))).not.toBe(
+      protocolHash(predicted),
+    )
+  })
+})

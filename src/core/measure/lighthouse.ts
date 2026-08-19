@@ -160,7 +160,10 @@ async function runOnce(
   const chromeErrTail = async () => {
     try {
       const log = await readFile(path.join(userDataDir, 'chrome-err.log'), 'utf8')
-      return log.trim().split('\n').slice(-6).join('\n')
+      const lines = log.trim().split('\n')
+      // Crash logs put the fatal reason at the TOP and a register dump at the bottom — keep both.
+      if (lines.length <= 40) return lines.join('\n')
+      return [...lines.slice(0, 12), `… (${lines.length - 40} lines elided) …`, ...lines.slice(-28)].join('\n')
     } catch {
       return '(no chrome-err.log)'
     }

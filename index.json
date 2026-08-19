@@ -960,6 +960,92 @@
         ],
         "driftwatchVersion": "0.5.0"
       }
+    },
+    {
+      "sha": "230e0ceb2173f3a3b42f9c0ed788f4ccf455c698",
+      "shortSha": "230e0ceb2173",
+      "timestamp": "2026-08-19T11:35:36.261Z",
+      "branch": "main",
+      "benchmarkIndex": 2092,
+      "metrics": {
+        "install_time": {
+          "value": 15387,
+          "unit": "ms"
+        },
+        "build_time": {
+          "value": 34324,
+          "unit": "ms"
+        },
+        "bundle_size": {
+          "value": 2313028,
+          "unit": "bytes"
+        },
+        "route_latency:/live": {
+          "value": 20,
+          "unit": "ms"
+        },
+        "lcp:/": {
+          "value": 1889,
+          "unit": "ms"
+        },
+        "tbt:/": {
+          "value": 112,
+          "unit": "ms"
+        },
+        "fcp:/": {
+          "value": 789,
+          "unit": "ms"
+        },
+        "transfer_size:/": {
+          "value": 231543,
+          "unit": "bytes"
+        },
+        "lcp:/live": {
+          "value": 1890,
+          "unit": "ms"
+        },
+        "tbt:/live": {
+          "value": 123,
+          "unit": "ms"
+        },
+        "fcp:/live": {
+          "value": 782,
+          "unit": "ms"
+        },
+        "transfer_size:/live": {
+          "value": 230433,
+          "unit": "bytes"
+        },
+        "lcp:/blog": {
+          "value": 1873,
+          "unit": "ms"
+        },
+        "tbt:/blog": {
+          "value": 138,
+          "unit": "ms"
+        },
+        "fcp:/blog": {
+          "value": 781,
+          "unit": "ms"
+        },
+        "transfer_size:/blog": {
+          "value": 235462,
+          "unit": "bytes"
+        }
+      },
+      "protocol": {
+        "nodeVersion": "v24.18.0",
+        "platform": "linux",
+        "arch": "x64",
+        "browser": "chrome/151.0.7922.77",
+        "hostLabels": [
+          "arch:X64",
+          "env:github-hosted",
+          "image:ubuntu24",
+          "os:Linux"
+        ],
+        "driftwatchVersion": "0.5.0"
+      }
     }
   ]
 }

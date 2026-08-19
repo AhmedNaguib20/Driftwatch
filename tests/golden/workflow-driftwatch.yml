@@ -19,6 +19,11 @@ permissions:
   contents: write        # record mode pushes trend points to the perf-data branch;
                          # with auto_fix: propose it also pushes driftwatch/fix-pr<N> branches
   pull-requests: write   # the self-updating PR comment — and fix PRs when auto_fix is on
+# auto_fix: propose additionally requires a REPO SETTING (driftwatch documents it, never flips it):
+#   Settings → Actions → General → Workflow permissions →
+#   ✓ "Allow GitHub Actions to create and approve pull requests"
+# Without it, GitHub returns 403 on PR creation; the run still succeeds and the comment says
+# a verified fix exists but the PR could not be opened.
   checks: write          # the non-blocking check run
 
 jobs:

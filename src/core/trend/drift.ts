@@ -53,7 +53,13 @@ export function assessDrift(timeline: MetricTimeline): DriftReport {
 
   const absolute = latest.value - start.value
   const percent = (absolute / start.value) * 100
-  const quantum = quantumFor(timeline.id as MetricId, timeline.unit)
+  // The quantum follows the machine that MEASURED the segment (its recorded hostLabels), never
+  // the machine reading the trend — the instrument's resolution travels with the data (spec §5).
+  const quantum = quantumFor(
+    timeline.id as MetricId,
+    timeline.unit,
+    (segment?.protocol.hostLabels.length ?? 0) > 0,
+  )
 
   const underFloor = Math.abs(percent) < NOISE_FLOOR_PERCENT
   const underQuantum = quantum > 0 && Math.abs(absolute) < quantum

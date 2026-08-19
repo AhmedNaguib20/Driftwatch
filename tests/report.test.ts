@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildResult, compareMetrics, protocolMismatches } from '../src/core/index.js'
+import { buildResult, compareMetrics, isCiHost, protocolMismatches, quantumFor } from '../src/core/index.js'
 import type {
   BaselinePlan,
   BaseSideResult,
@@ -332,6 +332,25 @@ describe('timing resolution quantum', () => {
       OPTS,
     )
     expect(m!.verdict).toBe('regressed')
+  })
+
+  // Spec §5 (decided M6 acceptance): the machine is part of the instrument — browser-timing
+  // quanta are coarser on shared CI runners (hostLabels present). Byte and non-browser classes
+  // are environment-independent.
+  it('browser-timing quanta are environment-conditional; everything else is not', () => {
+    for (const [id, local, ci] of [
+      ['lcp:/', 25, 200],
+      ['fcp:/blog', 25, 200],
+      ['tbt:/live', 50, 100],
+      ['route_latency:/live', 5, 5],
+      ['build_time', 100, 100],
+    ] as const) {
+      expect(quantumFor(id, 'ms', false), `${id} local`).toBe(local)
+      expect(quantumFor(id, 'ms', true), `${id} ci`).toBe(ci)
+    }
+    expect(quantumFor('transfer_size:/', 'bytes', true)).toBe(1024)
+    expect(isCiHost({ DRIFTWATCH_HOST_LABELS: 'ubuntu-latest' } as NodeJS.ProcessEnv)).toBe(true)
+    expect(isCiHost({} as NodeJS.ProcessEnv)).toBe(false)
   })
 })
 

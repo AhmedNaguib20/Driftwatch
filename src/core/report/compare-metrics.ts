@@ -1,4 +1,5 @@
 import type { MetricId } from '../detect/types.js'
+import { hostLabelsFromEnv } from '../measure/protocol.js'
 import type { MetricResult } from '../measure/types.js'
 import type { MetricComparison, MetricVerdict } from './types.js'
 
@@ -34,16 +35,28 @@ function orderedIds(base: readonly MetricResult[], current: readonly MetricResul
  *
  *  - build_time 100ms: process spawn jitters 5-10ms, package managers add tens more.
  *  - route_latency 5ms: observed ±1ms sequential-fetch noise, x5.
- *  - lcp/fcp 25ms: ≤7ms spread across boots under simulated throttling.
- *  - tbt 50ms: values quantize near zero; real TBT regressions are tens-to-hundreds of ms.
+ *  - lcp/fcp 25ms local / 200ms CI: ≤7ms spread across boots locally; shared runners swung
+ *    −9.7%…+17.8% on byte-identical trees (measured, M6 acceptance).
+ *  - tbt 50ms local / 100ms CI: ±2ms locally; +83% observed on identical code on a runner.
  *  - transfer_size 1KB (bytes): ±2 bytes observed; ≥1KB is a real asset change.
+ *
+ * Browser-timing quanta are environment-conditional (spec §5, decided M6 acceptance): the
+ * quantum is the instrument's resolution, and the machine is part of the instrument — shared CI
+ * runners are a coarser instrument for browser timings. Host class comes from
+ * DRIFTWATCH_HOST_LABELS (present = CI), the same labels the protocol records, so cross-class
+ * comparisons are already refused before quanta ever matter.
  */
-export function quantumFor(id: MetricId, unit: 'ms' | 'bytes' | null): number {
+export function quantumFor(id: MetricId, unit: 'ms' | 'bytes' | null, ciHost: boolean = isCiHost()): number {
   if (unit === 'bytes') return id.startsWith('transfer_size:') ? 1024 : 0
   if (id.startsWith('route_latency:')) return 5
-  if (id.startsWith('lcp:') || id.startsWith('fcp:')) return 25
-  if (id.startsWith('tbt:')) return 50
+  if (id.startsWith('lcp:') || id.startsWith('fcp:')) return ciHost ? 200 : 25
+  if (id.startsWith('tbt:')) return ciHost ? 100 : 50
   return 100
+}
+
+/** CI = DRIFTWATCH_HOST_LABELS present; local = absent (spec §5). */
+export function isCiHost(env: NodeJS.ProcessEnv = process.env): boolean {
+  return hostLabelsFromEnv(env).length > 0
 }
 
 export interface CompareOptions {

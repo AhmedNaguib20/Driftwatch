@@ -176,8 +176,13 @@ Launch planning (npm publish, name/license/visibility, onboarding) remains queue
         valid diff fix on a confirmed regression, regardless of confidence; the fix-PR gate is
         verification outcome only. 0.8 stays as a display rule; confidence is self-report shown
         beside measured outcome, never a gate on measured evidence.
-  - [ ] step 3 — live acceptance under rule B: fix PR end-to-end + merge flips the comment + the
-        sabotaged fix that must NOT produce a PR
+  - [x] Run A CLOSED: fix PR #9 (four restored rows, confidence-beside-measurement), deliberate
+        merge, comment flipped in place. De-gating proven live.
+  - [x] Resolution gate (from B4): noise-radius-indistinguishable rows never certify recovery.
+  - [x] DECIDED: environment-conditional browser quanta — LCP/FCP 200ms, TBT 100ms on CI
+        (hostLabels present), local values unchanged. Protocol change, version bump.
+  - [ ] implement the CI quanta + document the Actions repo-setting prereq in init --github →
+        rerun Run B to deterministic close → cleanup → M6 CLOSED
 
 Do not start a milestone before the previous one's definition of done is met.
 

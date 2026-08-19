@@ -240,8 +240,17 @@ carries its own absolute quantum — the instrument's resolution, a code constan
 |---|---|---|
 | `build_time` | 100 ms | 15ms builds spread 43% run-to-run; process-spawn territory |
 | `route_latency:*` | 5 ms | observed ±1ms sampling noise (same-process sequential fetch), ×5 |
-| `lcp:*`, `fcp:*` | 25 ms | ≤7ms spread across boots on 1.7s values (simulated throttling); relative floor governs above 1.25s |
-| `tbt:*` | 50 ms | values quantize near zero (±2ms on ~2ms); real TBT regressions are tens-to-hundreds ms |
+| `lcp:*`, `fcp:*` | 25 ms local / **200 ms on CI** | local: ≤7ms spread across boots; CI (measured, M6 acceptance): swings of −9.7%…+17.8% on byte-identical trees |
+| `tbt:*` | 50 ms local / **100 ms on CI** | local: ±2ms; CI: +83% observed on identical code — machine-class noise |
+
+**Environment-conditional quanta (decided M6 acceptance):** the quantum is the instrument's
+resolution, and *the machine is part of the instrument* — shared CI runners are a coarser
+instrument for browser timings. Conditioned on host class (CI = `DRIFTWATCH_HOST_LABELS` present;
+local = absent), recorded in the protocol, a `DRIFTWATCH_VERSION` bump (caches strand — intended).
+Basis is one session of passive CI data; keep collecting and revisit the values, not the
+principle. Consequence accepted honestly: sub-200ms LCP regressions are invisible on CI — the
+instrument there cannot resolve them, and pretending otherwise produced both false banners and
+false recovery certifications.
 | `transfer_size:*` | 1 KB | ±2 **bytes** observed; ≥1KB is a real asset change |
 
 A single global quantum would gut whichever class it wasn't calibrated for — 100ms would suppress a
@@ -537,6 +546,12 @@ updated **in place** to no-change; check flipped neutral → success. Caught and
 never down; exposed by an honest inconclusive, fixed via action input baked into the generated
 workflow); **Node runtime drift** (GitHub force-ran node20 actions on Node 24 — the protocol
 recorded it on both sides, which is precisely its job).
+
+#### Repo-setting requirement for auto_fix (M6)
+
+Fix PRs from Actions require the repo setting "Allow GitHub Actions to create and approve pull
+requests" (403s without it). Flagged when enabled on our own repo; the generated workflow must
+document it as an auto_fix prerequisite — settings remain the user's to flip.
 
 ### 6.5 Distribution — GitHub Action (DECIDED)
 

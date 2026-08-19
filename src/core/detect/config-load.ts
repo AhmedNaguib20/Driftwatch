@@ -7,7 +7,7 @@ import {
   parsePercent,
 } from './config-schema.js'
 import type { PerfConfig, ResolvedConfig } from './config-schema.js'
-import type { Framework, MetricId } from './types.js'
+import type { Framework } from './types.js'
 import { readText } from './fs-probe.js'
 
 /**
@@ -86,12 +86,20 @@ function resolve(
   }
 }
 
-const KNOWN_METRIC_NAMES = ['build_time', 'bundle_size', 'install_time'] as const
+const KNOWN_METRIC_TOKENS = [
+  'build_time',
+  'bundle_size',
+  'install_time',
+  'route_latency',
+  'lcp',
+  'tbt',
+  'fcp',
+  'transfer_size',
+] as const
 
-function isKnownMetric(entry: string): entry is MetricId {
-  return (
-    (KNOWN_METRIC_NAMES as readonly string[]).includes(entry) || entry.startsWith('route_latency:')
-  )
+function isKnownMetric(entry: string): boolean {
+  const token = entry.split(':')[0]!
+  return (KNOWN_METRIC_TOKENS as readonly string[]).includes(token)
 }
 
 function pickFramework(value: unknown, fallback: Framework, warnings: string[]): Framework {
@@ -104,16 +112,16 @@ function pickFramework(value: unknown, fallback: Framework, warnings: string[]):
 
 function pickMetrics(
   value: unknown,
-  fallback: readonly MetricId[],
+  fallback: readonly string[],
   warnings: string[],
-): readonly MetricId[] {
+): readonly string[] {
   if (value === undefined) return fallback
   if (!Array.isArray(value)) {
     warnings.push(`${CONFIG_FILENAME}: measure must be a list — using detected metrics.`)
     return fallback
   }
 
-  const kept: MetricId[] = []
+  const kept: string[] = []
   for (const entry of value) {
     if (typeof entry === 'string' && isKnownMetric(entry)) {
       kept.push(entry)

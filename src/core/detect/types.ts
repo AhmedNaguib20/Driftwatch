@@ -81,8 +81,8 @@ export interface ProjectProfile {
   /** Route paths inferred from the file structure. Unused in M1; M4 (Layer 2a) drives them. */
   readonly routes: readonly string[]
 
-  /** Metrics this profile can actually produce. Never lists a metric we cannot collect. */
-  readonly supportedMetrics: readonly MetricId[]
+  /** Metric ids/class tokens this profile can actually produce. Never promises the uncollectable. */
+  readonly supportedMetrics: readonly string[]
 
   /** Conditions that will degrade or block measurement. Surfaced, never swallowed. */
   readonly warnings: readonly string[]

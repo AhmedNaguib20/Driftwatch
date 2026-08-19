@@ -14,25 +14,35 @@ import type { MetricComparison, MetricVerdict } from './types.js'
 /** Every metric is a cost: more milliseconds, more bytes — higher is worse. */
 const FIXED_ORDER: readonly MetricId[] = ['install_time', 'build_time', 'bundle_size']
 
-/** Fixed metrics first, then route metrics sorted by route — deterministic table order. */
+/** Fixed metrics first, then per-route classes in a stable class order — deterministic table. */
+const ROUTE_CLASS_ORDER = ['route_latency:', 'lcp:', 'tbt:', 'fcp:', 'transfer_size:'] as const
+
 function orderedIds(base: readonly MetricResult[], current: readonly MetricResult[]): MetricId[] {
   const present = new Set<MetricId>([...base, ...current].map((m) => m.id))
   const fixed = FIXED_ORDER.filter((id) => present.has(id))
-  const routes = [...present].filter((id) => id.startsWith('route_latency:')).sort()
-  return [...fixed, ...routes]
+  const classes = ROUTE_CLASS_ORDER.flatMap((prefix) =>
+    [...present].filter((id) => id.startsWith(prefix)).sort(),
+  )
+  return [...fixed, ...classes]
 }
 
 /**
  * Per-class absolute quanta — each metric class carries its own instrument resolution (spec §5
  * quantum table; code constants, never config). A single global quantum would gut whichever class
- * it wasn't calibrated for: 100ms would suppress a 4ms route regressing 25x.
+ * it wasn't calibrated for: 100ms would suppress a 4ms route regressing 25x. Bases are measured,
+ * never guessed:
  *
- *  - build_time 100ms: process spawn jitters 5-10ms, package managers add tens more (a 15ms
- *    build spread 43% run-to-run).
- *  - route_latency 5ms: observed ±1ms sequential-fetch sampling noise, x5.
+ *  - build_time 100ms: process spawn jitters 5-10ms, package managers add tens more.
+ *  - route_latency 5ms: observed ±1ms sequential-fetch noise, x5.
+ *  - lcp/fcp 25ms: ≤7ms spread across boots under simulated throttling.
+ *  - tbt 50ms: values quantize near zero; real TBT regressions are tens-to-hundreds of ms.
+ *  - transfer_size 1KB (bytes): ±2 bytes observed; ≥1KB is a real asset change.
  */
-function quantumMsFor(id: MetricId): number {
+function quantumFor(id: MetricId, unit: 'ms' | 'bytes' | null): number {
+  if (unit === 'bytes') return id.startsWith('transfer_size:') ? 1024 : 0
   if (id.startsWith('route_latency:')) return 5
+  if (id.startsWith('lcp:') || id.startsWith('fcp:')) return 25
+  if (id.startsWith('tbt:')) return 50
   return 100
 }
 
@@ -132,14 +142,14 @@ function compareOne(
     }
   }
 
-  const quantum = quantumMsFor(id)
-  if (shell.unit === 'ms' && Math.abs(absolute) < quantum) {
+  const quantum = quantumFor(id, shell.unit)
+  if (quantum > 0 && Math.abs(absolute) < quantum) {
     return {
       ...shell,
       delta: null,
       verdict: 'no_change',
       exceedsThreshold: false,
-      reason: `time delta is under the ${quantum}ms timing resolution for this metric class`,
+      reason: `delta is under this metric class's ${quantum}${shell.unit === 'bytes' ? ' byte' : 'ms'} resolution`,
     }
   }
 

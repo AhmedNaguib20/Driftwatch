@@ -126,7 +126,10 @@ mismatch.
         dynamic routes rock-stable (4×4ms medians), statics are file-server noise. DECIDED:
         per-class quanta (route_latency: 5ms), dynamic/SSR routes prioritized, SSG excluded by
         default, route metrics non-key until Lighthouse lands.
-  - [ ] verdict wiring under the 5ms quantum → Lighthouse → M4 acceptance
+  - [x] Lighthouse spread measured (`chrome/151`) — quantum rows decided (lcp/fcp 25ms, tbt 50ms,
+        transfer 1KB), LIGHTHOUSE_WARMUP=1, warm-up law named (third occurrence), CI budget:
+        wire now, revisit after one real CI run
+  - [ ] verdict wiring (all Layer 2a classes) → M4 acceptance
 **M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.
 
 Do not start a milestone before the previous one's definition of done is met.

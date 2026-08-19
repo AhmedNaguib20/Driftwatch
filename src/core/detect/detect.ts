@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { realpath } from 'node:fs/promises'
-import type { Command, Evidence, MetricId, ProjectProfile } from './types.js'
+import type { Command, Evidence, ProjectProfile } from './types.js'
 import { exists, readPackageJson } from './fs-probe.js'
 import type { PackageJson } from './fs-probe.js'
 import { detectPackageManager, installCommand, runScript } from './package-manager.js'
@@ -80,7 +80,7 @@ export async function detectProject(options: DetectOptions = {}): Promise<Projec
 
   const canBuild = build !== null && framework.buildOutputDirs.length > 0
   // Only metrics with a collector behind them and a project able to produce them (hard rule 3).
-  const supportedMetrics: MetricId[] = canBuild ? ['build_time', 'bundle_size'] : []
+  const supportedMetrics: string[] = canBuild ? ['build_time', 'bundle_size'] : []
 
   if (!canBuild && pkg) {
     warnings.push('build_time and bundle_size are unavailable: no usable build command.')

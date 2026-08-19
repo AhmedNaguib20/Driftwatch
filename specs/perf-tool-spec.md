@@ -240,9 +240,24 @@ carries its own absolute quantum — the instrument's resolution, a code constan
 |---|---|---|
 | `build_time` | 100 ms | 15ms builds spread 43% run-to-run; process-spawn territory |
 | `route_latency:*` | 5 ms | observed ±1ms sampling noise (same-process sequential fetch), ×5 |
+| `lcp:*`, `fcp:*` | 25 ms | ≤7ms spread across boots on 1.7s values (simulated throttling); relative floor governs above 1.25s |
+| `tbt:*` | 50 ms | values quantize near zero (±2ms on ~2ms); real TBT regressions are tens-to-hundreds ms |
+| `transfer_size:*` | 1 KB | ±2 **bytes** observed; ≥1KB is a real asset change |
 
 A single global quantum would gut whichever class it wasn't calibrated for — 100ms would suppress a
 4ms route regressing 25×. A 4ms route now reports at ≥9ms (+125%); a 200ms route at +2%.
+
+**The warm-up law (named at M4 step 2, third occurrence):** *every fresh execution context runs its
+first iteration slow — discard it.* Builds (cold OS page cache, +25%), servers (JIT/module warm-up,
+6→4ms), and now Lighthouse traces (first run after boot: LCP 2707ms vs 1702 steady). One discarded
+warm-up per context per side (`LIGHTHOUSE_WARMUP = 1`, ~+5s) so the median never depends on
+absorbing a +1000ms outlier. Simulated throttling vindicated: trace-computed LCP/FCP spread ≤7ms on
+1.7s values across independent boots.
+
+**CI wall-clock stance (M4 step 2):** Layer 2a ≈ ~50s/side locally, projected ~90–110s/side on CI
+(runners ~2× slower). Wire now, revisit after **one real CI observation** — first lever
+`LIGHTHOUSE_SAMPLES` 3→2 (data says 2 stays in noise with warm-up), second the route cap 3→2.
+Never pre-trim on a projection.
 
 **Route-latency scope note (M4 step 1):** request-level latency on prerendered (SSG) routes
 measures the file server, not the app — 1–2ms responses where ±1ms is 50–100% relative. Route

@@ -7,12 +7,18 @@ detect: nextjs
 
 # Metrics driftwatch will collect. Only metrics it can actually collect are listed —
 # it will not promise a number it cannot produce.
-measure: [build_time, bundle_size]
+measure: [build_time, bundle_size, route_latency, lcp, tbt, fcp, transfer_size]
 
 # The delta at which a change is called a regression.
 # Separately and not configurable: anything under 2% is treated as measurement
 # noise and reported as "no change".
 threshold: 5%
+
+# Boot the built app and measure route latency (Layer 2a). --no-serve skips per run.
+serve: true
+
+# Lighthouse browser metrics against the served app (needs Chrome). --no-browser skips per run.
+browser: true
 
 # Warn only. Set to true once you trust the numbers and want failing checks to block merges.
 block_merge: false

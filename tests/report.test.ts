@@ -320,7 +320,7 @@ describe('timing resolution quantum', () => {
       OPTS,
     )
     expect(m!.verdict).toBe('no_change')
-    expect(m!.reason).toMatch(/timing resolution/)
+    expect(m!.reason).toMatch(/metric class's 100ms resolution/)
   })
 
   it('does not apply the quantum to bytes', () => {
@@ -330,5 +330,44 @@ describe('timing resolution quantum', () => {
       OPTS,
     )
     expect(m!.verdict).toBe('regressed')
+  })
+})
+
+describe('Layer 2a verdict wiring', () => {
+  const layerOpts = { noiseFloorPercent: 2, thresholdPercent: 5, protocolMismatches: [] as string[] }
+
+  it('applies per-class quanta: 5ms routes, 25ms lcp, 50ms tbt, 1KB transfer', () => {
+    const cases: [MetricResult['id'], number, number, string][] = [
+      ['route_latency:/live', 4, 8, 'no_change'], // +4ms < 5ms quantum despite +100%
+      ['route_latency:/live', 4, 12, 'regressed'], // +8ms ≥ 5ms
+      ['lcp:/', 1700, 1720, 'no_change'], // +20ms < 25ms
+      ['lcp:/', 1700, 1780, 'regressed'], // +80ms
+      ['tbt:/', 2, 40, 'no_change'], // +38ms < 50ms despite +1900%
+      ['tbt:/', 2, 90, 'regressed'],
+      ['transfer_size:/', 231000, 231500, 'no_change'], // +500B < 1KB
+      ['transfer_size:/', 231000, 301000, 'regressed'], // +70KB
+    ]
+    for (const [id, base, current, expected] of cases) {
+      const unit = id.startsWith('transfer') ? 'bytes' as const : 'ms' as const
+      const [m] = compareMetrics(
+        [measured(id, base, unit, id)],
+        [measured(id, current, unit, id)],
+        layerOpts,
+      )
+      expect(m!.verdict, `${id} ${base}→${current}`).toBe(expected)
+    }
+  })
+
+  it('class tokens in measure make per-route metrics KEY', async () => {
+    const r = buildResult({
+      profile: profile(),
+      config: config({ measure: ['build_time', 'bundle_size', 'route_latency'] }),
+      plan: plan(),
+      base: baseResult(side([measured('route_latency:/live', 4, 'ms', 'route /live'), measured('build_time', 10000, 'ms', 'b'), measured('bundle_size', 100000, 'bytes', 's')])),
+      current: side([measured('route_latency:/live', 90, 'ms', 'route /live'), measured('build_time', 10100, 'ms', 'b'), measured('bundle_size', 100100, 'bytes', 's')], protocol({ workspace: 'copy' })),
+      now: () => new Date('2026-08-19T12:00:00Z'),
+    })
+    expect(r.comparison.metrics.find((m) => m.id === 'route_latency:/live')!.verdict).toBe('regressed')
+    expect(r.verdict).toBe('regression') // +2150% crosses the threshold, class is key
   })
 })

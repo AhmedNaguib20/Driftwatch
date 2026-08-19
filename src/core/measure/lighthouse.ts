@@ -13,7 +13,14 @@ import type { BrowserInfo } from './browser.js'
  */
 
 /** Bumped when any determinism choice changes — it rides in the protocol hash. */
-export const LIGHTHOUSE_PROFILE = 'simulated/desktop/v1'
+export const LIGHTHOUSE_PROFILE = 'simulated/desktop/v2'
+
+/**
+ * The warm-up law (spec v24): every fresh execution context runs its first iteration slow —
+ * discard it. Measured here: the first Lighthouse run after a fresh boot traced LCP 2707ms vs a
+ * 1702ms steady state. One discarded run per side, before any samples.
+ */
+export const LIGHTHOUSE_WARMUP = 1
 
 /** Lighthouse runs cost ~5-10s each — cap harder than route latency. */
 export const LIGHTHOUSE_ROUTE_LIMIT = 3
@@ -62,6 +69,11 @@ export async function measureLighthouse(
 ): Promise<MetricResult[]> {
   const metrics: MetricResult[] = []
 
+  if (routes.length > 0) {
+    progress('lighthouse warm-up run (discarded)…')
+    await runOnce(server, browser, routes[0]!) // outcome deliberately ignored — see LIGHTHOUSE_WARMUP
+  }
+
   for (const route of routes) {
     progress(`lighthouse ${route}: ${LIGHTHOUSE_SAMPLES} runs…`)
     metrics.push(...(await auditRoute(server, browser, route)))
@@ -91,7 +103,7 @@ async function auditRoute(
 
   const med = (pick: (a: RouteAudit) => number) => median(samples.map(pick))
   const raw = (pick: (a: RouteAudit) => number) => samples.map(pick)
-  const collectedBy = `median of ${LIGHTHOUSE_SAMPLES} lighthouse runs (${LIGHTHOUSE_PROFILE}, ${browser.signature}) against the built app`
+  const collectedBy = `median of ${LIGHTHOUSE_SAMPLES} lighthouse runs after ${LIGHTHOUSE_WARMUP} discarded warm-up (${LIGHTHOUSE_PROFILE}, ${browser.signature}) against the built app`
 
   return [
     metric(`lcp:${route}`, `LCP ${route}`, med((a) => a.lcpMs), 'ms', raw((a) => a.lcpMs), collectedBy),

@@ -131,7 +131,11 @@ function buildComparison(input: BuildResultInput): Comparison {
  */
 function runVerdict(comparison: Comparison, config: ResolvedConfig): RunVerdict {
   const keyIds = config.measure.length > 0 ? config.measure : ['build_time', 'bundle_size']
-  const key = comparison.metrics.filter((m) => keyIds.includes(m.id))
+  // measure entries may be full ids or class tokens ('route_latency', 'lcp', …) covering every
+  // per-route metric of that class.
+  const keySet = new Set<string>(keyIds)
+  const isKey = (id: string) => keySet.has(id) || keySet.has(id.split(':')[0]!)
+  const key = comparison.metrics.filter((m) => isKey(m.id))
 
   if (key.some((m) => m.verdict === 'regressed' && m.exceedsThreshold)) return 'regression'
   if (key.length === 0 || key.some(isUndecided)) return 'inconclusive'

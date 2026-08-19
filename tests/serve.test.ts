@@ -173,3 +173,41 @@ describe('lighthouse route selection', () => {
     expect(selected).toEqual(['/', '/blog', '/about']) // shortest-first within the static group
   })
 })
+
+describe('browser resolution', () => {
+  it('CHROME_PATH wins outright — a toolcache pin invisible to the install scan is honored', async () => {
+    const { resetBrowserCache, resolveBrowser } = await import('../src/core/measure/browser.js')
+    const dir = await scratch()
+    const fake = path.join(dir, 'chrome')
+    await writeFile(fake, '#!/bin/sh\necho "Chrome for Testing 151.0.7922.138"\n', 'utf8')
+    const { execFile } = await import('node:child_process')
+    const { promisify } = await import('node:util')
+    await promisify(execFile)('chmod', ['+x', fake])
+
+    const prev = process.env.CHROME_PATH
+    process.env.CHROME_PATH = fake
+    try {
+      resetBrowserCache()
+      const info = await resolveBrowser()
+      expect(info).toEqual({ path: fake, signature: 'chrome/151.0.7922.138' })
+    } finally {
+      if (prev === undefined) delete process.env.CHROME_PATH
+      else process.env.CHROME_PATH = prev
+      resetBrowserCache()
+    }
+  })
+
+  it('a broken pin resolves to no browser, not a mystery binary', async () => {
+    const { resetBrowserCache, resolveBrowser } = await import('../src/core/measure/browser.js')
+    const prev = process.env.CHROME_PATH
+    process.env.CHROME_PATH = '/does/not/exist/chrome'
+    try {
+      resetBrowserCache()
+      expect(await resolveBrowser()).toBeNull()
+    } finally {
+      if (prev === undefined) delete process.env.CHROME_PATH
+      else process.env.CHROME_PATH = prev
+      resetBrowserCache()
+    }
+  })
+})

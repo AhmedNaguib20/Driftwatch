@@ -29,14 +29,23 @@ export function resetBrowserCache(): void {
 }
 
 async function resolve(): Promise<BrowserInfo | null> {
+  // CHROME_PATH wins outright: chrome-launcher's install scan only covers PATH and desktop
+  // entries, so a pinned Chrome in a toolcache directory is invisible to it — its env handling
+  // merely re-weights entries the scan already found. Honoring the var directly is what makes
+  // the CI pin (and our own install hint) actually work.
   let chromePath: string
-  try {
-    const launcher = await import('chrome-launcher')
-    const installations = launcher.Launcher.getInstallations()
-    if (installations.length === 0) return null
-    chromePath = installations[0]!
-  } catch {
-    return null
+  const pinned = process.env.CHROME_PATH?.trim()
+  if (pinned) {
+    chromePath = pinned
+  } else {
+    try {
+      const launcher = await import('chrome-launcher')
+      const installations = launcher.Launcher.getInstallations()
+      if (installations.length === 0) return null
+      chromePath = installations[0]!
+    } catch {
+      return null
+    }
   }
 
   try {
@@ -45,7 +54,9 @@ async function resolve(): Promise<BrowserInfo | null> {
     const version = /([0-9][0-9.]*)/.exec(stdout)?.[1] ?? 'unknown'
     return { path: chromePath, signature: `chrome/${version}` }
   } catch {
-    return { path: chromePath, signature: 'chrome/unknown' }
+    // A pinned path that cannot even answer --version is a broken pin — better no browser (and
+    // skipped lighthouse metrics with the hint) than measuring with a mystery binary.
+    return pinned ? null : { path: chromePath, signature: 'chrome/unknown' }
   }
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import _ from 'lodash'
+import lodash from 'lodash'
 import {
   CartesianGrid,
   Line,
@@ -12,7 +12,7 @@ import {
 } from 'recharts'
 import type { Sample } from '@/lib/metrics'
 
-const logResize = _.debounce(() => console.log('chart resized'), 200)
+const logResize = lodash.debounce(() => console.log('chart resized'), 200)
 
 export default function Chart({ data }: { data: Sample[] }) {
   if (typeof window !== 'undefined') window.addEventListener('resize', logResize)

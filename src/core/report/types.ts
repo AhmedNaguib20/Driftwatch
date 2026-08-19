@@ -132,4 +132,6 @@ export interface MetricComparison {
   readonly exceedsThreshold: boolean
   /** Present for skipped / not_comparable / no_change — why there is no reported delta. */
   readonly reason: string | null
+  /** True when a skipped row is a policy exclusion (never gates the verdict). */
+  readonly excluded?: boolean
 }

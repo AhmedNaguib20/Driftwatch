@@ -85,7 +85,19 @@ function compareOne(
 
   const skipReason = skippedReason(base, current)
   if (skipReason) {
-    return { ...shell, delta: null, verdict: 'skipped', exceedsThreshold: false, reason: skipReason }
+    // Policy exclusions (SSG, dynamic segments, user-disabled layers) are excluded on every side
+    // that has the row; a failed measurement is not — only the latter gates the run verdict.
+    const policyOnly = [base, current]
+      .filter((m): m is MetricResult => m !== null)
+      .every((m) => m.status === 'skipped' && m.excluded === true)
+    return {
+      ...shell,
+      delta: null,
+      verdict: 'skipped',
+      exceedsThreshold: false,
+      reason: skipReason,
+      ...(policyOnly ? { excluded: true } : {}),
+    }
   }
 
   // §5.1 enforcement: mismatched protocols → no delta, ever. The exact fields are named so the

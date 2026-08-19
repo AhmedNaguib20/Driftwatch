@@ -143,5 +143,6 @@ function runVerdict(comparison: Comparison, config: ResolvedConfig): RunVerdict 
 }
 
 function isUndecided(m: MetricComparison): boolean {
+  if (m.excluded) return false // policy exclusion — nothing failed, nothing undecided
   return m.verdict === 'skipped' || m.verdict === 'not_comparable'
 }

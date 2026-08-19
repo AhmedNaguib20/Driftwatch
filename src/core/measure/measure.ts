@@ -146,11 +146,13 @@ async function collectLayer2a(
     status: 'skipped' as const,
     label: `route ${route}`,
     reason,
+    excluded: true,
   }))
 
   if (options.serve === false) {
     const reason = 'serving disabled (--no-serve / serve: false)'
-    return none([...skipRoutes(reason), ...skipLighthouse(reason), ...excluded])
+    const markExcluded = (m: MetricResult) => ({ ...m, excluded: true }) as MetricResult
+    return none([...skipRoutes(reason).map(markExcluded), ...skipLighthouse(reason).map(markExcluded), ...excluded])
   }
   if (!buildSucceeded) {
     const reason = 'no server to boot (build did not succeed)'
@@ -170,7 +172,11 @@ async function collectLayer2a(
     let browser = 'none'
     let lighthouseProfile = 'none'
     if (!browserWanted) {
-      metrics.push(...skipLighthouse('browser metrics disabled (--no-browser / browser: false)'))
+      metrics.push(
+        ...skipLighthouse('browser metrics disabled (--no-browser / browser: false)').map(
+          (m) => ({ ...m, excluded: true }) as MetricResult,
+        ),
+      )
     } else if (!browserInfo) {
       metrics.push(...skipLighthouse(NO_BROWSER_HINT))
     } else {

@@ -371,3 +371,33 @@ describe('Layer 2a verdict wiring', () => {
     expect(r.verdict).toBe('regression') // +2150% crosses the threshold, class is key
   })
 })
+
+describe('policy exclusions never gate the verdict', () => {
+  it('SSG-excluded key-class rows leave the run ok; a failed boot does not', () => {
+    const ssgSkip: MetricResult = {
+      id: 'route_latency:/about', status: 'skipped', label: 'route /about',
+      reason: 'prerendered (SSG) — excluded', excluded: true,
+    }
+    const bootFail: MetricResult = {
+      id: 'route_latency:/live', status: 'skipped', label: 'route /live',
+      reason: 'server did not answer 200 within 60s',
+    }
+    const clean = [measured('build_time', 10000, 'ms', 'b'), measured('bundle_size', 100000, 'bytes', 's')]
+    const build = (extra: MetricResult) =>
+      buildResult({
+        profile: profile(),
+        config: config({ measure: ['build_time', 'bundle_size', 'route_latency'] }),
+        plan: plan(),
+        base: baseResult(side([...clean, extra])),
+        current: side([...clean.map((m) => ({ ...m })), extra], protocol({ workspace: 'copy' })),
+        now: () => new Date('2026-08-19T12:00:00Z'),
+      })
+
+    const withPolicy = build(ssgSkip)
+    expect(withPolicy.comparison.metrics.find((m) => m.id === 'route_latency:/about')!.excluded).toBe(true)
+    expect(withPolicy.verdict).toBe('ok')
+
+    const withFailure = build(bootFail)
+    expect(withFailure.verdict).toBe('inconclusive')
+  })
+})

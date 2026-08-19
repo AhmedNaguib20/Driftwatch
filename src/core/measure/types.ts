@@ -71,6 +71,11 @@ export interface SkippedMetric {
   readonly label: string
   /** Why we have no number. Skipped is a first-class outcome, never a silent omission (rule 3). */
   readonly reason: string
+  /**
+   * True when the skip is POLICY (SSG exclusion, dynamic segment, cap, user-disabled layer) as
+   * opposed to a failed measurement (boot/build failure). Policy skips never gate the verdict.
+   */
+  readonly excluded?: boolean
 }
 
 export type MetricResult = MeasuredMetric | SkippedMetric

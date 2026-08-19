@@ -23,12 +23,18 @@ function orderedIds(base: readonly MetricResult[], current: readonly MetricResul
 }
 
 /**
- * Absolute resolution of wall-clock timing. Process spawn alone jitters 5-10ms and a package
- * manager adds tens more (measured: a 15ms script spreads 43% run to run), so a time delta under
- * this quantum is unresolvable regardless of what it is as a percentage. Only bites when 2% of
- * the build is under 100ms — i.e. builds shorter than ~5s; the percent floor governs real builds.
+ * Per-class absolute quanta — each metric class carries its own instrument resolution (spec §5
+ * quantum table; code constants, never config). A single global quantum would gut whichever class
+ * it wasn't calibrated for: 100ms would suppress a 4ms route regressing 25x.
+ *
+ *  - build_time 100ms: process spawn jitters 5-10ms, package managers add tens more (a 15ms
+ *    build spread 43% run-to-run).
+ *  - route_latency 5ms: observed ±1ms sequential-fetch sampling noise, x5.
  */
-const MIN_TIME_DELTA_MS = 100
+function quantumMsFor(id: MetricId): number {
+  if (id.startsWith('route_latency:')) return 5
+  return 100
+}
 
 export interface CompareOptions {
   readonly noiseFloorPercent: number
@@ -126,13 +132,14 @@ function compareOne(
     }
   }
 
-  if (shell.unit === 'ms' && Math.abs(absolute) < MIN_TIME_DELTA_MS) {
+  const quantum = quantumMsFor(id)
+  if (shell.unit === 'ms' && Math.abs(absolute) < quantum) {
     return {
       ...shell,
       delta: null,
       verdict: 'no_change',
       exceedsThreshold: false,
-      reason: `time delta is under the ${MIN_TIME_DELTA_MS}ms timing resolution`,
+      reason: `time delta is under the ${quantum}ms timing resolution for this metric class`,
     }
   }
 

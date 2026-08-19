@@ -117,6 +117,14 @@ describe('route selection', () => {
     expect(skipped).toContainEqual({ route: '/blog/[slug]', reason: 'dynamic segment — no concrete URL to measure' })
     expect(skipped.some((s) => s.route === '/eeeee' && /cap/.test(s.reason))).toBe(true)
   })
+
+  it('prerendered routes are excluded with the SSG reason; dynamic routes lead', () => {
+    const routes = ['/', '/about', '/live', '/feed']
+    const { selected, skipped } = selectRoutes(routes, new Set(['/', '/about']))
+
+    expect(selected).toEqual(['/feed', '/live'])
+    expect(skipped.filter((s) => /prerendered/.test(s.reason)).map((s) => s.route).sort()).toEqual(['/', '/about'])
+  })
 })
 
 describe('route measurement', () => {

@@ -232,10 +232,26 @@ a week. Three mitigations, in increasing strength:
    alone is not enough. **No reported delta may span a time gap** — see §5.1 fifth instance.
 3. **Instruction counting (Layer 3).** Eliminates the problem entirely for CPU-bound work.
 
-Anything below a ~2% delta is treated as noise and not reported. **Additionally: a 100ms absolute
-quantum under the floor** (M1 step 5) — a 15ms build spreads 43% run-to-run; wall clocks cannot
-resolve sub-100ms deltas regardless of percentage. Code constant like `BUILD_SAMPLES`; only bites
-on builds under ~5s.
+Anything below a ~2% delta is treated as noise and not reported. **Additionally, each metric class
+carries its own absolute quantum — the instrument's resolution, a code constant, never config**
+(generalized at M4 step 1 from the M1 build quantum):
+
+| Metric class | Quantum | Basis (measured) |
+|---|---|---|
+| `build_time` | 100 ms | 15ms builds spread 43% run-to-run; process-spawn territory |
+| `route_latency:*` | 5 ms | observed ±1ms sampling noise (same-process sequential fetch), ×5 |
+
+A single global quantum would gut whichever class it wasn't calibrated for — 100ms would suppress a
+4ms route regressing 25×. A 4ms route now reports at ≥9ms (+125%); a 200ms route at +2%.
+
+**Route-latency scope note (M4 step 1):** request-level latency on prerendered (SSG) routes
+measures the file server, not the app — 1–2ms responses where ±1ms is 50–100% relative. Route
+selection therefore prioritizes dynamic/SSR routes; prerendered routes are excluded from
+`route_latency` by default (their regressions surface in `bundle_size`, and client-side cost lands
+with Lighthouse). Warm-up-then-median holds for servers exactly as for builds: every fresh boot runs
+6→5ms before settling at 4 (JIT/module warm-up) — §5.1's pattern, discarded identically. K=5 with
+1 warm-up, sequential fetches only (parallel requests contend). Route metrics stay non-key until
+the full Layer 2a picture exists.
 
 ### 5.1 Protocol symmetry — the general law
 

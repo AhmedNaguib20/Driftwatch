@@ -80,7 +80,7 @@ describe('detectProject on the Next.js fixture', () => {
 
   it('finds every route in the fixture', async () => {
     const profile = await detectProject({ cwd: fixture })
-    expect(profile.routes).toEqual(['/', '/about', '/blog', '/blog/[slug]', '/dashboard'])
+    expect(profile.routes).toEqual(['/', '/about', '/blog', '/blog/[slug]', '/dashboard', '/live'])
   })
 
   it('detects from a subdirectory by walking up to the project root', async () => {

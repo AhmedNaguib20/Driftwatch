@@ -48,10 +48,12 @@ async function repo(): Promise<string> {
   await git(dir, 'config', 'user.name', 't')
   await writeFileIn(dir, 'package.json', JSON.stringify({ name: 'p', version: '1.0.0', scripts: { build: 'node build.js' } }))
   await writeFileIn(dir, 'next.config.mjs', 'export default {}\n')
+  // Sleep-based duration: wall-clock stays ~300ms even when parallel test workers saturate the
+  // CPU — a pure-write build jitters past the 100ms quantum under suite load.
   await writeFileIn(
     dir,
     'build.js',
-    `const fs = require('fs')\nfs.mkdirSync('.next/static', { recursive: true })\nfs.writeFileSync('.next/static/app.js', 'x'.repeat(1000))\n`,
+    `const fs = require('fs')\nfs.mkdirSync('.next/static', { recursive: true })\nfs.writeFileSync('.next/static/app.js', 'x'.repeat(1000))\nsetTimeout(() => {}, 300)\n`,
   )
   await writeFileIn(dir, 'package-lock.json', JSON.stringify({ name: 'p', version: '1.0.0', lockfileVersion: 3, requires: true, packages: { '': { name: 'p', version: '1.0.0' } } }))
   await writeFileIn(dir, '.gitignore', 'node_modules/\n.next/\n.perf/\n')

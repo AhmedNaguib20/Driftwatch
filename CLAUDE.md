@@ -122,6 +122,11 @@ lint-enforced; keep it that way.
 readiness + request-level route latency first (no browser); browser metrics (Lighthouse) second.
 Every §5.1 discipline applies: same-invocation pairs, medians, protocol recorded, refusal on
 mismatch.
+  - [x] serve + route latency (`f0b5bb8`, fixture `/live` route `7f1bc76`) — spread measured:
+        dynamic routes rock-stable (4×4ms medians), statics are file-server noise. DECIDED:
+        per-class quanta (route_latency: 5ms), dynamic/SSR routes prioritized, SSG excluded by
+        default, route metrics non-key until Lighthouse lands.
+  - [ ] verdict wiring under the 5ms quantum → Lighthouse → M4 acceptance
 **M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.
 
 Do not start a milestone before the previous one's definition of done is met.

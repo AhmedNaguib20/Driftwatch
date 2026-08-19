@@ -4,7 +4,7 @@ import { collectBuildTime } from './build.js'
 import { collectBundleSize } from './bundle.js'
 import { collectInstallTime } from './install.js'
 import { MEASUREMENT_ENV, buildProtocol } from './protocol.js'
-import { measureRoutes, selectRoutes } from './route-latency.js'
+import { measureRoutes, prerenderedRoutes, selectRoutes } from './route-latency.js'
 import { startServer, sweepStaleServers } from './serve.js'
 import type { MetricResult, SideMeasurement } from './types.js'
 import { createWorkingTreeWorkspace } from './workspace.js'
@@ -94,7 +94,10 @@ async function collectRouteLatency(
 ): Promise<MetricResult[]> {
   if (!profile.commands.serve || profile.routes.length === 0) return [] // unservable: not promised
 
-  const { selected } = selectRoutes(profile.routes)
+  const prerendered = buildSucceeded
+    ? await prerenderedRoutes(workspace.dir, profile.buildOutputDirs)
+    : new Set<string>()
+  const { selected, skipped } = selectRoutes(profile.routes, prerendered)
   const skipAll = (reason: string): MetricResult[] =>
     selected.map((route) => ({
       id: `route_latency:${route}` as const,
@@ -103,7 +106,14 @@ async function collectRouteLatency(
       reason,
     }))
 
-  if (options.serve === false) return skipAll('serving disabled (--no-serve / serve: false)')
+  const excluded: MetricResult[] = skipped.map(({ route, reason }) => ({
+    id: `route_latency:${route}` as const,
+    status: 'skipped' as const,
+    label: `route ${route}`,
+    reason,
+  }))
+
+  if (options.serve === false) return [...skipAll('serving disabled (--no-serve / serve: false)'), ...excluded]
   if (!buildSucceeded) return skipAll('no server to boot (build did not succeed)')
 
   await sweepStaleServers().catch(() => [])
@@ -114,7 +124,7 @@ async function collectRouteLatency(
 
   try {
     progress(`serving on :${boot.server.port} — measuring ${selected.length} route(s)…`)
-    return await measureRoutes(boot.server, profile.routes, progress)
+    return [...(await measureRoutes(boot.server, selected, progress)), ...excluded]
   } finally {
     await boot.server.stop()
   }

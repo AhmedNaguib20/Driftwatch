@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import type { MetricResult } from './types.js'
 import { ROUTE_SAMPLES, ROUTE_WARMUP_SAMPLES } from './protocol.js'
@@ -14,11 +16,36 @@ import type { ServerHandle } from './serve.js'
 export const ROUTE_LIMIT = 5
 
 /**
- * Static priority: '/' first, then shortest paths (they are the app's most-trafficked shape and
- * keep selection deterministic). Dynamic segments ([slug]) have no concrete URL to fetch — they
- * are skipped with a reason, not guessed at.
+ * Reads which routes the build prerendered (Next: .next/prerender-manifest.json). Unreadable
+ * manifest → empty set: routes are then measured rather than silently excluded.
  */
-export function selectRoutes(routes: readonly string[]): {
+export async function prerenderedRoutes(
+  workspaceDir: string,
+  buildOutputDirs: readonly string[],
+): Promise<ReadonlySet<string>> {
+  for (const dir of buildOutputDirs) {
+    try {
+      const manifest = JSON.parse(
+        await readFile(path.join(workspaceDir, dir, 'prerender-manifest.json'), 'utf8'),
+      ) as { routes?: Record<string, unknown> }
+      return new Set(Object.keys(manifest.routes ?? {}))
+    } catch {
+      /* try next dir / fall through */
+    }
+  }
+  return new Set()
+}
+
+/**
+ * Route-latency scope (spec §5 scope note): prerendered routes measure the file server, not the
+ * app — excluded by default (their regressions surface in bundle_size; client cost lands with
+ * Lighthouse). Dynamic/SSR routes first, '/' leads its group, shortest next — deterministic.
+ * Dynamic segments ([slug]) have no concrete URL and are skipped, not guessed at.
+ */
+export function selectRoutes(
+  routes: readonly string[],
+  prerendered: ReadonlySet<string> = new Set(),
+): {
   selected: string[]
   skipped: { route: string; reason: string }[]
 } {
@@ -27,38 +54,39 @@ export function selectRoutes(routes: readonly string[]): {
     .map((route) => ({ route, reason: 'dynamic segment — no concrete URL to measure' }))
 
   const concrete = routes.filter((r) => !r.includes('['))
-  const ordered = [...concrete].sort((a, b) => {
+  const byPriority = (a: string, b: string) => {
     if (a === '/') return -1
     if (b === '/') return 1
     return a.length - b.length || (a < b ? -1 : 1)
-  })
+  }
+  const dynamic = concrete.filter((r) => !prerendered.has(r)).sort(byPriority)
+  const staticRoutes = concrete.filter((r) => prerendered.has(r)).sort(byPriority)
 
-  const selected = ordered.slice(0, ROUTE_LIMIT)
-  for (const route of ordered.slice(ROUTE_LIMIT)) {
+  for (const route of staticRoutes) {
+    skipped.push({
+      route,
+      reason:
+        'prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)',
+    })
+  }
+
+  const selected = dynamic.slice(0, ROUTE_LIMIT)
+  for (const route of dynamic.slice(ROUTE_LIMIT)) {
     skipped.push({ route, reason: `beyond the ${ROUTE_LIMIT}-route measurement cap` })
   }
   return { selected, skipped }
 }
 
+/** Measures exactly the routes given — selection (SSG exclusion, cap) happens in the caller. */
 export async function measureRoutes(
   server: ServerHandle,
-  routes: readonly string[],
+  selected: readonly string[],
   progress: (message: string) => void = () => {},
 ): Promise<MetricResult[]> {
-  const { selected, skipped } = selectRoutes(routes)
   const metrics: MetricResult[] = []
-
   for (const route of selected) {
     progress(`route ${route}: warm-up + ${ROUTE_SAMPLES} samples…`)
     metrics.push(await measureRoute(server, route))
-  }
-  for (const { route, reason } of skipped) {
-    metrics.push({
-      id: `route_latency:${route}`,
-      status: 'skipped',
-      label: `route ${route}`,
-      reason,
-    })
   }
   return metrics
 }

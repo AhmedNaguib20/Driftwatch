@@ -23,7 +23,7 @@ export interface TimelineSegment {
 }
 
 export interface ProtocolBreak {
-  /** Last point of the earlier segment / first point of the later one. */
+  /** FULL shas of the last point before / first point after — display code shortens them. */
   readonly beforeSha: string
   readonly afterSha: string
   /** Exactly which identity fields changed, e.g. "browser: chrome/151.0.7922.108 → chrome/151.0.7922.140". */
@@ -90,8 +90,8 @@ export function buildTimelines(index: IndexFile): MetricTimeline[] {
       if (current) {
         segments.push({ protocol: current.protocol, points: current.points })
         breaks.push({
-          beforeSha: current.points.at(-1)!.shortSha,
-          afterSha: entry.shortSha,
+          beforeSha: current.points.at(-1)!.sha,
+          afterSha: entry.sha,
           changes: identityDiff(current.protocol, entry.protocol),
         })
       }

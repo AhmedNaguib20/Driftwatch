@@ -73,7 +73,7 @@ export function renderTrend(reports: readonly DriftReport[], entryCount: number)
         const key = `${b.beforeSha}→${b.afterSha}:${b.changes.join(';')}`
         if (seen.has(key)) continue
         seen.add(key)
-        lines.push(`  ${b.beforeSha} → ${b.afterSha}: ${pc.yellow(b.changes.join(' | '))}`)
+        lines.push(`  ${b.beforeSha.slice(0, 12)} → ${b.afterSha.slice(0, 12)}: ${pc.yellow(b.changes.join(' | '))}`)
       }
     }
   }

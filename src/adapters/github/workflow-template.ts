@@ -8,6 +8,9 @@ on:
   pull_request:          # compare mode: did this change regress?
   push:
     branches: [main]     # record mode: append main's trend point to the perf-data branch
+                         # The branch also carries a self-contained index.html dashboard.
+                         # One-time (optional): Settings → Pages → Deploy from a branch →
+                         # perf-data / root — driftwatch never changes repo settings itself.
 
 # A superseded push should not waste a measurement (~2-4 minutes each).
 concurrency:

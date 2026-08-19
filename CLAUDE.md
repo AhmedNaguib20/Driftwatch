@@ -140,7 +140,10 @@ spec §5. (stderr streaming: fixed, `74d74af`.)
   - [x] perf-data branch + record mode (`5f9f72f`, install fix `8e190b8`) — validated live on the
         real repo: 2 entries, 16 metrics incl. Layer 2a, protocol identity per entry. Schema 1.2,
         verdict `recorded`.
-  - [ ] trend math + §5.1-aware timeline → static dashboard → live proof
+  - [x] trend math (`1b89d6a`) — five-field segmentation between consecutive points, drift vs the
+        shared quantumFor table, drift never crosses breaks, cumulative:null under 3 points,
+        "drift"/"regression" language split. Real branch self-accumulating points per push.
+  - [ ] static dashboard (renders step-2 structures only) → live proof
 
 Do not start a milestone before the previous one's definition of done is met.
 

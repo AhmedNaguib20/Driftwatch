@@ -4,7 +4,10 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import type { ResultJson } from '../report/types.js'
+import { assessDrift } from './drift.js'
+import { renderDashboard } from './dashboard/index.js'
 import { appendEntry, emptyIndex, entryFromResult, parseIndex } from './index-file.js'
+import { buildTimelines } from './timeline.js'
 
 const exec = promisify(execFile)
 const GIT_BUFFER = 64 * 1024 * 1024
@@ -104,9 +107,20 @@ async function tryAppend(
       JSON.stringify(result, null, 2) + '\n',
       'utf8',
     )
+    const updated = appendEntry(index, entryFromResult(result, sha, branch))
+    await writeFile(indexPath, JSON.stringify(updated, null, 2) + '\n', 'utf8')
+
+    // The dashboard is regenerated on every append: point GitHub Pages at this branch and the
+    // trend chart is always current (spec §6.3 — no server, no backend).
+    const reports = buildTimelines(updated).map((timeline) => ({ timeline, drift: assessDrift(timeline) }))
     await writeFile(
-      indexPath,
-      JSON.stringify(appendEntry(index, entryFromResult(result, sha, branch)), null, 2) + '\n',
+      path.join(tree, 'index.html'),
+      renderDashboard({
+        reports,
+        index: updated,
+        generatedAt: result.createdAt,
+        sourceLabel: branch,
+      }),
       'utf8',
     )
 

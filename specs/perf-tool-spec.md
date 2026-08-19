@@ -582,6 +582,21 @@ Covers what a PR comment can't: trends over time, Git History Replay charts, bra
   entry is preserved deliberately: truthful history, and real test data for sparse-entry handling.
 - `driftwatch record [--json]` locally (no push — publishing is CI's job).
 
+#### Trend math (M5 step 2 — DONE, `1b89d6a`)
+
+- Segmentation breaks on any of the five identity fields, **between consecutive points** — a
+  protocol that flips and flips back is three segments, never two. Breaks annotated with the exact
+  fields ("browser: chrome/151….108 → .140" — the live pair is the golden's break case).
+- Drift judged against the **same** exported floor+quantum table as PR runs (`quantumFor` — one
+  source, never duplicated): 14 commits × +0.8% (each under the floor) reports **+11% drifting-up**
+  — the headline promise; a 4ms route "drifting" +50% is correctly stable (+2ms < 5ms quantum).
+  Drift never crosses a break. Language is structural: **"drift" for trends, "regression" for
+  PRs** — different epistemics, different words; and `insufficient-data` carries `cumulative:
+  null`, not an unlabeled number — publishing it would invite reading a trend into noise
+  (< 3 points is not a trend).
+- `driftwatch trend [--json]`: read-only (remote-tracking ref only). Today's honest output on the
+  real branch: all 16 metrics `insufficient data (1 < 3 points)` — correct.
+
 ### 6.4 Hosted dashboard — later
 
 Build only when monetizing teams (multi-repo, alerting, permissions), with paying users to justify it.

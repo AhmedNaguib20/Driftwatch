@@ -49,6 +49,17 @@ program
   })
 
 program
+  .command('dashboard')
+  .description('Write the static trend dashboard to .perf/dashboard.html from the perf-data branch')
+  .option('--open', 'open it in the default browser', false)
+  .option('--no-fetch', 'use the local perf-data ref without fetching origin')
+  .option('--cwd <dir>', 'project directory', process.cwd())
+  .action(async (flags: { open: boolean; fetch: boolean; cwd: string }) => {
+    const { dashboardCommand } = await import('./dashboard-command.js')
+    await dashboardCommand(flags)
+  })
+
+program
   .command('eval', { hidden: true })
   .description('dev: run the eval cases against the live provider and judge the prompts')
   .option('--cases <dir>', 'cases directory', 'eval/cases')

@@ -15,6 +15,10 @@ export type ActionEvent =
       readonly baseSha: string
       readonly baseRef: string
       readonly headSha: string
+      /** The PR branch's name — the base for a proposed fix PR. */
+      readonly headRef: string
+      /** True when the head lives in a fork: we cannot push branches there. */
+      readonly fromFork: boolean
     }
   | {
       /** Push to the DEFAULT branch → record mode: measure the landed commit, append the trend. */
@@ -30,7 +34,7 @@ interface EventPayload {
   pull_request?: {
     number?: number
     base?: { sha?: string; ref?: string }
-    head?: { sha?: string }
+    head?: { sha?: string; ref?: string; repo?: { full_name?: string } }
   }
   repository?: { default_branch?: string }
   after?: string
@@ -87,7 +91,8 @@ export async function parseActionEvent(
     typeof pr?.number !== 'number' ||
     typeof pr.base?.sha !== 'string' ||
     typeof pr.base.ref !== 'string' ||
-    typeof pr.head?.sha !== 'string'
+    typeof pr.head?.sha !== 'string' ||
+    typeof pr.head.ref !== 'string'
   ) {
     return { kind: 'not-a-pr', reason: 'the event payload has no complete pull_request block' }
   }
@@ -100,5 +105,7 @@ export async function parseActionEvent(
     baseSha: pr.base.sha,
     baseRef: pr.base.ref,
     headSha: pr.head.sha,
+    headRef: pr.head.ref,
+    fromFork: (pr.head.repo?.full_name ?? repository) !== repository,
   }
 }

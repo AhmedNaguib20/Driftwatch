@@ -42,6 +42,10 @@ browser: ${config.browser}
 # Measure the AI's suggested diff fix in a fresh copy before showing it (M6). --no-verify skips.
 verify: ${config.verify}
 
+# "propose": when a verified fix RESTORES the regressed metrics, open a fix PR into your PR
+# branch carrying the measured evidence. Off by default — turn it on once you trust the numbers.
+auto_fix: ${config.auto_fix}
+
 # Warn only. Set to true once you trust the numbers and want failing checks to block merges.
 block_merge: ${config.block_merge}
 

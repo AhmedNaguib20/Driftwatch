@@ -39,6 +39,7 @@
     "noiseFloorPercent": 2,
     "base": "main",
     "block_merge": false,
+    "auto_fix": "off",
     "sourcePath": "/repo/app/perf.yml"
   },
   "base": {

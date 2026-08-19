@@ -76,6 +76,7 @@ export interface ConfigReport {
   /** The base ref actually used for this run (a --base override wins over perf.yml). */
   readonly base: string
   readonly block_merge: boolean
+  readonly auto_fix: 'off' | 'propose'
   readonly sourcePath: string | null
 }
 

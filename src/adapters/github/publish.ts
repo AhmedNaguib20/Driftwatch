@@ -20,6 +20,8 @@ export interface PublishContext {
   readonly token: string
   /** Link target for the comment's "full accounting" pointer (the run's summary page). */
   readonly runUrl?: string | null
+  readonly fixPr?: { readonly number: number; readonly url: string; readonly summary: string } | null
+  readonly fixPrNote?: string | null
   readonly fetchImpl?: typeof fetch
   readonly sleep?: (ms: number) => Promise<void>
 }
@@ -47,7 +49,7 @@ export async function publishResult(
     const { url, healed } = await upsertComment(
       client,
       { owner: ctx.owner, repo: ctx.repo, prNumber: ctx.prNumber },
-      renderComment(result, { runUrl: ctx.runUrl ?? null }),
+      renderComment(result, { runUrl: ctx.runUrl ?? null, fixPr: ctx.fixPr ?? null, fixPrNote: ctx.fixPrNote ?? null }),
     )
     commentUrl = url
     if (healed > 0) warnings.push(`removed ${healed} duplicate driftwatch comment(s)`)

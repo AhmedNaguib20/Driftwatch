@@ -25,6 +25,9 @@ export interface PerfConfig {
   readonly browser: boolean
   /** Measure the AI's diff fix as a third side (M6). CLI --no-verify overrides per run. */
   readonly verify: boolean
+  /** 'propose': open a fix PR when a verified diff RESTORES (or partially recovers) the metrics.
+   *  Only restored/partial may ever open one; everything else stays in the comment. */
+  readonly auto_fix: 'off' | 'propose'
   readonly threshold: string
   readonly block_merge: boolean
   readonly base: string
@@ -38,6 +41,7 @@ export const DEFAULT_CONFIG: PerfConfig = {
   serve: true,
   browser: true,
   verify: true,
+  auto_fix: 'off',
   threshold: '5%',
   block_merge: false,
   base: 'main',

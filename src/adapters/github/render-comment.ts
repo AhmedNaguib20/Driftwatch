@@ -14,6 +14,9 @@ export const COMMENT_MARKER = '<!-- driftwatch:comment -->'
 export interface CommentOptions {
   /** Link target for the full measurement accounting (the run's step summary). */
   readonly runUrl?: string | null
+  /** A verified fix PR (or the honest reason there is none despite a verified fix). */
+  readonly fixPr?: { readonly number: number; readonly url: string; readonly summary: string } | null
+  readonly fixPrNote?: string | null
 }
 
 /**
@@ -25,6 +28,13 @@ export function renderComment(result: ResultJson, options: CommentOptions = {}):
   const lines: string[] = [COMMENT_MARKER, '']
 
   lines.push(...verdictBanner(result))
+  if (options.fixPr) {
+    lines.push('')
+    lines.push(`✓ **verified fix available:** [#${options.fixPr.number}](${options.fixPr.url}) (${options.fixPr.summary})`)
+  } else if (options.fixPrNote) {
+    lines.push('')
+    lines.push(`_${options.fixPrNote}_`)
+  }
   lines.push('')
   lines.push(...comparisonTable(result))
   lines.push(...renderAnalysisSection(result))

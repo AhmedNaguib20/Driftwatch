@@ -131,7 +131,7 @@ async function project(): Promise<{ profile: ProjectProfile; dir: string }> {
 
 function regressionResult(analysis: AnalysisReport, currentProto = protocol()): ResultJson {
   const config = {
-    detect: 'nextjs' as const, measure: ['bundle_size'], serve: true, browser: true, verify: true,
+    detect: 'nextjs' as const, measure: ['bundle_size'], serve: true, browser: true, verify: true, auto_fix: 'off' as const,
     threshold: '5%', block_merge: false, base: 'main', provider: 'deepseek', model: 'm',
     thresholdPercent: 5, noiseFloorPercent: 2, sourcePath: null, warnings: [],
   }
@@ -214,7 +214,7 @@ describe('verifyFix — outcome matrix (real apply, real tiny builds)', () => {
 
   it('refused: a third side measured under a different protocol refuses itself (§5.1)', async () => {
     const { profile } = await project()
-    const mockMeasure = (async (_p, w) => side([measured('build_time', 300, 'ms'), measured('bundle_size', 41, 'bytes')], protocol({ nodeVersion: 'v99.0.0', workspace: w.kind })) ) as never
+    const mockMeasure = (async (_p: unknown, w: { kind: 'copy' | 'worktree' }) => side([measured('build_time', 300, 'ms'), measured('bundle_size', 41, 'bytes')], protocol({ nodeVersion: 'v99.0.0', workspace: w.kind })) ) as never
 
     const report = await verifyFix(profile, regressionResult(analysed()), { serve: false, browser: false, measureFn: mockMeasure })
 
@@ -225,7 +225,7 @@ describe('verifyFix — outcome matrix (real apply, real tiny builds)', () => {
   it('no-recovery and partial via mocked measurement', async () => {
     const { profile } = await project()
     const withFixedBundle = (value: number) =>
-      (async (_p: never, w: { kind: 'copy' }) =>
+      (async (_p: unknown, w: { kind: 'copy' }) =>
         side([measured('build_time', 300, 'ms'), measured('bundle_size', value, 'bytes')], protocol({ workspace: w.kind }))) as never
 
     const none = await verifyFix(profile, regressionResult(analysed()), { serve: false, browser: false, measureFn: withFixedBundle(5030) })

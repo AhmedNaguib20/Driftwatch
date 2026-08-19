@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url'
 import type { ResultJson } from '../../core/index.js'
 import { parseActionEvent } from './event.js'
 import { preflightBase } from './preflight.js'
+import { createGithubClient } from './api-client.js'
+import { proposeFixPr } from './fix-pr.js'
 import { publishResult } from './publish.js'
 import { renderComment } from './render-comment.js'
 import { renderSummary } from './render-summary.js'
@@ -66,6 +68,39 @@ export async function main(): Promise<void> {
   const token = process.env.GITHUB_TOKEN
   let commentUrl: string | null = null
   let checkUrl: string | null = null
+
+  // The verified-fix PR is proposed BEFORE the comment posts, so the comment can link it.
+  let fixPr: { number: number; url: string; summary: string } | null = null
+  let fixPrNote: string | null = null
+  if (token && result.verification) {
+    try {
+      const outcome = await proposeFixPr(
+        createGithubClient({ token }),
+        {
+          owner: event.owner,
+          repo: event.repo,
+          prNumber: event.prNumber,
+          headRef: event.headRef,
+          headSha: event.headSha,
+          fromFork: event.fromFork,
+          gitRoot: workspace,
+        },
+        result,
+      )
+      if (outcome.kind === 'opened' || outcome.kind === 'updated') {
+        fixPr = { number: outcome.number, url: outcome.url, summary: outcome.summary }
+        console.log(`driftwatch: fix PR ${outcome.kind}: ${outcome.url}`)
+      } else if (outcome.kind === 'closed-stale') {
+        console.log(`driftwatch: fix PR #${outcome.number} closed (stored diff no longer applies)`)
+      } else if (outcome.kind === 'skipped') {
+        fixPrNote = outcome.commentLine
+        console.log(`driftwatch: fix PR skipped: ${outcome.reason}`)
+      }
+    } catch (error) {
+      console.error(`driftwatch: warning: fix PR failed: ${(error as Error).message}`)
+    }
+  }
+
   if (token) {
     const outcome = await publishResult(result, {
       owner: event.owner,
@@ -75,6 +110,8 @@ export async function main(): Promise<void> {
       blockMerge: result.config.block_merge,
       token,
       runUrl,
+      fixPr,
+      fixPrNote,
     })
     commentUrl = outcome.commentUrl
     checkUrl = outcome.checkUrl

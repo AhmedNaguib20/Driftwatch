@@ -60,6 +60,7 @@ function config(overrides: Partial<ResolvedConfig> = {}): ResolvedConfig {
     serve: true,
     browser: true,
     verify: true,
+    auto_fix: 'off',
     threshold: '5%',
     block_merge: false,
     base: 'main',

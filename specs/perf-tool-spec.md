@@ -833,7 +833,15 @@ recurring opinion into a number, permanently.
 - JS/TS adapter (build time, bundle size, Lighthouse)
 
 ### Post-MVP — ranked by expected impact
-1. **Auto-fix PR — M6, IN PROGRESS, with the differentiator: measurement-proven fixes.** Before
+1. **Auto-fix PR — M6, IN PROGRESS.** *Step 1 (core verification, `c46eef9`) done:* `git apply
+   --check` gates (never fuzzy-matched — a fix we had to bend is not the fix that was suggested);
+   the fixed copy is a **third side** through the same measurement path, protocol-compared
+   field-by-field — §5.1 applies to itself; three-way verdicts reuse the same floor+quanta
+   ("restored" means what "no change" means everywhere); a worsening fix lands in `no-recovery`
+   and can never count as `partial`; gate-outs are absent from the JSON — rule 3 is about
+   reporting attempts, not non-events. Real e2e: the live PR #6 lodash fix verified `restored`,
+   ~140KB recovered, fixed within 2KB of base. Verification runs only at the enforceFixRules bar
+   (diff fix, ≥0.8), only on regressed metrics. Schema minor 3. Before
    opening any fix PR, apply the AI's diff in a fresh temp copy and MEASURE it — same protocol,
    same invocation, three-way comparison (fixed vs current vs base). The PR opens carrying its own
    measured evidence ("this fix was measured: bundle returns 2.33→2.20MB") or does not open at all,

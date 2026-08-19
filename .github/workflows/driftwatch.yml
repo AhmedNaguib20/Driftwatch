@@ -16,8 +16,9 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write        # record mode pushes trend points to the perf-data branch
-  pull-requests: write   # the self-updating PR comment
+  contents: write        # record mode pushes trend points to the perf-data branch;
+                         # with auto_fix: propose it also pushes driftwatch/fix-pr<N> branches
+  pull-requests: write   # the self-updating PR comment — and fix PRs when auto_fix is on
   checks: write          # the non-blocking check run
 
 jobs:

@@ -30,7 +30,7 @@ const PR_PAYLOAD = JSON.stringify({
   pull_request: {
     number: 7,
     base: { sha: 'b'.repeat(40), ref: 'main' },
-    head: { sha: 'h'.repeat(40) },
+    head: { sha: 'h'.repeat(40), ref: 'feature', repo: { full_name: 'ahmed/driftwatch' } },
   },
 })
 
@@ -53,6 +53,8 @@ describe('event parsing', () => {
       baseSha: 'b'.repeat(40),
       baseRef: 'main',
       headSha: 'h'.repeat(40),
+      headRef: 'feature',
+      fromFork: false,
     })
   })
 
@@ -228,5 +230,27 @@ describe('init --github workflow file', () => {
     // …and --force overwrites it.
     await writeGithubWorkflow(profile, true)
     expect(await readFile(target, 'utf8')).toBe(renderWorkflow())
+  })
+})
+
+describe('fork detection', () => {
+  it('a head repo different from the base repo flags fromFork', async () => {
+    const event = await parseActionEvent(
+      {
+        GITHUB_EVENT_NAME: 'pull_request',
+        GITHUB_REPOSITORY: 'ahmed/driftwatch',
+        GITHUB_EVENT_PATH: '/event.json',
+      },
+      async () =>
+        JSON.stringify({
+          pull_request: {
+            number: 7,
+            base: { sha: 'b'.repeat(40), ref: 'main' },
+            head: { sha: 'h'.repeat(40), ref: 'feature', repo: { full_name: 'stranger/driftwatch-fork' } },
+          },
+        }),
+    )
+    expect(event.kind).toBe('pull-request')
+    if (event.kind === 'pull-request') expect(event.fromFork).toBe(true)
   })
 })

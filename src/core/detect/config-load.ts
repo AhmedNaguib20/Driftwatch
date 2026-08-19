@@ -50,6 +50,7 @@ export async function loadConfig(
     serve: pickBoolean(record.serve, fallback.serve, 'serve', warnings),
     browser: pickBoolean(record.browser, fallback.browser, 'browser', warnings),
     verify: pickBoolean(record.verify, fallback.verify, 'verify', warnings),
+    auto_fix: pickAutoFix(record.auto_fix, fallback.auto_fix, warnings),
     threshold: pickString(record.threshold, fallback.threshold, 'threshold', warnings),
     block_merge: pickBoolean(record.block_merge, fallback.block_merge, 'block_merge', warnings),
     base: pickString(record.base, fallback.base, 'base', warnings),
@@ -131,6 +132,18 @@ function pickMetrics(
     }
   }
   return kept
+}
+
+function pickAutoFix(
+  value: unknown,
+  fallback: 'off' | 'propose',
+  warnings: string[],
+): 'off' | 'propose' {
+  if (value === 'off' || value === 'propose') return value
+  if (value !== undefined) {
+    warnings.push(`${CONFIG_FILENAME}: auto_fix must be "off" or "propose" — using "${fallback}".`)
+  }
+  return fallback
 }
 
 function pickString(value: unknown, fallback: string, key: string, warnings: string[]): string {

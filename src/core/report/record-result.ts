@@ -59,6 +59,7 @@ export function buildRecordResult(input: BuildRecordInput): ResultJson {
       noiseFloorPercent: config.noiseFloorPercent,
       base: config.base,
       block_merge: config.block_merge,
+      auto_fix: config.auto_fix,
       sourcePath: config.sourcePath,
     },
     base: { available: false, reason: 'record mode — this run measures one commit; there is no baseline comparison' },

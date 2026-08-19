@@ -166,6 +166,12 @@ temp copy → measure it same-invocation → three-way verdict (fixed vs current
 reported in the comment honestly. All §5.1 disciplines apply to the third side. Opt-in via
 `auto_fix` in perf.yml; local parity first (the CLI verifies before any GitHub mechanics exist).
 Launch planning (npm publish, name/license/visibility, onboarding) remains queued after M6.
+  - [x] step 1 — core verification (`c46eef9`): apply-check gate, third-side measurement (§5.1
+        applies to itself), three-way verdicts on shared floor+quanta, real e2e `restored` with
+        the live lodash fix (~140KB recovered, within 2KB of base). Schema 1.3.
+  - [ ] step 2 — GitHub side: fix branch + PR carrying measured evidence, auto_fix opt-in,
+        upsert semantics, only restored/partial ever open one
+  - [ ] step 3 — live acceptance incl. a deliberately-bad fix that must NOT produce a PR
 
 Do not start a milestone before the previous one's definition of done is met.
 

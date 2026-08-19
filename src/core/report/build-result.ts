@@ -57,6 +57,7 @@ export function buildResult(input: BuildResultInput): ResultJson {
       // perf.yml's default.
       base: plan.available ? plan.baseRef : config.base,
       block_merge: config.block_merge,
+      auto_fix: config.auto_fix,
       sourcePath: config.sourcePath,
     },
     base:

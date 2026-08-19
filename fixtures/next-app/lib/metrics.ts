@@ -1,6 +1,6 @@
 export type Sample = { day: string; buildTime: number; bundleKb: number }
 
-/** Deterministic pseudo-data — the fixture must build identically on every run. */
+/** Deterministic pseudo-data — the fixture must build identically on every run (observation PR). */
 export function series(points = 24): Sample[] {
   const out: Sample[] = []
   for (let i = 0; i < points; i += 1) {

@@ -59,6 +59,26 @@ Every run records a `contextManifest` in the result JSON (`--json`) listing each
 The manifest is the authoritative per-run answer to "what was sent"; this section is its
 standing summary, and the test suite keeps the two in sync.
 
+## Trends — where has main been going?
+
+PR runs answer "did this change regress?". Trend data answers a different question: every push to
+the default branch is measured absolutely (record mode) and appended to a `perf-data` branch in
+your own repo — plain Git, no backend. The branch also carries a self-contained `index.html`
+dashboard: point GitHub Pages at `perf-data` / root and it is always current, or render it
+locally:
+
+```bash
+npx driftwatch record          # measure this commit absolutely (no comparison, no AI)
+npx driftwatch trend           # per-metric drift within the latest protocol segment
+npx driftwatch dashboard --open
+```
+
+Trend language is *drift*, never "regression" — a drift is an observation over landed history, not
+a verdict about one change. Timelines split into segments whenever the measurement protocol
+changes (Node, platform, browser build, runner labels, driftwatch version); no line is ever drawn
+across a break, and drift is only judged within one segment. Under 3 points is not a trend and is
+reported as exactly that.
+
 ## Requirements
 
 Node 20+, git. M1/M2 support Next.js projects; more frameworks as milestones land.

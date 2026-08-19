@@ -43,7 +43,7 @@ jobs:
       - uses: browser-actions/setup-chrome@v2
         id: chrome
         with:
-          chrome-version: 151.0.7922.140
+          chrome-version: 151.0.7922.138  # a Chrome-for-Testing known-good build (not every stable build is published)
 
       # Developing driftwatch in this repo: build the local action and run it.
       # Once driftwatch is published, these two steps become a single

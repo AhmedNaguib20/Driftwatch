@@ -18,6 +18,8 @@ export const CONFIG_FILENAME = 'perf.yml'
 export interface PerfConfig {
   readonly detect: Framework
   readonly measure: readonly MetricId[]
+  /** Boot the built app and measure routes (Layer 2a). CLI --no-serve overrides per run. */
+  readonly serve: boolean
   readonly threshold: string
   readonly block_merge: boolean
   readonly base: string
@@ -28,6 +30,7 @@ export interface PerfConfig {
 export const DEFAULT_CONFIG: PerfConfig = {
   detect: 'unknown',
   measure: [],
+  serve: true,
   threshold: '5%',
   block_merge: false,
   base: 'main',

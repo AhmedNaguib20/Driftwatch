@@ -3,7 +3,9 @@ import type { ProjectProfile } from '../detect/types.js'
 import { collectBuildTime } from './build.js'
 import { collectBundleSize } from './bundle.js'
 import { collectInstallTime } from './install.js'
-import { buildProtocol } from './protocol.js'
+import { MEASUREMENT_ENV, buildProtocol } from './protocol.js'
+import { measureRoutes, selectRoutes } from './route-latency.js'
+import { startServer, sweepStaleServers } from './serve.js'
 import type { MetricResult, SideMeasurement } from './types.js'
 import { createWorkingTreeWorkspace } from './workspace.js'
 import type { Workspace, WorkspaceOptions } from './workspace.js'
@@ -27,9 +29,11 @@ export interface MeasureOptions {
   /**
    * Run a timed install when the workspace has no dependencies. Set by the lockfile rule
    * (spec §5.1): dependencies changed between the sides, so the install is part of the change and
-   * is measured — identically on both sides.
+   is measured — identically on both sides.
    */
   readonly installIfAbsent?: boolean
+  /** Boot the built app and measure route latency (M4 Layer 2a). Default true when servable. */
+  readonly serve?: boolean
 }
 
 export async function measureWorkspace(
@@ -67,11 +71,52 @@ export async function measureWorkspace(
   progress('weighing build output…')
   metrics.push(await collectBundleSize(profile, effective, build.succeeded))
 
+  metrics.push(...(await collectRouteLatency(profile, effective, build.succeeded, progress, options)))
+
   return {
     metrics,
     protocol: buildProtocol(profile, effective),
     warnings: [...workspace.warnings],
     elapsedMs: Math.round(performance.now() - started),
+  }
+}
+
+/**
+ * Route latency for the servable routes. Every route the profile promised appears in the output
+ * — measured, or skipped with the reason (disabled / unservable / build failed / boot failed).
+ */
+async function collectRouteLatency(
+  profile: ProjectProfile,
+  workspace: Workspace,
+  buildSucceeded: boolean,
+  progress: ProgressReporter,
+  options: MeasureOptions,
+): Promise<MetricResult[]> {
+  if (!profile.commands.serve || profile.routes.length === 0) return [] // unservable: not promised
+
+  const { selected } = selectRoutes(profile.routes)
+  const skipAll = (reason: string): MetricResult[] =>
+    selected.map((route) => ({
+      id: `route_latency:${route}` as const,
+      status: 'skipped' as const,
+      label: `route ${route}`,
+      reason,
+    }))
+
+  if (options.serve === false) return skipAll('serving disabled (--no-serve / serve: false)')
+  if (!buildSucceeded) return skipAll('no server to boot (build did not succeed)')
+
+  await sweepStaleServers().catch(() => [])
+
+  progress('booting the built app…')
+  const boot = await startServer(workspace.dir, profile.commands.serve, MEASUREMENT_ENV)
+  if (!boot.ok) return skipAll(boot.reason)
+
+  try {
+    progress(`serving on :${boot.server.port} — measuring ${selected.length} route(s)…`)
+    return await measureRoutes(boot.server, profile.routes, progress)
+  } finally {
+    await boot.server.stop()
   }
 }
 

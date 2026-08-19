@@ -30,6 +30,14 @@ export const BUILD_SAMPLES = 3
 export const WARMUP_SAMPLES = 1
 
 /**
+ * Route latency sampling (M4, Layer 2a). One discarded warm-up per route (first hit fills
+ * per-process caches), then this many sequential samples, median reported. Sized provisionally —
+ * the per-route spread measurement decides whether this class needs more (spec step-1 gate).
+ */
+export const ROUTE_SAMPLES = 5
+export const ROUTE_WARMUP_SAMPLES = 1
+
+/**
  * Environment added on top of the inherited one, identically on both sides, and recorded in the
  * protocol. Telemetry is disabled because it phones home (rule 6) and adds network jitter to the
  * timed window.
@@ -63,6 +71,8 @@ export function buildProtocol(
     buildCommand: profile.commands.build ? formatCommand(profile.commands.build) : null,
     buildSamples: BUILD_SAMPLES,
     warmupSamples: WARMUP_SAMPLES,
+    routeSamples: ROUTE_SAMPLES,
+    routeWarmupSamples: ROUTE_WARMUP_SAMPLES,
     hostLabels: hostLabelsFromEnv(),
     env: MEASUREMENT_ENV,
   }

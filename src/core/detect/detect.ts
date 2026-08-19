@@ -95,7 +95,7 @@ export async function detectProject(options: DetectOptions = {}): Promise<Projec
     frameworkVersion: framework.version,
     packageManager: pm.manager,
     lockfile: pm.lockfile,
-    commands: { install, build },
+    commands: { install, build, serve: framework.serve },
     buildOutputDirs: framework.buildOutputDirs,
     cacheDirs: framework.cacheDirs,
     routes: routeDetection.routes,

@@ -13,8 +13,8 @@ export type Framework = 'nextjs' | 'unknown'
 
 export type Language = 'javascript' | 'unknown'
 
-/** Metric identifiers. M1 implements `build_time` and `bundle_size` only. */
-export type MetricId = 'build_time' | 'bundle_size' | 'install_time'
+/** Metric identifiers. Route metrics are a class: one per measured route (M4, Layer 2a). */
+export type MetricId = 'build_time' | 'bundle_size' | 'install_time' | `route_latency:${string}`
 
 /** A command to run, kept as bin + args so it is executed without a shell. */
 export interface Command {
@@ -55,6 +55,8 @@ export interface ProjectProfile {
   readonly commands: {
     readonly install: Command | null
     readonly build: Command | null
+    /** Boots the BUILT app (never dev mode). Null for unservable projects (libraries). */
+    readonly serve: Command | null
   }
 
   /** Directories produced by the build — where bundle size is weighed. */

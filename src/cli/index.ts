@@ -18,8 +18,9 @@ program
   .option('--json', 'print the schema-v1 result JSON to stdout instead of the table', false)
   .option('--no-cache', 'ignore the baseline cache for this run (results are still written)')
   .option('--no-ai', 'skip AI analysis entirely — fully offline run (also: DRIFTWATCH_NO_AI=1)')
+  .option('--no-serve', 'skip booting the app and route-latency metrics')
   .option('--cwd <dir>', 'project directory', process.cwd())
-  .action(async (flags: { base?: string; baseLabel?: string; json: boolean; cache: boolean; ai: boolean; cwd: string }) => {
+  .action(async (flags: { base?: string; baseLabel?: string; json: boolean; cache: boolean; ai: boolean; serve: boolean; cwd: string }) => {
     await runCommand(flags)
   })
 

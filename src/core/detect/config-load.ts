@@ -47,8 +47,9 @@ export async function loadConfig(
   const config: PerfConfig = {
     detect: pickFramework(record.detect, fallback.detect, warnings),
     measure: pickMetrics(record.measure, fallback.measure, warnings),
+    serve: pickBoolean(record.serve, fallback.serve, 'serve', warnings),
     threshold: pickString(record.threshold, fallback.threshold, 'threshold', warnings),
-    block_merge: pickBoolean(record.block_merge, fallback.block_merge, warnings),
+    block_merge: pickBoolean(record.block_merge, fallback.block_merge, 'block_merge', warnings),
     base: pickString(record.base, fallback.base, 'base', warnings),
     provider: pickString(record.provider, fallback.provider, 'provider', warnings),
     model: pickString(record.model, fallback.model, 'model', warnings),
@@ -84,7 +85,13 @@ function resolve(
   }
 }
 
-const KNOWN_METRICS: readonly MetricId[] = ['build_time', 'bundle_size', 'install_time']
+const KNOWN_METRIC_NAMES = ['build_time', 'bundle_size', 'install_time'] as const
+
+function isKnownMetric(entry: string): entry is MetricId {
+  return (
+    (KNOWN_METRIC_NAMES as readonly string[]).includes(entry) || entry.startsWith('route_latency:')
+  )
+}
 
 function pickFramework(value: unknown, fallback: Framework, warnings: string[]): Framework {
   if (value === 'nextjs' || value === 'unknown') return value
@@ -107,8 +114,8 @@ function pickMetrics(
 
   const kept: MetricId[] = []
   for (const entry of value) {
-    if (typeof entry === 'string' && (KNOWN_METRICS as readonly string[]).includes(entry)) {
-      kept.push(entry as MetricId)
+    if (typeof entry === 'string' && isKnownMetric(entry)) {
+      kept.push(entry)
     } else {
       warnings.push(`${CONFIG_FILENAME}: unknown metric "${String(entry)}" ignored.`)
     }
@@ -125,10 +132,10 @@ function pickString(value: unknown, fallback: string, key: string, warnings: str
   return fallback
 }
 
-function pickBoolean(value: unknown, fallback: boolean, warnings: string[]): boolean {
+function pickBoolean(value: unknown, fallback: boolean, key: string, warnings: string[]): boolean {
   if (typeof value === 'boolean') return value
   if (value !== undefined) {
-    warnings.push(`${CONFIG_FILENAME}: block_merge must be true or false — using ${fallback}.`)
+    warnings.push(`${CONFIG_FILENAME}: ${key} must be true or false — using ${fallback}.`)
   }
   return fallback
 }

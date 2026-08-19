@@ -11,8 +11,16 @@ import type { MetricComparison, MetricVerdict } from './types.js'
  * terminal.
  */
 
-/** Every M1 metric is a cost: more milliseconds, more bytes — higher is worse. */
-const METRIC_ORDER: readonly MetricId[] = ['install_time', 'build_time', 'bundle_size']
+/** Every metric is a cost: more milliseconds, more bytes — higher is worse. */
+const FIXED_ORDER: readonly MetricId[] = ['install_time', 'build_time', 'bundle_size']
+
+/** Fixed metrics first, then route metrics sorted by route — deterministic table order. */
+function orderedIds(base: readonly MetricResult[], current: readonly MetricResult[]): MetricId[] {
+  const present = new Set<MetricId>([...base, ...current].map((m) => m.id))
+  const fixed = FIXED_ORDER.filter((id) => present.has(id))
+  const routes = [...present].filter((id) => id.startsWith('route_latency:')).sort()
+  return [...fixed, ...routes]
+}
 
 /**
  * Absolute resolution of wall-clock timing. Process spawn alone jitters 5-10ms and a package
@@ -34,10 +42,7 @@ export function compareMetrics(
   current: readonly MetricResult[],
   options: CompareOptions,
 ): MetricComparison[] {
-  const ids = [...METRIC_ORDER].filter(
-    (id) => base.some((m) => m.id === id) || current.some((m) => m.id === id),
-  )
-  return ids.map((id) =>
+  return orderedIds(base, current).map((id) =>
     compareOne(
       base.find((m) => m.id === id) ?? null,
       current.find((m) => m.id === id) ?? null,
@@ -76,6 +81,19 @@ function compareOne(
       verdict: 'not_comparable',
       exceedsThreshold: false,
       reason: `the two sides were measured under different protocols — ${options.protocolMismatches.join('; ')}`,
+    }
+  }
+
+  // §5.1 sixth instance: within one invocation the base side installs first (cold package-manager
+  // cache), current second (warm). When both sides measured a fresh install, the cache states
+  // cannot be shown equal — values reported, delta refused.
+  if (id === 'install_time') {
+    return {
+      ...shell,
+      delta: null,
+      verdict: 'not_comparable',
+      exceedsThreshold: false,
+      reason: 'package-manager cache state differs between sides (base installs first, cold; current second, warm)',
     }
   }
 

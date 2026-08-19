@@ -26,6 +26,7 @@ export function protocolMismatches(
     ['buildCommand', (p) => p.buildCommand ?? '(none)'],
     ['buildSamples', (p) => String(p.buildSamples)],
     ['warmupSamples', (p) => String(p.warmupSamples)],
+    ['routeSamples', (p) => `${p.routeSamples}+${p.routeWarmupSamples}w`],
     ['hostLabels', (p) => (p.hostLabels.length > 0 ? [...p.hostLabels].join(',') : '(none)')],
     ['env', (p) => formatEnv(p.env)],
   ]

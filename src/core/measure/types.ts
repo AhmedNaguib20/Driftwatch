@@ -32,6 +32,9 @@ export interface MeasurementProtocol {
   readonly buildSamples: number
   /** Discarded warm-up builds before the measured samples (§5.1 fifth instance). */
   readonly warmupSamples: number
+  /** Sequential requests per route; median reported (M4 Layer 2a). */
+  readonly routeSamples: number
+  readonly routeWarmupSamples: number
   /**
    * Labels describing the machine class, from DRIFTWATCH_HOST_LABELS (comma-separated) — a
    * generic contract: CI adapters set it (runner OS, image), core never knows who did. Part of

@@ -101,7 +101,7 @@ applies in full: BYOK env key, `--no-ai` fully offline, docs state exactly what 
         diffs (<~50 lines) ride inline in triage; magnitude rule: imports are multipliers.
   - [x] prompts v2 + de-gated pipeline (`5232516`) + eval set live (`a5bad85`) — all three cases
         PASS, run-b names lodash at 0.9 with the fix confined to the page. v2 is the eval baseline.
-**M3 — GitHub Action adapter (current).** Self-updating PR comment + non-blocking check, rendering
+**M3 — GitHub Action adapter — COMPLETE (live proof: PR #4, comment 5336172502 told both truths in place).** Self-updating PR comment + non-blocking check, rendering
 the same result JSON. Adapter consumes `--json` output only — the core/adapter boundary is already
 lint-enforced; keep it that way.
   - [x] renderer — pure fn over schema 1.1, five goldens as contract, honest-omission rules
@@ -111,12 +111,17 @@ lint-enforced; keep it that way.
   - [x] action entry + init --github (`8e1adcd`) — setup errors exit 1 with the fix stanza
         (warn-only covers verdicts, not misconfiguration); base = pinned event SHA; runner labels
         via DRIFTWATCH_HOST_LABELS join the protocol hash
-  - [ ] live PR proof (needs GitHub remote + DRIFTWATCH_API_KEY repo secret) → M3 close
+  - [x] live PR proof — same comment, both states, same URL; project-dir bug + Node-drift finding
+        fixed en route. Install-order asymmetry → §5.1 sixth instance: cache state not provably
+        equal ⇒ install delta not_comparable.
   - [x] markdown renderer (`76a8723`) — five goldens are the adapter contract; pipe-escaping in
         table cells; "why not higher" renders only held facts (omitted over padded — fabricated
         uncertainty is rule 3 in reverse); dead links omitted until their features exist.
   - [ ] GitHub API client (upsert + check) → action entry → live PR proof
-**M4 — Real measurement (Layer 2a).** Boot the app, measure routes with Lighthouse/Playwright.
+**M4 — Real measurement, Layer 2a (current).** Boot the built app, measure routes. Order: serve +
+readiness + request-level route latency first (no browser); browser metrics (Lighthouse) second.
+Every §5.1 discipline applies: same-invocation pairs, medians, protocol recorded, refusal on
+mismatch.
 **M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.
 
 Do not start a milestone before the previous one's definition of done is met.

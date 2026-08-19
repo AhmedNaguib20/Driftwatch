@@ -41,6 +41,8 @@ function protocol(overrides: Partial<MeasurementProtocol> = {}): MeasurementProt
     buildCommand: 'npm run build',
     buildSamples: 3,
     warmupSamples: 1,
+    routeSamples: 5,
+    routeWarmupSamples: 1,
     hostLabels: [],
     env: { NEXT_TELEMETRY_DISABLED: '1' },
     ...overrides,
@@ -59,6 +61,7 @@ const profile: ProjectProfile = {
   commands: {
     install: { bin: 'npm', args: ['ci'] },
     build: { bin: 'npm', args: ['run', 'build'] },
+    serve: { bin: 'node_modules/.bin/next', args: ['start'] },
   },
   buildOutputDirs: ['.next'],
   cacheDirs: ['.next', 'node_modules/.cache'],
@@ -73,6 +76,7 @@ const profile: ProjectProfile = {
 const config: ResolvedConfig = {
   detect: 'nextjs',
   measure: ['build_time', 'bundle_size'],
+  serve: true,
   threshold: '5%',
   block_merge: false,
   base: 'main',

@@ -48,6 +48,8 @@ export function protocolHashInput(protocol: MeasurementProtocol): Record<string,
     arch: protocol.arch,
     buildSamples: protocol.buildSamples,
     warmupSamples: protocol.warmupSamples,
+    routeSamples: protocol.routeSamples,
+    routeWarmupSamples: protocol.routeWarmupSamples,
     hostLabels: protocol.hostLabels,
     env: protocol.env,
   }

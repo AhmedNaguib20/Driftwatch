@@ -24,6 +24,8 @@ export interface FrameworkDetection {
   readonly version: string | null
   readonly buildOutputDirs: readonly string[]
   readonly cacheDirs: readonly string[]
+  /** Boots the built app; the port is appended by the server layer at spawn time. */
+  readonly serve: { readonly bin: string; readonly args: readonly string[] } | null
   readonly evidence: readonly Evidence[]
   readonly warnings: readonly string[]
 }
@@ -47,6 +49,7 @@ export async function detectFramework(
       version: null,
       buildOutputDirs: [],
       cacheDirs: [],
+      serve: null,
       evidence,
       warnings,
     }
@@ -91,6 +94,9 @@ export async function detectFramework(
     // `.next` holds both the build output and the build cache, so it serves as both.
     buildOutputDirs: ['.next'],
     cacheDirs: ['.next', path.join('node_modules', '.cache')],
+    // Relative bin, resolved against the workspace at spawn — the workspace's own Next serves
+    // the workspace's own build. `-p <port>` is appended by the server layer.
+    serve: { bin: path.join('node_modules', '.bin', 'next'), args: ['start'] },
     evidence,
     warnings,
   }

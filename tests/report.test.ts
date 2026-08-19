@@ -26,6 +26,8 @@ function protocol(overrides: Partial<MeasurementProtocol> = {}): MeasurementProt
     buildCommand: 'npm run build',
     buildSamples: 3,
     warmupSamples: 1,
+    routeSamples: 5,
+    routeWarmupSamples: 1,
     hostLabels: [],
     env: { NEXT_TELEMETRY_DISABLED: '1' },
     ...overrides,
@@ -53,6 +55,7 @@ function config(overrides: Partial<ResolvedConfig> = {}): ResolvedConfig {
   return {
     detect: 'nextjs',
     measure: ['build_time', 'bundle_size'],
+    serve: true,
     threshold: '5%',
     block_merge: false,
     base: 'main',
@@ -79,6 +82,7 @@ function profile(): ProjectProfile {
     commands: {
       install: { bin: 'npm', args: ['ci'] },
       build: { bin: 'npm', args: ['run', 'build'] },
+      serve: { bin: 'node_modules/.bin/next', args: ['start'] },
     },
     buildOutputDirs: ['.next'],
     cacheDirs: ['.next', 'node_modules/.cache'],
@@ -277,7 +281,7 @@ describe('run verdict', () => {
     expect(r.comparison.metrics[0]!.reason).toMatch(/base unavailable/)
   })
 
-  it('surfaces dependenciesChanged and install_time at comparison level', () => {
+  it('install deltas are refused — §5.1 sixth instance: cache state differs between sides', () => {
     const r = result(
       [measured('install_time', 30000, 'ms', 'install time'), measured('build_time', 10000, 'ms', 'b'), measured('bundle_size', 100000, 'bytes', 's')],
       [measured('install_time', 42000, 'ms', 'install time'), measured('build_time', 10100, 'ms', 'b'), measured('bundle_size', 100100, 'bytes', 's')],
@@ -286,8 +290,13 @@ describe('run verdict', () => {
     expect(r.comparison.dependenciesChanged).toBe(true)
     expect(r.comparison.lockfileStatus).toBe('changed')
     const install = r.comparison.metrics.find((m) => m.id === 'install_time')!
-    expect(install.verdict).toBe('regressed')
-    // install_time is contextual, not key: a 40% slower install alone does not fail the run.
+    // Values reported, delta refused: the base installs first (cold pm cache), current second.
+    expect(install.verdict).toBe('not_comparable')
+    expect(install.base).toBe(30000)
+    expect(install.current).toBe(42000)
+    expect(install.delta).toBeNull()
+    expect(install.reason).toMatch(/cache state differs/)
+    // Contextual metric: its refusal does not make the run inconclusive.
     expect(r.verdict).toBe('ok')
   })
 

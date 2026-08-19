@@ -34,6 +34,8 @@ export interface RunOptions {
   readonly baseLabel?: string
   /** Skip the baseline cache lookup (--no-cache). Results are still written. */
   readonly readCache?: boolean
+  /** Skip booting the app / route metrics (--no-serve). perf.yml `serve: false` also disables. */
+  readonly serve?: boolean
   readonly progress?: ProgressReporter
 }
 
@@ -54,7 +56,7 @@ export async function runDriftwatch(options: RunOptions = {}): Promise<ResultJso
   const first = await measureOnce(profile, config, plan, progress, {
     readCache: options.readCache ?? true,
     pathWhenFresh: 'fresh',
-  })
+  }, serveEnabled(config, options))
   if (!first.fromCache || !requiresConfirmation(first.result)) return first.result
 
   progress(
@@ -63,7 +65,7 @@ export async function runDriftwatch(options: RunOptions = {}): Promise<ResultJso
   const confirmed = await measureOnce(profile, config, plan, progress, {
     readCache: false,
     pathWhenFresh: 'confirmed',
-  })
+  }, serveEnabled(config, options))
   return confirmed.result
 }
 
@@ -73,23 +75,30 @@ interface MeasureOnceOptions {
   readonly pathWhenFresh: 'fresh' | 'confirmed'
 }
 
+function serveEnabled(config: ResolvedConfig, options: RunOptions): boolean {
+  return (options.serve ?? true) && config.serve
+}
+
 async function measureOnce(
   profile: ProjectProfile,
   config: ResolvedConfig,
   plan: BaselinePlan | BaselineUnavailable,
   progress: ProgressReporter,
   options: MeasureOnceOptions,
+  serve: boolean,
 ): Promise<{ result: ResultJson; fromCache: boolean }> {
   let base: BaseSideResult | null = null
   if (plan.available) {
     base = await measureBaseSide(profile, plan, (m) => progress(`base: ${m}`), {
       readCache: options.readCache,
+      serve,
     })
   }
 
   const current = await measureWorkingTree(profile, (m) => progress(`current: ${m}`), {
     dependencies: plan.available ? plan.dependencies : 'clone',
     installIfAbsent: plan.available && plan.dependencies === 'install',
+    serve,
   })
 
   const fromCache = base?.fromCache ?? false

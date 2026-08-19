@@ -373,6 +373,15 @@ regression becomes invisible whenever the cache is warm.
 Bundle size is immune to all of this (byte counts don't drift); the escalation applies to
 time-based metrics only.
 
+#### Sixth instance: install-order cache asymmetry (DECIDED — M3 live proof)
+
+On CI, install time reported −38.8% "improvements" on **unchanged** dependencies: within one run,
+the base side installs first (cold package-manager cache), current second (warm). §5.1-shaped:
+stable, plausible, pure artifact. **Decision: when the package-manager cache state cannot be shown
+equal between sides, the install delta is `not_comparable` ("package-manager cache state differs
+between sides") — values still reported, no delta, never a percentage.** A warm-up install was
+rejected: doubling install cost for a contextual metric that never drives the verdict buys nothing.
+
 #### Cache integrity rules (M1 step 3)
 
 - **Failed builds are never cached.** A transient OOM must not become the permanent truth about a
@@ -447,6 +456,16 @@ default; a team turns it on once they trust the numbers.
 *Reason:* a newly installed tool that blocks merges gets uninstalled, not fixed. Trust has to be
 earned by being right for a few weeks first. The cost of this choice is that the tool is ignorable
 early on — mitigated by making the PR comment itself impossible to miss (§6.1).
+
+#### M3 live-proof findings (2026-08-19, PR #4)
+
+Proven live: one comment (id 5336172502) told both truths at the same URL — regression
+(+6.1% bundle, lodash analysed at 70% with the ~140KB arithmetic) then, after the fix push,
+updated **in place** to no-change; check flipped neutral → success. Caught and fixed en route:
+**project-dir bug** (the action measured repo root, not the project dir — detection walks up,
+never down; exposed by an honest inconclusive, fixed via action input baked into the generated
+workflow); **Node runtime drift** (GitHub force-ran node20 actions on Node 24 — the protocol
+recorded it on both sides, which is precisely its job).
 
 ### 6.5 Distribution — GitHub Action (DECIDED)
 

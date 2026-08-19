@@ -2,7 +2,7 @@ import path from 'node:path'
 import { detectProject } from '../detect/detect.js'
 import type { ProjectProfile } from '../detect/types.js'
 import { exists } from '../detect/fs-probe.js'
-import { BUILD_SAMPLES, MEASUREMENT_ENV, WARMUP_SAMPLES, hostLabelsFromEnv } from '../measure/protocol.js'
+import { BUILD_SAMPLES, MEASUREMENT_ENV, ROUTE_SAMPLES, ROUTE_WARMUP_SAMPLES, WARMUP_SAMPLES, hostLabelsFromEnv } from '../measure/protocol.js'
 import { measureWorkspace } from '../measure/measure.js'
 import type { ProgressReporter } from '../measure/measure.js'
 import type { MeasurementProtocol, SideMeasurement } from '../measure/types.js'
@@ -29,6 +29,8 @@ export interface BaseSideResult {
 export interface MeasureBaseOptions {
   /** Skip cache lookup (still writes). For --no-cache style flags. */
   readonly readCache?: boolean
+  /** Boot + route metrics on the base side too (same flag as current — §5.1 symmetry). */
+  readonly serve?: boolean
 }
 
 export async function measureBaseSide(
@@ -86,7 +88,7 @@ export async function measureBaseSide(
       baseProfile,
       { ...workspace, warnings },
       progress,
-      { installIfAbsent: plan.dependencies === 'install' },
+      { installIfAbsent: plan.dependencies === 'install', serve: options.serve },
     )
 
     // Cache only a side whose build was actually measured: a transient failure (OOM, disk full)
@@ -124,6 +126,8 @@ export function predictProtocol(plan: BaselinePlan): MeasurementProtocol {
     buildCommand: null, // not part of the hash — the SHA fixes it
     buildSamples: BUILD_SAMPLES,
     warmupSamples: WARMUP_SAMPLES,
+    routeSamples: ROUTE_SAMPLES,
+    routeWarmupSamples: ROUTE_WARMUP_SAMPLES,
     hostLabels: hostLabelsFromEnv(),
     env: MEASUREMENT_ENV,
   }

@@ -118,7 +118,7 @@ lint-enforced; keep it that way.
         table cells; "why not higher" renders only held facts (omitted over padded — fabricated
         uncertainty is rule 3 in reverse); dead links omitted until their features exist.
   - [ ] GitHub API client (upsert + check) → action entry → live PR proof
-**M4 — Real measurement, Layer 2a (current).** Boot the built app, measure routes. Order: serve +
+**M4 — Real measurement, Layer 2a — COMPLETE (acceptance green ×3; 15 metrics; zero adapter changes needed — the schema contract held).** Boot the built app, measure routes. Order: serve +
 readiness + request-level route latency first (no browser); browser metrics (Lighthouse) second.
 Every §5.1 discipline applies: same-invocation pairs, medians, protocol recorded, refusal on
 mismatch.
@@ -129,7 +129,11 @@ mismatch.
   - [x] Lighthouse spread measured (`chrome/151`) — quantum rows decided (lcp/fcp 25ms, tbt 50ms,
         transfer 1KB), LIGHTHOUSE_WARMUP=1, warm-up law named (third occurrence), CI budget:
         wire now, revisit after one real CI run
-  - [ ] verdict wiring (all Layer 2a classes) → M4 acceptance
+  - [x] verdict wiring + acceptance: (a) unchanged ×2 all-quiet incl. screening; (b) +80ms handler
+        → route metric + AI at 95% with arithmetic; (c) client lodash → LCP/transfer/bundle caught
+        it, SSG-exclusion bet paid, TBT correctly under quantum. Fixes: excluded-vs-failed skips,
+        predictProtocol parity (cache was silently dead with browser on). Per-route LH warm-up +
+        SAMPLES 3→2 (net zero). run-d in the eval set.
 **M5 — Trends + static dashboard.** JSON in a `perf-data` branch; static site reads it.
 
 Do not start a milestone before the previous one's definition of done is met.

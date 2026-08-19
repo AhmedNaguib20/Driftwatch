@@ -13,20 +13,22 @@ import type { BrowserInfo } from './browser.js'
  */
 
 /** Bumped when any determinism choice changes — it rides in the protocol hash. */
-export const LIGHTHOUSE_PROFILE = 'simulated/desktop/v2'
+export const LIGHTHOUSE_PROFILE = 'simulated/desktop/v3'
 
 /**
  * The warm-up law (spec v24): every fresh execution context runs its first iteration slow —
- * discard it. Measured here: the first Lighthouse run after a fresh boot traced LCP 2707ms vs a
- * 1702ms steady state. One discarded run per side, before any samples.
+ * discard it. v2 warmed only the side's first route, and a base-side /blog promptly traced
+ * 1.86s vs 1.70s steady (M4 acceptance b) — each route's first trace is its own fresh context.
+ * v3: one discarded run PER ROUTE, samples 3→2 — the spread data shows 2 stays in noise once
+ * warmed, so the per-route run count is unchanged and the estimator becomes law-correct.
  */
 export const LIGHTHOUSE_WARMUP = 1
 
 /** Lighthouse runs cost ~5-10s each — cap harder than route latency. */
 export const LIGHTHOUSE_ROUTE_LIMIT = 3
 
-/** Samples per route; provisional until the spread gate decides (same as every K before it). */
-export const LIGHTHOUSE_SAMPLES = 3
+/** Samples per route, after the per-route warm-up. Spread: ≤7ms across boots once warmed. */
+export const LIGHTHOUSE_SAMPLES = 2
 
 const CHROME_FLAGS = [
   '--headless=new',
@@ -69,13 +71,8 @@ export async function measureLighthouse(
 ): Promise<MetricResult[]> {
   const metrics: MetricResult[] = []
 
-  if (routes.length > 0) {
-    progress('lighthouse warm-up run (discarded)…')
-    await runOnce(server, browser, routes[0]!) // outcome deliberately ignored — see LIGHTHOUSE_WARMUP
-  }
-
   for (const route of routes) {
-    progress(`lighthouse ${route}: ${LIGHTHOUSE_SAMPLES} runs…`)
+    progress(`lighthouse ${route}: warm-up + ${LIGHTHOUSE_SAMPLES} runs…`)
     metrics.push(...(await auditRoute(server, browser, route)))
   }
   return metrics
@@ -87,6 +84,9 @@ async function auditRoute(
   route: string,
 ): Promise<MetricResult[]> {
   const samples: RouteAudit[] = []
+
+  // Per-route warm-up (see LIGHTHOUSE_WARMUP) — outcome deliberately discarded.
+  await runOnce(server, browser, route)
 
   for (let i = 0; i < LIGHTHOUSE_SAMPLES; i += 1) {
     const outcome = await runOnce(server, browser, route)
@@ -103,7 +103,7 @@ async function auditRoute(
 
   const med = (pick: (a: RouteAudit) => number) => median(samples.map(pick))
   const raw = (pick: (a: RouteAudit) => number) => samples.map(pick)
-  const collectedBy = `median of ${LIGHTHOUSE_SAMPLES} lighthouse runs after ${LIGHTHOUSE_WARMUP} discarded warm-up (${LIGHTHOUSE_PROFILE}, ${browser.signature}) against the built app`
+  const collectedBy = `median of ${LIGHTHOUSE_SAMPLES} lighthouse runs after ${LIGHTHOUSE_WARMUP} discarded per-route warm-up (${LIGHTHOUSE_PROFILE}, ${browser.signature}) against the built app`
 
   return [
     metric(`lcp:${route}`, `LCP ${route}`, med((a) => a.lcpMs), 'ms', raw((a) => a.lcpMs), collectedBy),

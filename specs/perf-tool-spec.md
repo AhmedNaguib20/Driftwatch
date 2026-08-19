@@ -254,6 +254,19 @@ warm-up per context per side (`LIGHTHOUSE_WARMUP = 1`, ~+5s) so the median never
 absorbing a +1000ms outlier. Simulated throttling vindicated: trace-computed LCP/FCP spread ≤7ms on
 1.7s values across independent boots.
 
+**Warm-up law, per-route (M4 acceptance):** the LH warm-up initially touched only the first route —
+a fresh boot's *second* route can still trace hot once (observed: a base-side LCP outlier reported a
+fake −8.7% "improvement"; no verdict impact, but a reported-delta artifact). Decision: **per-route
+warm-up + `LIGHTHOUSE_SAMPLES` 3→2** — the law applied at the correct granularity (the fresh context
+is the per-route trace), and since the spread data already showed 2 samples stay in noise once
+warmed, net run count per route is unchanged (1+2 = 3). Correct estimator, ~zero added wall-clock.
+
+**Acceptance-flushed fixes (M4):** policy skips (`excluded: true` — SSG/dynamic/cap/user-disabled)
+no longer gate the verdict; only real failures (boot/build) make a run inconclusive. And
+`predictProtocol` must stay parity-locked with measured protocols (a `browser: none` default left
+the base cache silently dead — every run re-measured; caught only via `measurementPath` in the
+JSON). A Chrome upgrade stranding caches is intended behaviour, now test-asserted.
+
 **CI wall-clock stance (M4 step 2):** Layer 2a ≈ ~50s/side locally, projected ~90–110s/side on CI
 (runners ~2× slower). Wire now, revisit after **one real CI observation** — first lever
 `LIGHTHOUSE_SAMPLES` 3→2 (data says 2 stays in noise with warm-up), second the route cap 3→2.

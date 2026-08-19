@@ -46,7 +46,12 @@ jobs:
       - uses: browser-actions/setup-chrome@v2
         id: chrome
         with:
-          chrome-version: 151.0.7922.77  # a Chrome-for-Testing known-good build (not every stable build is published)
+          chrome-version: 151.0.7922.77
+          # ^ a Chrome-for-Testing known-good build. Two hard-won notes: not every stable build
+          #   is published to CfT, and "published" does not mean "works" — 151.0.7922.138
+          #   installs fine but its DevTools endpoint resets connections on ubuntu-24 runners
+          #   (child-process crashes; diagnosed via trend-point skip reasons). Test a pin bump
+          #   on one push before trusting it.
           install-dependencies: true      # CfT builds need shared libraries the bare runner lacks
 
       # Developing driftwatch in this repo: build the local action and run it.

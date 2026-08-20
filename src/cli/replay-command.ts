@@ -36,7 +36,13 @@ export async function replayCommand(flags: {
       serve: flags.serve,
       browser: flags.browser,
       push: flags.push,
-      confirm: flags.yes ? undefined : confirmOnTerminal,
+      // --yes skips the question, never the information: the cost line still prints.
+      confirm: flags.yes
+        ? async (description) => {
+            console.error(`${pc.bold('replay cost:')} ${description}. (--yes given — proceeding)`)
+            return true
+          }
+        : confirmOnTerminal,
       progress,
     })
 

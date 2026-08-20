@@ -1992,6 +1992,94 @@
         ],
         "driftwatchVersion": "0.6.0"
       }
+    },
+    {
+      "sha": "2c66ff979f1eb7f4354fd8591e751a6d887cedad",
+      "shortSha": "2c66ff979f1e",
+      "timestamp": "2026-08-20T08:13:45.802Z",
+      "branch": "main",
+      "committedAt": "2026-08-20T11:09:49+03:00",
+      "parentSha": "5e1decaa6b6df17064c8e39a5cf9a436941e5989",
+      "benchmarkIndex": 2512,
+      "metrics": {
+        "install_time": {
+          "value": 13182,
+          "unit": "ms"
+        },
+        "build_time": {
+          "value": 29096,
+          "unit": "ms"
+        },
+        "bundle_size": {
+          "value": 2313032,
+          "unit": "bytes"
+        },
+        "route_latency:/live": {
+          "value": 11,
+          "unit": "ms"
+        },
+        "lcp:/": {
+          "value": 1724,
+          "unit": "ms"
+        },
+        "tbt:/": {
+          "value": 149,
+          "unit": "ms"
+        },
+        "fcp:/": {
+          "value": 786,
+          "unit": "ms"
+        },
+        "transfer_size:/": {
+          "value": 231559,
+          "unit": "bytes"
+        },
+        "lcp:/live": {
+          "value": 1580,
+          "unit": "ms"
+        },
+        "tbt:/live": {
+          "value": 94,
+          "unit": "ms"
+        },
+        "fcp:/live": {
+          "value": 779,
+          "unit": "ms"
+        },
+        "transfer_size:/live": {
+          "value": 230456,
+          "unit": "bytes"
+        },
+        "lcp:/blog": {
+          "value": 1864,
+          "unit": "ms"
+        },
+        "tbt:/blog": {
+          "value": 108,
+          "unit": "ms"
+        },
+        "fcp:/blog": {
+          "value": 775,
+          "unit": "ms"
+        },
+        "transfer_size:/blog": {
+          "value": 235483,
+          "unit": "bytes"
+        }
+      },
+      "protocol": {
+        "nodeVersion": "v24.18.0",
+        "platform": "linux",
+        "arch": "x64",
+        "browser": "chrome/151.0.7922.77",
+        "hostLabels": [
+          "arch:X64",
+          "env:github-hosted",
+          "image:ubuntu24",
+          "os:Linux"
+        ],
+        "driftwatchVersion": "0.6.0"
+      }
     }
   ]
 }

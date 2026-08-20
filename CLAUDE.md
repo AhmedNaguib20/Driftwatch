@@ -209,8 +209,17 @@ commit topology/date, not append order.
   - [x] DECIDED — movement doctrine: byte classes only, every environment; wall-clock labeled
         not-judged with reason. Movement=attribution (strong claim) vs drift=tendency (weak claim)
         — deliberate asymmetry. CPU-probe normalization is future work.
-  - [ ] finish the proof under the doctrine (movement line + dashboard + 3 harvest folders) →
-        M7 CLOSED
+  - [x] doctrine implemented (`8da8e9e`) + live proof CLOSED on a constructed 10-commit fixture
+        history (3 buried events among 7 innocents): **bundle size moved at 3 commits: f95fe6f
+        +6.1% · 4db8b12 +21.3% · 0d812a9 −4.7%** — the 3 events, correct directions including the
+        improvement, silent on all 7 innocents; wall-clock classes named not-judged; dashboard
+        shows 10 hollow replayed points, 3 rings on bundle_size only, captions elsewhere; harvest
+        wrote exactly 3 candidate folders with empty truth fields. 293 tests.
+
+**M7 — COMPLETE.** The replay proof history lived in scratch (not a repo fixture — the unit
+suite's tiny git repos already cover replay end-to-end; a 367MB node_modules fixture would earn
+nothing). Pre-launch items unchanged, plus: per-point CPU-probe normalization is the door back to
+wall-clock attribution (spec §10).
 
 Do not start a milestone before the previous one's definition of done is met.
 

@@ -3,10 +3,12 @@ import {
   assessDrift,
   buildTimelines,
   detectProject,
+  findMovements,
   readPerfDataIndex,
 } from '../core/index.js'
 import type { DriftReport } from '../core/index.js'
 import { formatValue, padVisible, visibleLength } from './format.js'
+import { renderMovements } from './render-moves.js'
 
 
 /**
@@ -15,6 +17,7 @@ import { formatValue, padVisible, visibleLength } from './format.js'
  * "regression". Honest about thin data: under 3 points is not a trend and says so.
  */
 export async function trendCommand(flags: {
+  moves?: boolean
   json: boolean
   fetch: boolean
   cwd: string
@@ -29,6 +32,14 @@ export async function trendCommand(flags: {
   if ('unavailable' in read) {
     if (flags.json) console.log(JSON.stringify({ unavailable: read.unavailable }))
     else console.log(pc.yellow(read.unavailable))
+    return
+  }
+
+  // --moves: the movement report — same data, the "where did it change" question.
+  if (flags.moves) {
+    const moves = findMovements(read.index)
+    if (flags.json) console.log(JSON.stringify({ ref: read.ref, entries: read.index.entries.length, movements: moves }, null, 2))
+    else console.log(renderMovements(moves, read.index.entries.length))
     return
   }
 

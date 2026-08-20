@@ -911,8 +911,16 @@ a candidate eval case, converting the hand-built 4-case set into dozens from rea
   index entries gain commit timestamp + parent linkage. Existing branch data must render
   identically after the migration.
 - Dedup: commits already in the index are skipped.
-- Step 2 scope: dashboard renders replayed points visually distinct; a regression-finding report
-  names the commits where metrics moved — the wow moment and the eval harvest in one surface.
+- *Step 1 (DONE — `62365c7`, `3cee4cb`):* topology ordering via Kahn's algorithm with date +
+  append-index priority — **rebases can author-date a child before its parent**, so parent linkage
+  outranks dates; pre-M7 byte-goldens pass unchanged (the migration proof). Cost estimate reads the
+  machine's own last record run; with none it says **"unknown — the first commit will calibrate"**
+  rather than inventing a number. Zero-metrics-measured maps to §10's "fails to build" (measurement
+  never throws by convention). Resume from `.perf/replay-pending/` proven; one-segment-by-
+  construction test-asserted.
+- Step 2 scope: dashboard renders replayed points visually distinct; a **movement report** names
+  the commits where metrics moved beyond noise (same floor+quanta machinery, consecutive points
+  within a segment) — the wow moment and the eval harvest in one surface.
 
 ---
 

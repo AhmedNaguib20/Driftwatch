@@ -1,5 +1,6 @@
 import type { DriftReport } from '../drift.js'
 import type { IndexFile } from '../index-file.js'
+import { findMovements } from '../movement.js'
 import { orderEntries } from '../order.js'
 import type { MetricTimeline } from '../timeline.js'
 import { renderChart } from './chart.js'
@@ -29,8 +30,16 @@ export function renderDashboard(input: DashboardInput): string {
   const entryIndexOf = (sha: string) => Math.max(0, entryShas.indexOf(sha))
   const ordered = orderReports(input.reports)
 
+  // Movement emphasis (M7): the same floor+quanta machinery, computed once for every card.
+  const movedAt = new Map(
+    findMovements({ tool: 'driftwatch', schemaVersion: 1, entries: input.index.entries }).map(
+      (m) => [m.id, new Set(m.movements.map((mv) => mv.toSha))],
+    ),
+  )
   const cards = ordered
-    .map(({ timeline, drift }) => renderCard(timeline, drift, entryIndexOf, entryShas.length))
+    .map(({ timeline, drift }) =>
+      renderCard(timeline, drift, entryIndexOf, entryShas.length, movedAt.get(timeline.id) ?? new Set()),
+    )
     .join('\n')
 
   const latest = entries.at(-1) ?? null
@@ -95,6 +104,7 @@ function renderCard(
   drift: DriftReport,
   entryIndexOf: (sha: string) => number,
   entryCount: number,
+  movedAt: ReadonlySet<string>,
 ): string {
   const chip = driftChip(drift)
   const latest = drift.latest ? formatValue(drift.latest.value, drift.unit) : '—'
@@ -110,7 +120,7 @@ function renderCard(
     <span class="current">${escapeHtml(latest)}</span>
     ${chip}
   </div>
-  ${renderChart(timeline, drift, entryIndexOf, entryCount)}
+  ${renderChart(timeline, drift, entryIndexOf, entryCount, movedAt)}
   ${breaks}
 </section>`
 }
@@ -197,6 +207,8 @@ svg { display: block; width: 100%; height: auto; }
 .latest { fill: var(--text); font-size: 10.5px; font-weight: 600; font-family: inherit; }
 .line { fill: none; stroke: var(--line); stroke-width: 2; stroke-linejoin: round; }
 .dot { fill: var(--line); }
+.dot-replayed { fill: var(--card); stroke: var(--line); stroke-width: 1.5; }
+.move { fill: none; stroke: var(--line); stroke-width: 1; opacity: 0.45; }
 .hit { fill: transparent; }
 .break line { stroke: var(--break); stroke-width: 1.5; stroke-dasharray: 3 4; }
 footer { margin-top: 24px; font-size: 11.5px; }

@@ -19,6 +19,8 @@ export function renderChart(
   drift: DriftReport,
   entryIndexOf: (sha: string) => number,
   entryCount: number,
+  /** Shas where this metric moved beyond noise — a subtle emphasis ring (M7). */
+  movedAt: ReadonlySet<string> = new Set(),
 ): string {
   const points = timeline.segments.flatMap((s) => s.points)
   if (points.length === 0) return ''
@@ -85,10 +87,21 @@ export function renderChart(
       for (const p of r) {
         const cx = x(p.sha).toFixed(1)
         const cy = y(p.value).toFixed(1)
+        // Replayed points render HOLLOW: measurement time ≠ commit time, and the reader must be
+        // able to tell a retro-measured point from a lived-through one at a glance (M7).
+        const dot = p.replayed
+          ? `<circle class="dot dot-replayed" cx="${cx}" cy="${cy}" r="3"/>`
+          : `<circle class="dot" cx="${cx}" cy="${cy}" r="3"/>`
+        const emphasis = movedAt.has(p.sha)
+          ? `<circle class="move" cx="${cx}" cy="${cy}" r="6"/>`
+          : ''
+        const tip = p.replayed
+          ? `${p.shortSha} · ${formatValue(p.value, timeline.unit)} · replayed — measured ${p.timestamp}, committed ${p.committedAt ?? 'unknown'}`
+          : `${p.shortSha} · ${formatValue(p.value, timeline.unit)} · ${p.timestamp}`
         parts.push(
-          `<g><circle class="dot" cx="${cx}" cy="${cy}" r="3"/>` +
+          `<g>${emphasis}${dot}` +
             `<circle class="hit" cx="${cx}" cy="${cy}" r="9"/>` +
-            `<title>${escapeHtml(`${p.shortSha} · ${formatValue(p.value, timeline.unit)} · ${p.timestamp}`)}</title></g>`,
+            `<title>${escapeHtml(tip + (movedAt.has(p.sha) ? '\nmoved beyond noise at this commit' : ''))}</title></g>`,
         )
       }
     }

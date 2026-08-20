@@ -7,6 +7,7 @@ import {
   assessDrift,
   buildTimelines,
   emptyIndex,
+  findMovements,
   identityDiff,
 } from '../src/core/index.js'
 import type { IndexEntry, IndexFile, ProtocolIdentity } from '../src/core/index.js'
@@ -249,6 +250,63 @@ describe('history ordering (M7) — topology first, date fallback, append order 
     expect(timeline!.segments[0]!.points.map((p) => p.sha)).toEqual([r1.sha, r2.sha, r3.sha])
     expect(timeline!.segments[1]!.points.map((p) => p.sha)).toEqual([live.sha])
     expect(timeline!.breaks[0]!.changes.join()).toContain('driftwatch')
+  })
+})
+
+describe('movement report (M7) — where history actually changed', () => {
+  const at = (e: IndexEntry, extra: Partial<IndexEntry>): IndexEntry => ({ ...e, ...extra })
+
+  it('flags crossings of floor+quantum between adjacent points; improvements count with direction', () => {
+    const a = entry({ bundle_size: 100_000, build_time: 30_000 })
+    const b = entry({ bundle_size: 140_000, build_time: 30_050 }) // bundle +40%; build +50ms < 100ms quantum
+    const c = entry({ bundle_size: 100_500, build_time: 30_040 }) // bundle −28.2%; build noise
+
+    const reports = findMovements(index([a, b, c]))
+    expect(reports.map((r) => r.id)).toEqual(['bundle_size']) // build time stays quiet
+    const moves = reports[0]!.movements
+    expect(moves).toHaveLength(2)
+    expect(moves[0]).toMatchObject({ fromSha: a.sha, toSha: b.sha, direction: 'up', deltaPercent: 40, gap: null })
+    expect(moves[1]).toMatchObject({ fromSha: b.sha, toSha: c.sha, direction: 'down', gap: null })
+  })
+
+  it('a percentage spike under the class quantum is not a movement (the M1 rule, applied to history)', () => {
+    const a = entry({ 'route_latency:/live': 4 })
+    const b = entry({ 'route_latency:/live': 8 }) // +100%, but 4ms < 5ms quantum
+    expect(findMovements(index([a, b]))).toEqual([])
+  })
+
+  it('the quantum follows the SEGMENT\'s recorded host class, not the reading machine', () => {
+    const ci = protocol({ hostLabels: ['os:Linux'] })
+    const a = entry({ 'lcp:/': 1700 }, ci)
+    const b = entry({ 'lcp:/': 1820 }, ci) // +120ms: over the 25ms local quantum, under the 200ms CI quantum
+    expect(findMovements(index([a, b]))).toEqual([])
+
+    const local = protocol({ hostLabels: [] })
+    const c = entry({ 'lcp:/': 1700 }, local)
+    const d = entry({ 'lcp:/': 1820 }, local)
+    expect(findMovements(index([c, d]))[0]?.movements).toHaveLength(1)
+  })
+
+  it('never judges across a protocol break', () => {
+    const a = entry({ bundle_size: 100_000 }, protocol({ nodeVersion: 'v20' }))
+    const b = entry({ bundle_size: 150_000 }, protocol({ nodeVersion: 'v24' }))
+    expect(findMovements(index([a, b]))).toEqual([])
+  })
+
+  it('an unmeasured interval names the gap instead of pinning one sha — unbuildable counted', () => {
+    const a = at(entry({ bundle_size: 100_000 }), { committedAt: '2026-08-01T00:00:00Z', parentSha: null })
+    const broken = at(entry({}), {
+      committedAt: '2026-08-02T00:00:00Z', parentSha: a.sha, replayed: true,
+      skipped: { reason: 'build failed' },
+    })
+    const c = at(entry({ bundle_size: 150_000 }), { committedAt: '2026-08-03T00:00:00Z', parentSha: broken.sha })
+
+    const [report] = findMovements(index([a, broken, c]))
+    expect(report!.movements[0]).toMatchObject({
+      fromSha: a.sha,
+      toSha: c.sha,
+      gap: { commits: 1, unbuildable: 1 },
+    })
   })
 })
 

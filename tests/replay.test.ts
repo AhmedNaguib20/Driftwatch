@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
@@ -9,12 +9,15 @@ import {
   buildTimelines,
   describeEstimate,
   estimate,
+  findMovements,
+  harvestCandidates,
   readPerfDataIndex,
   replayHistory,
   resolveReplayCommits,
   savePending,
 } from '../src/core/index.js'
 import type { ResultJson } from '../src/core/index.js'
+import { renderMovements } from '../src/cli/render-moves.js'
 
 const exec = promisify(execFile)
 const temps: string[] = []
@@ -167,6 +170,41 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
     const values = timeline.segments[0]!.points.map((p) => p.value)
     expect(values[1]!).toBeGreaterThan(values[0]!)
     expect(values[2]!).toBeLessThan(values[1]!)
+
+    // The movement report over the same branch: c2's jump pinned to its sha; c4's recovery is a
+    // gapped interval — the unbuildable c3 sits inside it and the report says so.
+    const moves = findMovements(read.index)
+    const bundleMoves = moves.find((m) => m.id === 'bundle_size')!.movements
+    expect(bundleMoves).toHaveLength(2)
+    expect(bundleMoves[0]).toMatchObject({ fromSha: shas.c1, toSha: shas.c2, direction: 'up', gap: null })
+    expect(bundleMoves[1]).toMatchObject({
+      fromSha: shas.c2,
+      toSha: shas.c4,
+      direction: 'down',
+      gap: { commits: 1, unbuildable: 1 },
+    })
+    const line = renderMovements(moves, read.index.entries.length)
+    expect(line).toContain('bundle size moved at 2 commits')
+    expect(line).toContain('somewhere across 1 commit, 1 unbuildable')
+
+    // The harvest: half an eval case per movement commit — measured facts filled, truth empty.
+    const harvest = await harvestCandidates(dir, moves)
+    expect(harvest.written).toHaveLength(2)
+    expect(harvest.missing).toEqual([])
+    const candidate = path.join(dir, 'eval', 'candidates', shas.c2.slice(0, 12))
+    const tpl = JSON.parse(await readFile(path.join(candidate, 'expected-template.json'), 'utf8'))
+    expect(tpl.movement.metrics[0]).toMatchObject({ id: 'bundle_size', direction: 'up' })
+    expect(tpl.causeMustContain).toEqual([])
+    expect(tpl.suspectsInclude).toEqual([])
+    const after = JSON.parse(await readFile(path.join(candidate, 'after.json'), 'utf8'))
+    expect(after.mode).toBe('record')
+    const patch = await readFile(path.join(candidate, 'diff.patch'), 'utf8')
+    expect(patch).toContain('app.js')
+
+    // A second harvest never clobbers a human's in-progress truth-naming.
+    const again = await harvestCandidates(dir, moves)
+    expect(again.written).toEqual([])
+    expect(again.skippedExisting).toHaveLength(2)
   }, 300_000)
 
   it('dedup: a second replay measures nothing — every commit is already recorded', async () => {

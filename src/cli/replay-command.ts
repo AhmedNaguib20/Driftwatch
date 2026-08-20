@@ -1,6 +1,7 @@
 import { createInterface } from 'node:readline'
 import pc from 'picocolors'
-import { replayHistory } from '../core/index.js'
+import { detectProject, findMovements, harvestCandidates, readPerfDataIndex, replayHistory } from '../core/index.js'
+import { renderMovements } from './render-moves.js'
 
 /**
  * `driftwatch replay --last N | --since <ref>` — measure the mainline's recent history
@@ -12,6 +13,7 @@ export async function replayCommand(flags: {
   since?: string
   yes: boolean
   push: boolean
+  harvest: boolean
   json: boolean
   serve: boolean
   browser: boolean
@@ -38,12 +40,25 @@ export async function replayCommand(flags: {
       progress,
     })
 
-    if (flags.json) {
-      console.log(JSON.stringify(summary, null, 2))
+    if (summary.write.detail === 'declined') {
+      if (flags.json) console.log(JSON.stringify(summary, null, 2))
+      else console.log(pc.yellow('replay declined — nothing was measured.'))
       return
     }
-    if (summary.write.detail === 'declined') {
-      console.log(pc.yellow('replay declined — nothing was measured.'))
+
+    // The movement report — the reason replay exists. Read back what the branch now holds.
+    const profile = await detectProject({ cwd: flags.cwd })
+    const read = profile.gitRoot ? await readPerfDataIndex(profile.gitRoot, { fetch: false }) : null
+    const moves = read && 'index' in read ? findMovements(read.index) : []
+    const entryCount = read && 'index' in read ? read.index.entries.length : 0
+
+    const harvest =
+      flags.harvest && profile.gitRoot && moves.length > 0
+        ? await harvestCandidates(profile.gitRoot, moves)
+        : null
+
+    if (flags.json) {
+      console.log(JSON.stringify({ ...summary, movements: moves, harvest }, null, 2))
       return
     }
     const parts = [
@@ -55,6 +70,15 @@ export async function replayCommand(flags: {
     console.log(`replay: ${parts.join(', ')} — perf-data ${summary.write.detail}${flags.push ? '' : ' (local; use --push to publish)'}`)
     for (const skip of summary.skipped) {
       console.log(pc.yellow(`  skipped ${skip.sha.slice(0, 12)}: ${skip.reason.split('\n')[0]}`))
+    }
+    console.log('')
+    console.log(renderMovements(moves, entryCount))
+    if (harvest) {
+      for (const dir of harvest.written) console.log(pc.dim(`  harvested ${dir}`))
+      for (const dir of harvest.skippedExisting) console.log(pc.dim(`  candidate exists, left untouched: ${dir}`))
+      for (const sha of harvest.missing) console.log(pc.yellow(`  could not harvest ${sha.slice(0, 12)}: endpoint results not on the perf-data branch`))
+    } else if (flags.harvest && moves.length === 0) {
+      console.log(pc.dim('  nothing to harvest — no movements.'))
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

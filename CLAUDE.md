@@ -199,6 +199,12 @@ expensive), one batched perf-data push at the end. Replayed entries are marked (
 segment by construction. KNOWN DESIGN ISSUE to solve in step 1: timelines currently build in
 APPEND order; replay inserts older commits after newer entries, so timeline ordering must move to
 commit topology/date, not append order.
+  - [x] step 1 (`62365c7`, `3cee4cb`, `0373139`): topology ordering (Kahn + date/append priority —
+        parent linkage outranks author dates because rebases lie), replay core (first-parent,
+        honest cost estimate, per-commit pending saves + resume, skip-and-continue on broken
+        commits, one batch write, one segment asserted). 286 tests.
+  - [ ] step 2: dashboard distinction for replayed points + the movement report + fixture-scale
+        live proof + eval-candidate harvest
 
 Do not start a milestone before the previous one's definition of done is met.
 

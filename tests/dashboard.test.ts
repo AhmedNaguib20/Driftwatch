@@ -51,6 +51,24 @@ function mixedIndex(): IndexFile {
   }
 }
 
+describe('replayed points and movement emphasis (M7)', () => {
+  it('replayed points render hollow with the two-dates tooltip; movement commits get the ring', () => {
+    counter = 0
+    const a: IndexEntry = { ...entry({ bundle_size: 100_000 }), committedAt: '2026-06-01T00:00:00Z', parentSha: null, replayed: true }
+    const b: IndexEntry = { ...entry({ bundle_size: 145_000 }), committedAt: '2026-06-02T00:00:00Z', parentSha: a.sha, replayed: true }
+    const live = entry({ bundle_size: 145_200 })
+    const html = render({ ...emptyIndex(), entries: [live, a, b] })
+
+    expect(html).toContain('class="dot dot-replayed"')
+    expect(html).toContain('replayed — measured 2026-08-01T00:00:00.000Z, committed 2026-06-01T00:00:00Z')
+    // b is where bundle_size moved (+45%): the subtle emphasis ring + the tooltip line.
+    expect(html).toContain('class="move"')
+    expect(html).toContain('moved beyond noise at this commit')
+    // The live point keeps the filled dot and the plain tooltip.
+    expect(html).toContain('class="dot"')
+  })
+})
+
 describe('dashboard generation', () => {
   it('is byte-stable: fixed input → the golden HTML', async () => {
     const html = render(mixedIndex())

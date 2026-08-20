@@ -16,6 +16,9 @@ export interface TimelinePoint {
   readonly timestamp: string
   readonly value: number
   readonly unit: 'ms' | 'bytes'
+  /** Carried from the entry (M7): consumers must see measurement time ≠ commit time. */
+  readonly replayed?: true
+  readonly committedAt?: string
 }
 
 export interface TimelineSegment {
@@ -85,6 +88,8 @@ export function buildTimelines(index: IndexFile): MetricTimeline[] {
         timestamp: entry.timestamp,
         value,
         unit,
+        ...(entry.replayed ? { replayed: true as const } : {}),
+        ...(entry.committedAt ? { committedAt: entry.committedAt } : {}),
       }
       if (current && identityDiff(current.protocol, entry.protocol).length === 0) {
         current.points.push(point)

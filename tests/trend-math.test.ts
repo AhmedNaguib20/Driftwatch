@@ -9,6 +9,7 @@ import {
   emptyIndex,
   findMovements,
   identityDiff,
+  movementReport,
 } from '../src/core/index.js'
 import type { IndexEntry, IndexFile, ProtocolIdentity } from '../src/core/index.js'
 
@@ -257,34 +258,43 @@ describe('movement report (M7) — where history actually changed', () => {
   const at = (e: IndexEntry, extra: Partial<IndexEntry>): IndexEntry => ({ ...e, ...extra })
 
   it('flags crossings of floor+quantum between adjacent points; improvements count with direction', () => {
-    const a = entry({ bundle_size: 100_000, build_time: 30_000 })
-    const b = entry({ bundle_size: 140_000, build_time: 30_050 }) // bundle +40%; build +50ms < 100ms quantum
-    const c = entry({ bundle_size: 100_500, build_time: 30_040 }) // bundle −28.2%; build noise
+    const a = entry({ bundle_size: 100_000 })
+    const b = entry({ bundle_size: 140_000 }) // +40%
+    const c = entry({ bundle_size: 100_500 }) // −28.2%
 
     const reports = findMovements(index([a, b, c]))
-    expect(reports.map((r) => r.id)).toEqual(['bundle_size']) // build time stays quiet
+    expect(reports.map((r) => r.id)).toEqual(['bundle_size'])
     const moves = reports[0]!.movements
     expect(moves).toHaveLength(2)
     expect(moves[0]).toMatchObject({ fromSha: a.sha, toSha: b.sha, direction: 'up', deltaPercent: 40, gap: null })
     expect(moves[1]).toMatchObject({ fromSha: b.sha, toSha: c.sha, direction: 'down', gap: null })
   })
 
-  it('a percentage spike under the class quantum is not a movement (the M1 rule, applied to history)', () => {
-    const a = entry({ 'route_latency:/live': 4 })
-    const b = entry({ 'route_latency:/live': 8 }) // +100%, but 4ms < 5ms quantum
+  // Spec §10 doctrine: attribution is licensed to deterministic byte classes in EVERY environment.
+  // Wall-clock classes drift across the time gaps a movement spans — locally by thermals (observed:
+  // build 9.94→12.47s over one 10-minute replay), on CI by the runner lottery.
+  it('never attributes wall-clock classes, however large the jump — but names them as not judged', () => {
+    const a = entry({ build_time: 30_000, 'route_latency:/live': 10, 'lcp:/': 1700, 'install_time': 4_000 })
+    const b = entry({ build_time: 45_000, 'route_latency:/live': 40, 'lcp:/': 2600, 'install_time': 9_000 })
+
     expect(findMovements(index([a, b]))).toEqual([])
+    const report = movementReport(index([a, b]))
+    expect(report.moved).toEqual([])
+    expect([...report.notJudged].sort()).toEqual(['build_time', 'install_time', 'lcp:/', 'route_latency:/live'])
   })
 
-  it('the quantum follows the SEGMENT\'s recorded host class, not the reading machine', () => {
-    const ci = protocol({ hostLabels: ['os:Linux'] })
-    const a = entry({ 'lcp:/': 1700 }, ci)
-    const b = entry({ 'lcp:/': 1820 }, ci) // +120ms: over the 25ms local quantum, under the 200ms CI quantum
-    expect(findMovements(index([a, b]))).toEqual([])
+  it('transfer_size carries the licence too, under its own 1KB quantum', () => {
+    const under = index([entry({ 'transfer_size:/': 231_000 }), entry({ 'transfer_size:/': 231_500 })])
+    expect(findMovements(under)).toEqual([]) // +500B < 1KB
+    const over = index([entry({ 'transfer_size:/': 231_000 }), entry({ 'transfer_size:/': 256_000 })])
+    expect(findMovements(over)[0]?.movements).toHaveLength(1)
+  })
 
-    const local = protocol({ hostLabels: [] })
-    const c = entry({ 'lcp:/': 1700 }, local)
-    const d = entry({ 'lcp:/': 1820 }, local)
-    expect(findMovements(index([c, d]))[0]?.movements).toHaveLength(1)
+  it('a byte delta under the 2% floor is not a movement (the innocent-commit case)', () => {
+    // The live proof's innocent commits wobbled bundle_size by 5 bytes on 2.3MB.
+    const a = entry({ bundle_size: 2_319_175 })
+    const b = entry({ bundle_size: 2_319_170 })
+    expect(findMovements(index([a, b]))).toEqual([])
   })
 
   it('never judges across a protocol break', () => {

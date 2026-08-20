@@ -922,6 +922,22 @@ a candidate eval case, converting the hand-built 4-case set into dozens from rea
   the commits where metrics moved beyond noise (same floor+quanta machinery, consecutive points
   within a segment) — the wow moment and the eval harvest in one surface.
 
+**Movement doctrine (DECIDED at M7 live proof):** movements are **per-commit attribution** — the
+strongest claim the tool makes ("your perf moved AT this commit") — and attribution requires a
+license the wall-clock classes don't have across time gaps: local sequential replay marches
+monotonically under sustained load/thermals (observed: build 9.94→12.47s across a 10-minute run,
++22.3% "movements" on innocent commits), and CI record points carry the M5 **runner lottery**
+(build +65.3% on comment-only pushes). **Rule: the movement report judges deterministic byte
+classes only (`bundle_size`, `transfer_size:*`) in every environment.** Wall-clock classes stay in
+the data and on the dashboard but are labeled "not judged — cross-time-gap timing (§5.1 fifth
+instance / runner lottery)". The asymmetry with drift is deliberate and stated: **drift** is a
+segment-level *tendency* (weaker claim, keeps timing with its honest language); **movement** is
+per-commit *attribution* (stronger claim, byte-license only). Revisit when a per-point CPU probe
+(benchmarkIndex-style normalization — option C, real design work) provides a license; one
+machine/one session was rejected as a calibration basis. The byte-class demo line is the product:
+3 buried events found, correct directions including the improvement, silent on all 7 innocents.
+Harvest folders follow the same rule for free (3, not 7).
+
 ---
 
 ## 11. Business Model

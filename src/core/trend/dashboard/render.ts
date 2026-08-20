@@ -1,6 +1,6 @@
 import type { DriftReport } from '../drift.js'
 import type { IndexFile } from '../index-file.js'
-import { findMovements } from '../movement.js'
+import { NOT_JUDGED_REASON, findMovements, isAttributable } from '../movement.js'
 import { orderEntries } from '../order.js'
 import type { MetricTimeline } from '../timeline.js'
 import { renderChart } from './chart.js'
@@ -114,6 +114,11 @@ function renderCard(
           .map((b) => escapeHtml(`${b.beforeSha.slice(0, 7)} → ${b.afterSha.slice(0, 7)}: ${b.changes.join(' | ')}`))
           .join('<br>⚡ ')}</p>`
       : ''
+  // Doctrine caption (spec §10): wall-clock cards keep their points but carry no movement rings,
+  // and say why — attribution is a byte-class licence.
+  const notJudged = isAttributable(timeline.id)
+    ? ''
+    : `<p class="not-judged">◌ movements ${escapeHtml(NOT_JUDGED_REASON)}</p>`
   return `<section class="card">
   <div class="card-head">
     <h2>${escapeHtml(timeline.id)}</h2>
@@ -121,6 +126,7 @@ function renderCard(
     ${chip}
   </div>
   ${renderChart(timeline, drift, entryIndexOf, entryCount, movedAt)}
+  ${notJudged}
   ${breaks}
 </section>`
 }
@@ -209,6 +215,7 @@ svg { display: block; width: 100%; height: auto; }
 .dot { fill: var(--line); }
 .dot-replayed { fill: var(--card); stroke: var(--line); stroke-width: 1.5; }
 .move { fill: none; stroke: var(--line); stroke-width: 1; opacity: 0.45; }
+.not-judged { margin: 6px 0 0; font-size: 11px; color: var(--muted); }
 .hit { fill: transparent; }
 .break line { stroke: var(--break); stroke-width: 1.5; stroke-dasharray: 3 4; }
 footer { margin-top: 24px; font-size: 11.5px; }

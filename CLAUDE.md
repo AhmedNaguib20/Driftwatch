@@ -203,8 +203,14 @@ commit topology/date, not append order.
         parent linkage outranks author dates because rebases lie), replay core (first-parent,
         honest cost estimate, per-commit pending saves + resume, skip-and-continue on broken
         commits, one batch write, one segment asserted). 286 tests.
-  - [ ] step 2: dashboard distinction for replayed points + the movement report + fixture-scale
-        live proof + eval-candidate harvest
+  - [x] step 2 machinery (`5e1deca`): movement report, hollow replayed points + movement rings,
+        harvest with empty truth fields. Live proof: byte line PERFECT (3 events, 7 innocents
+        silent); wall-clock cried wolf (thermal march local, lottery on CI).
+  - [x] DECIDED — movement doctrine: byte classes only, every environment; wall-clock labeled
+        not-judged with reason. Movement=attribution (strong claim) vs drift=tendency (weak claim)
+        — deliberate asymmetry. CPU-probe normalization is future work.
+  - [ ] finish the proof under the doctrine (movement line + dashboard + 3 harvest folders) →
+        M7 CLOSED
 
 Do not start a milestone before the previous one's definition of done is met.
 

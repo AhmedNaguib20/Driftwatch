@@ -1,6 +1,6 @@
 import { createInterface } from 'node:readline'
 import pc from 'picocolors'
-import { detectProject, findMovements, harvestCandidates, readPerfDataIndex, replayHistory } from '../core/index.js'
+import { detectProject, harvestCandidates, movementReport, readPerfDataIndex, replayHistory } from '../core/index.js'
 import { renderMovements } from './render-moves.js'
 
 /**
@@ -55,16 +55,17 @@ export async function replayCommand(flags: {
     // The movement report — the reason replay exists. Read back what the branch now holds.
     const profile = await detectProject({ cwd: flags.cwd })
     const read = profile.gitRoot ? await readPerfDataIndex(profile.gitRoot, { fetch: false }) : null
-    const moves = read && 'index' in read ? findMovements(read.index) : []
+    const report = read && 'index' in read ? movementReport(read.index) : { moved: [], notJudged: [] }
     const entryCount = read && 'index' in read ? read.index.entries.length : 0
 
+    // The harvest follows the doctrine for free: only attributable movements make candidates.
     const harvest =
-      flags.harvest && profile.gitRoot && moves.length > 0
-        ? await harvestCandidates(profile.gitRoot, moves)
+      flags.harvest && profile.gitRoot && report.moved.length > 0
+        ? await harvestCandidates(profile.gitRoot, report.moved)
         : null
 
     if (flags.json) {
-      console.log(JSON.stringify({ ...summary, movements: moves, harvest }, null, 2))
+      console.log(JSON.stringify({ ...summary, movements: report, harvest }, null, 2))
       return
     }
     const parts = [
@@ -78,12 +79,12 @@ export async function replayCommand(flags: {
       console.log(pc.yellow(`  skipped ${skip.sha.slice(0, 12)}: ${skip.reason.split('\n')[0]}`))
     }
     console.log('')
-    console.log(renderMovements(moves, entryCount))
+    console.log(renderMovements(report, entryCount))
     if (harvest) {
       for (const dir of harvest.written) console.log(pc.dim(`  harvested ${dir}`))
       for (const dir of harvest.skippedExisting) console.log(pc.dim(`  candidate exists, left untouched: ${dir}`))
       for (const sha of harvest.missing) console.log(pc.yellow(`  could not harvest ${sha.slice(0, 12)}: endpoint results not on the perf-data branch`))
-    } else if (flags.harvest && moves.length === 0) {
+    } else if (flags.harvest && report.moved.length === 0) {
       console.log(pc.dim('  nothing to harvest — no movements.'))
     }
   } catch (error) {

@@ -9,8 +9,8 @@ import {
   buildTimelines,
   describeEstimate,
   estimate,
-  findMovements,
   harvestCandidates,
+  movementReport,
   readPerfDataIndex,
   replayHistory,
   resolveReplayCommits,
@@ -173,8 +173,8 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
 
     // The movement report over the same branch: c2's jump pinned to its sha; c4's recovery is a
     // gapped interval — the unbuildable c3 sits inside it and the report says so.
-    const moves = findMovements(read.index)
-    const bundleMoves = moves.find((m) => m.id === 'bundle_size')!.movements
+    const report = movementReport(read.index)
+    const bundleMoves = report.moved.find((m) => m.id === 'bundle_size')!.movements
     expect(bundleMoves).toHaveLength(2)
     expect(bundleMoves[0]).toMatchObject({ fromSha: shas.c1, toSha: shas.c2, direction: 'up', gap: null })
     expect(bundleMoves[1]).toMatchObject({
@@ -183,12 +183,16 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
       direction: 'down',
       gap: { commits: 1, unbuildable: 1 },
     })
-    const line = renderMovements(moves, read.index.entries.length)
+    const line = renderMovements(report, read.index.entries.length)
     expect(line).toContain('bundle size moved at 2 commits')
     expect(line).toContain('somewhere across 1 commit, 1 unbuildable')
+    // Doctrine (spec §10): wall-clock classes are named, never attributed.
+    expect(report.moved.map((m) => m.id)).toEqual(['bundle_size'])
+    expect(line).toContain('not judged — cross-time-gap timing')
+    expect(line).toContain('build time')
 
     // The harvest: half an eval case per movement commit — measured facts filled, truth empty.
-    const harvest = await harvestCandidates(dir, moves)
+    const harvest = await harvestCandidates(dir, report.moved)
     expect(harvest.written).toHaveLength(2)
     expect(harvest.missing).toEqual([])
     const candidate = path.join(dir, 'eval', 'candidates', shas.c2.slice(0, 12))
@@ -202,7 +206,7 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
     expect(patch).toContain('app.js')
 
     // A second harvest never clobbers a human's in-progress truth-naming.
-    const again = await harvestCandidates(dir, moves)
+    const again = await harvestCandidates(dir, report.moved)
     expect(again.written).toEqual([])
     expect(again.skippedExisting).toHaveLength(2)
   }, 300_000)

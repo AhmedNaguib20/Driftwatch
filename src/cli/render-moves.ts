@@ -1,21 +1,28 @@
 import pc from 'picocolors'
-import type { MetricMovements, Movement } from '../core/index.js'
+import { NOT_JUDGED_REASON } from '../core/index.js'
+import type { Movement, MovementReport } from '../core/index.js'
 
 /**
  * The movement report, rendered — the wow line. One line per metric that moved; each movement is
  * the sha where history changed, signed. Gapped intervals never pin a single commit: they say
  * "somewhere across". Improvements render too — this is history, not blame.
  */
-export function renderMovements(reports: readonly MetricMovements[], entryCount: number): string {
-  if (reports.length === 0) {
-    return pc.dim(`no metric moved beyond noise across ${entryCount} recorded commit(s).`)
+export function renderMovements(report: MovementReport, entryCount: number): string {
+  const lines: string[] =
+    report.moved.length === 0
+      ? [pc.dim(`no metric moved beyond noise across ${entryCount} recorded commit(s).`)]
+      : [pc.bold(`performance moved (${entryCount} recorded commit(s)):`)]
+
+  for (const metric of report.moved) {
+    const n = metric.movements.length
+    const where = metric.movements.map((m) => renderMovement(m)).join(pc.dim(' · '))
+    lines.push(`  ${pc.bold(displayName(metric.id))} moved at ${n} ${n === 1 ? 'commit' : 'commits'}: ${where}`)
   }
 
-  const lines: string[] = [pc.bold(`performance moved (${entryCount} recorded commit(s)):`)]
-  for (const report of reports) {
-    const n = report.movements.length
-    const where = report.movements.map((m) => renderMovement(m)).join(pc.dim(' · '))
-    lines.push(`  ${pc.bold(displayName(report.id))} moved at ${n} ${n === 1 ? 'commit' : 'commits'}: ${where}`)
+  // Never silently: the classes the doctrine declines to attribute are named, with the reason.
+  if (report.notJudged.length > 0) {
+    lines.push('')
+    lines.push(pc.dim(`  ${report.notJudged.map(displayName).join(', ')}: ${NOT_JUDGED_REASON}`))
   }
   return lines.join('\n')
 }

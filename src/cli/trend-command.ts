@@ -3,7 +3,7 @@ import {
   assessDrift,
   buildTimelines,
   detectProject,
-  findMovements,
+  movementReport,
   readPerfDataIndex,
 } from '../core/index.js'
 import type { DriftReport } from '../core/index.js'
@@ -37,9 +37,9 @@ export async function trendCommand(flags: {
 
   // --moves: the movement report — same data, the "where did it change" question.
   if (flags.moves) {
-    const moves = findMovements(read.index)
-    if (flags.json) console.log(JSON.stringify({ ref: read.ref, entries: read.index.entries.length, movements: moves }, null, 2))
-    else console.log(renderMovements(moves, read.index.entries.length))
+    const report = movementReport(read.index)
+    if (flags.json) console.log(JSON.stringify({ ref: read.ref, entries: read.index.entries.length, movements: report }, null, 2))
+    else console.log(renderMovements(report, read.index.entries.length))
     return
   }
 

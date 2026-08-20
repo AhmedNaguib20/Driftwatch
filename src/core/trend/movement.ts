@@ -11,6 +11,10 @@ import { buildTimelines } from './timeline.js'
  * comparison — the quantum follows the segment's recorded host class. Improvements count too:
  * the report is history, not blame. Never judged across a protocol break, and when unmeasured
  * commits sit inside an interval the report says so instead of pinning the movement on one sha.
+ *
+ * Deliberate asymmetry with drift (spec §10): drift is a segment-level TENDENCY — a weak claim,
+ * so it keeps the wall-clock classes with its hedged language. Movement is per-commit
+ * ATTRIBUTION — the strongest claim the tool makes — so it is licensed to byte classes only.
  */
 
 export interface Movement {
@@ -35,6 +39,25 @@ export interface MetricMovements {
   readonly movements: readonly Movement[]
 }
 
+export interface MovementReport {
+  readonly moved: readonly MetricMovements[]
+  /** Metric ids present in the data but ineligible for attribution (spec §10 doctrine). */
+  readonly notJudged: readonly string[]
+}
+
+export const NOT_JUDGED_REASON =
+  'not judged — cross-time-gap timing (§5.1 fifth instance / runner lottery)'
+
+/**
+ * Attribution licence (spec §10, decided at the M7 live proof): only DETERMINISTIC byte classes
+ * may name a commit. Wall-clock classes drift across the time gaps a movement spans — locally by
+ * thermals/sustained load, on CI by the runner lottery — so pinning them on a commit would be a
+ * claim the instrument cannot support. They stay in the data and on the dashboard, labeled.
+ */
+export function isAttributable(id: string): boolean {
+  return id === 'bundle_size' || id.startsWith('transfer_size:')
+}
+
 /** Only metrics that moved appear; a fully quiet history returns []. */
 export function findMovements(index: IndexFile): MetricMovements[] {
   const ordered = orderEntries(index.entries)
@@ -43,6 +66,7 @@ export function findMovements(index: IndexFile): MetricMovements[] {
 
   const out: MetricMovements[] = []
   for (const timeline of buildTimelines(index)) {
+    if (!isAttributable(timeline.id)) continue
     const movements: Movement[] = []
     for (const segment of timeline.segments) {
       const ci = segment.protocol.hostLabels.length > 0
@@ -82,4 +106,12 @@ export function findMovements(index: IndexFile): MetricMovements[] {
     if (movements.length > 0) out.push({ id: timeline.id, unit: timeline.unit, movements })
   }
   return out
+}
+
+/** The full report: what moved, plus what the doctrine declines to judge (never silently). */
+export function movementReport(index: IndexFile): MovementReport {
+  const notJudged = buildTimelines(index)
+    .map((t) => t.id)
+    .filter((id) => !isAttributable(id))
+  return { moved: findMovements(index), notJudged }
 }

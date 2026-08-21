@@ -67,7 +67,9 @@ export async function measureBaseSide(
   }
 
   if (readCache) {
-    const expectedHash = protocolHash(predictProtocol(plan, browserSig, lighthouseProfile))
+    // The cache is per (SHA, protocol, PROJECT): a monorepo has many apps at one commit.
+    const scope = profile.pathInRepo ?? '.'
+    const expectedHash = protocolHash(predictProtocol(plan, browserSig, lighthouseProfile), scope)
     const cached = await readCachedSide(gitRoot, plan.baseSha, expectedHash)
     if (cached) {
       progress(`base ${plan.baseSha.slice(0, 12)} found in cache (protocol ${expectedHash})`)
@@ -121,7 +123,7 @@ export async function measureBaseSide(
     )
     let cachePath: string | null = null
     if (buildMeasured) {
-      cachePath = (await writeCachedSide(gitRoot, plan.baseSha, side)).path
+      cachePath = (await writeCachedSide(gitRoot, plan.baseSha, side, profile.pathInRepo ?? '.')).path
     }
 
     return { side, sha: plan.baseSha, fromCache: false, measuredAt: null, cachePath }

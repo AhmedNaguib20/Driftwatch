@@ -132,26 +132,34 @@ function fakeSide(protocol: MeasurementProtocol): SideMeasurement {
 describe('protocol hash — §5.1 third instance', () => {
   it('is stable for identical protocols regardless of field order', () => {
     expect(canonicalJson({ b: 1, a: { d: 2, c: 3 } })).toBe(canonicalJson({ a: { c: 3, d: 2 }, b: 1 }))
-    expect(protocolHash(fakeProtocol())).toBe(protocolHash(fakeProtocol()))
+    expect(protocolHash(fakeProtocol(), 'app')).toBe(protocolHash(fakeProtocol(), 'app'))
+  })
+
+  it('changes with the measured PROJECT — one commit holds many apps in a monorepo', () => {
+    // Without this, `--app apps/admin` would read the entry `--app apps/storefront` wrote and
+    // report one app's build time as the other's (rule 3). Found in the jinni re-run.
+    expect(protocolHash(fakeProtocol(), 'apps/storefront-web')).not.toBe(
+      protocolHash(fakeProtocol(), 'apps/admin-web'),
+    )
   })
 
   it('changes when the node version, arch, sample count, or install state changes', () => {
-    const base = protocolHash(fakeProtocol())
-    expect(protocolHash(fakeProtocol({ nodeVersion: 'v22.0.0' }))).not.toBe(base)
-    expect(protocolHash(fakeProtocol({ arch: 'x64' }))).not.toBe(base)
-    expect(protocolHash(fakeProtocol({ buildSamples: 5 }))).not.toBe(base)
-    expect(protocolHash(fakeProtocol({ nodeModules: 'fresh-install' }))).not.toBe(base)
+    const base = protocolHash(fakeProtocol(), 'app')
+    expect(protocolHash(fakeProtocol({ nodeVersion: 'v22.0.0' }), 'app')).not.toBe(base)
+    expect(protocolHash(fakeProtocol({ arch: 'x64' }), 'app')).not.toBe(base)
+    expect(protocolHash(fakeProtocol({ buildSamples: 5 }), 'app')).not.toBe(base)
+    expect(protocolHash(fakeProtocol({ nodeModules: 'fresh-install' }), 'app')).not.toBe(base)
   })
 
   it('does not change on mechanism details: cloned vs copied are the same install state', () => {
-    expect(protocolHash(fakeProtocol({ nodeModules: 'copied' }))).toBe(
-      protocolHash(fakeProtocol({ nodeModules: 'cloned' })),
+    expect(protocolHash(fakeProtocol({ nodeModules: 'copied' }), 'app')).toBe(
+      protocolHash(fakeProtocol({ nodeModules: 'cloned' }), 'app'),
     )
   })
 
   it('ignores buildCommand — the SHA fixes it; full-protocol comparison still sees it', () => {
-    expect(protocolHash(fakeProtocol({ buildCommand: 'pnpm run build' }))).toBe(
-      protocolHash(fakeProtocol()),
+    expect(protocolHash(fakeProtocol({ buildCommand: 'pnpm run build' }), 'app')).toBe(
+      protocolHash(fakeProtocol(), 'app'),
     )
   })
 })
@@ -162,7 +170,7 @@ describe('baseline cache', () => {
     const side = fakeSide(fakeProtocol())
     const sha = 'a'.repeat(40)
 
-    const { hash } = await writeCachedSide(root, sha, side)
+    const { hash } = await writeCachedSide(root, sha, side, 'app')
     const entry = await readCachedSide(root, sha, hash)
 
     expect(entry).not.toBeNull()
@@ -174,16 +182,16 @@ describe('baseline cache', () => {
   it('misses on a different protocol hash — same SHA is not enough', async () => {
     const root = await scratch()
     const sha = 'a'.repeat(40)
-    await writeCachedSide(root, sha, fakeSide(fakeProtocol()))
+    await writeCachedSide(root, sha, fakeSide(fakeProtocol()), 'app')
 
-    const otherHash = protocolHash(fakeProtocol({ nodeVersion: 'v22.0.0' }))
+    const otherHash = protocolHash(fakeProtocol({ nodeVersion: 'v22.0.0' }), 'app')
     expect(await readCachedSide(root, sha, otherHash)).toBeNull()
   })
 
   it('treats a corrupt entry as a miss, not an error', async () => {
     const root = await scratch()
     const sha = 'a'.repeat(40)
-    const hash = protocolHash(fakeProtocol())
+    const hash = protocolHash(fakeProtocol(), 'app')
     await mkdir(path.join(root, '.perf', 'cache'), { recursive: true })
     await writeFile(path.join(root, '.perf', 'cache', `${sha}-${hash}.json`), '{torn', 'utf8')
 
@@ -192,7 +200,7 @@ describe('baseline cache', () => {
 
   it('keeps .perf out of version control without touching the user gitignore', async () => {
     const root = await scratch()
-    await writeCachedSide(root, 'a'.repeat(40), fakeSide(fakeProtocol()))
+    await writeCachedSide(root, 'a'.repeat(40), fakeSide(fakeProtocol()), 'app')
 
     expect(await readFile(path.join(root, '.perf', '.gitignore'), 'utf8')).toBe('*\n')
   })
@@ -454,10 +462,10 @@ describe('measureBaseSide — end to end on a tiny repo', () => {
     const dir = await repoWithHistory()
     const { profile, plan } = await planFor(dir)
 
-    const predicted = protocolHash(predictProtocol(plan))
+    const predicted = protocolHash(predictProtocol(plan), profile.pathInRepo ?? '.')
     const result = await measureBaseSide(profile, plan)
 
-    expect(protocolHash(result.side.protocol)).toBe(predicted)
+    expect(protocolHash(result.side.protocol, profile.pathInRepo ?? '.')).toBe(predicted)
   })
 })
 
@@ -469,10 +477,10 @@ describe('cache prediction parity with browser metrics', () => {
     }
     const predicted = predictProtocol(plan, 'chrome/151.0.1', 'simulated/desktop/v2')
     const measuredLike = { ...predicted, workspace: 'copy' as const, buildCommand: 'npm run build' }
-    expect(protocolHash(measuredLike)).toBe(protocolHash(predicted))
+    expect(protocolHash(measuredLike, 'app')).toBe(protocolHash(predicted, 'app'))
     // and a browser difference DOES change the hash — chrome upgrades strand caches
-    expect(protocolHash(predictProtocol(plan, 'chrome/152.0.0', 'simulated/desktop/v2'))).not.toBe(
-      protocolHash(predicted),
+    expect(protocolHash(predictProtocol(plan, 'chrome/152.0.0', 'simulated/desktop/v2'), 'app')).not.toBe(
+      protocolHash(predicted, 'app'),
     )
   })
 })

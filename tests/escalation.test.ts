@@ -120,7 +120,7 @@ describe('the screening → confirm path, end to end', () => {
     const file = cachePath(
       profile.gitRoot!,
       plan.baseSha,
-      protocolHash((await measureBaseSide(profile, plan)).side.protocol),
+      protocolHash((await measureBaseSide(profile, plan)).side.protocol, profile.pathInRepo ?? '.'),
     )
     const entry = JSON.parse(await readFile(file, 'utf8'))
     const build = entry.side.metrics.find((m: { id: string }) => m.id === 'build_time')

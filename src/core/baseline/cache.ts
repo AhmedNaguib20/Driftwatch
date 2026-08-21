@@ -31,14 +31,23 @@ export const DRIFTWATCH_VERSION: string = (
  * build saw a pre-existing dependency tree or a fresh install. Keeping the hash predictable from
  * the plan (before any measurement runs) is what makes cache lookup possible up front.
  *
- * Deliberately absent: `buildCommand` (fixed by the SHA — the tree at that commit determines it)
+ * Deliberately absent: `buildCommand` (fixed by the SHA AND the measured project — see `scope`)
  * and `workspace` kind (base is always 'worktree'). The full protocol still rides in the cache
  * entry and in the result JSON; the comparison step checks it field by field. The hash decides
  * *reuse*, the full protocol decides *comparability*.
+ *
+ * `scope` is the measured project's path in the repo. A single-app repo has one project per SHA,
+ * which is why the key was (sha, protocol) for M1–M7 — but a MONOREPO has many, and without the
+ * scope `--app apps/admin` would hit the entry `--app apps/storefront` wrote and report one app's
+ * numbers as the other's. Reporting a number measured somewhere else is rule 3 exactly.
  */
-export function protocolHashInput(protocol: MeasurementProtocol): Record<string, unknown> {
+export function protocolHashInput(
+  protocol: MeasurementProtocol,
+  scope: string,
+): Record<string, unknown> {
   return {
     driftwatchVersion: DRIFTWATCH_VERSION,
+    scope,
     protocolVersion: protocol.version,
     cacheState: protocol.cacheState,
     installState: protocol.nodeModules === 'fresh-install' ? 'fresh-install' : 'preinstalled',
@@ -57,9 +66,9 @@ export function protocolHashInput(protocol: MeasurementProtocol): Record<string,
   }
 }
 
-export function protocolHash(protocol: MeasurementProtocol): string {
+export function protocolHash(protocol: MeasurementProtocol, scope: string): string {
   return createHash('sha256')
-    .update(canonicalJson(protocolHashInput(protocol)))
+    .update(canonicalJson(protocolHashInput(protocol, scope)))
     .digest('hex')
     .slice(0, 12)
 }
@@ -124,8 +133,10 @@ export async function writeCachedSide(
   gitRoot: string,
   sha: string,
   side: SideMeasurement,
+  /** The measured project's path in the repo — one SHA holds many apps in a monorepo. */
+  scope: string,
 ): Promise<{ path: string; hash: string }> {
-  const hash = protocolHash(side.protocol)
+  const hash = protocolHash(side.protocol, scope)
   const dir = cacheDir(gitRoot)
   await mkdir(dir, { recursive: true })
 

@@ -162,3 +162,10 @@ function pickBoolean(value: unknown, fallback: boolean, key: string, warnings: s
   }
   return fallback
 }
+
+/**
+ * Said once when no perf.yml exists (spec §9a): running on defaults is normal and fine — the
+ * user just has to know it happened, and how to change it. `run` never writes the file itself.
+ */
+export const NO_CONFIG_NOTICE =
+  'no perf.yml — using defaults; run `driftwatch init` to customise'

@@ -21,11 +21,13 @@ export async function initCommand(options: {
 
   printProfile(profile)
 
+  // `init` is the ONLY command that writes to the user's tree, and it names every file it
+  // touches (spec §9a — `run`'s silent perf.yml was the trial's headline finding).
   const result = await writeConfigIfAbsent(profile.projectRoot, configFromProfile(profile))
   const rel = path.relative(process.cwd(), result.path) || result.path
   console.log(
     result.created
-      ? `\n${pc.green('wrote')} ${rel}`
+      ? `\n${pc.green('wrote')} ${rel} ${pc.dim('(the only file init creates unless --github is given)')}`
       : `\n${pc.dim('kept')}  ${rel} ${pc.dim(`(${result.reason})`)}`,
   )
 

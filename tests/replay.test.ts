@@ -132,6 +132,7 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
       last: 10,
       serve: false,
       browser: false,
+      writePerfData: true, // consent is a separate contract — see tests/rule2.test.ts
       confirm: async (description) => {
         confirmations.push(description)
         return true
@@ -194,8 +195,10 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
     // The harvest: half an eval case per movement commit — measured facts filled, truth empty.
     const harvest = await harvestCandidates(dir, report.moved)
     expect(harvest.written).toHaveLength(2)
+    expect(harvest.written.every((d) => d.includes('/.perf/eval-candidates/'))).toBe(true)
     expect(harvest.missing).toEqual([])
-    const candidate = path.join(dir, 'eval', 'candidates', shas.c2.slice(0, 12))
+    // Under .perf/ — the one directory driftwatch may write in the user's repo (spec §9a).
+    const candidate = path.join(dir, '.perf', 'eval-candidates', shas.c2.slice(0, 12))
     const tpl = JSON.parse(await readFile(path.join(candidate, 'expected-template.json'), 'utf8'))
     expect(tpl.movement.metrics[0]).toMatchObject({ id: 'bundle_size', direction: 'up' })
     expect(tpl.causeMustContain).toEqual([])
@@ -213,7 +216,7 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
 
   it('dedup: a second replay measures nothing — every commit is already recorded', async () => {
     const { dir } = await repo()
-    await replayHistory({ cwd: dir, last: 10, serve: false, browser: false })
+    await replayHistory({ cwd: dir, last: 10, serve: false, browser: false, writePerfData: true })
 
     let calls = 0
     const summary = await replayHistory({
@@ -221,6 +224,7 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
       last: 10,
       serve: false,
       browser: false,
+      writePerfData: true,
       recordFn: async () => {
         calls += 1
         throw new Error('must not be called')
@@ -243,6 +247,7 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
       last: 10,
       serve: false,
       browser: false,
+      writePerfData: true,
       recordFn: async (options) => {
         const cwd = options?.cwd
         if (!cwd) throw new Error('replay must pass the worktree cwd')

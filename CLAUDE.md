@@ -188,7 +188,8 @@ Launch planning (npm publish, name/license/visibility, onboarding) remains queue
 **Pre-launch items:** TRIAGE_MAX_OUTPUT vs current model verbosity; Pages leg (visibility);
 verdict-line length cap watch-item; LCP/TBT CI quanta values revisit as passive data accumulates.
 
-**M7 — Git History Replay (current).** `driftwatch replay --last N`: measure the default branch's
+**M7 — Git History Replay — CLOSED (293 tests; movement doctrine proven: 3/3 buried events, 0/7
+false positives, wall-clock not-judged with the CPU-probe door noted).** `driftwatch replay --last N`: measure the default branch's
 recent history retroactively in record mode (no AI), append to perf-data, and surface where
 performance actually moved. The onboarding wow ("your perf degraded at commit X") + the eval-case
 factory (every real historical regression is a candidate case). Spec §10 constraints hold: user
@@ -209,17 +210,25 @@ commit topology/date, not append order.
   - [x] DECIDED — movement doctrine: byte classes only, every environment; wall-clock labeled
         not-judged with reason. Movement=attribution (strong claim) vs drift=tendency (weak claim)
         — deliberate asymmetry. CPU-probe normalization is future work.
-  - [x] doctrine implemented (`8da8e9e`) + live proof CLOSED on a constructed 10-commit fixture
-        history (3 buried events among 7 innocents): **bundle size moved at 3 commits: f95fe6f
-        +6.1% · 4db8b12 +21.3% · 0d812a9 −4.7%** — the 3 events, correct directions including the
-        improvement, silent on all 7 innocents; wall-clock classes named not-judged; dashboard
-        shows 10 hollow replayed points, 3 rings on bundle_size only, captions elsewhere; harvest
-        wrote exactly 3 candidate folders with empty truth fields. 293 tests.
+  - [x] proof finished under the doctrine: byte-only movement line verbatim, dashboard rings on
+        bundle only + not-judged captions, exactly 3 harvest folders, constructed history retired
+        (unit tests encode its lessons in ~7s vs 8min). M7 CLOSED (`a61a1c0` lineage).
 
-**M7 — COMPLETE.** The replay proof history lived in scratch (not a repo fixture — the unit
-suite's tiny git repos already cover replay end-to-end; a 367MB node_modules fixture would earn
-nothing). Pre-launch items unchanged, plus: per-point CPU-probe normalization is the door back to
-wall-clock attribution (spec §10).
+**M8 — Real-world readiness (current).** Opened by the jinni trial (spec §9a). In order:
+1. **Rule-2 fix (urgent):** `run` never writes to the user's tree. Only `init` writes config, and
+   it announces every file. Missing config → defaults + one line saying so.
+2. **Monorepo support:** detect the workspace root (`pnpm-workspace.yaml`, `packageManager`,
+   lockfile kind), install at the root with the right package manager, measure the chosen app.
+   Multi-app repos: ask/choose explicitly, never guess silently.
+3. **Failure legibility:** every failure carries its own fix (the M3/M6 stanza discipline, applied
+   to the measurement path). Render the *last* reason line not the first; rename "workspace" in
+   user-facing text; warn on knowable risks at detect time; make "never ran" distinguishable from
+   "ran and found nothing".
+4. **Stale-base warning:** flag when the resolved base is far behind the likely integration target.
+
+**Later:** drift alerting (recommended — activates the namesake loop: scheduled run →
+drift verdicts → issue/comment) vs launch planning. Pre-launch items list stands (TRIAGE_MAX_OUTPUT
+first among them).
 
 Do not start a milestone before the previous one's definition of done is met.
 
@@ -229,7 +238,8 @@ Do not start a milestone before the previous one's definition of done is met.
 
 `npx driftwatch run` inside a Next.js project:
 
-1. Detects the stack and writes a `perf.yml` if absent.
+1. Detects the stack. *(Superseded by M8.1: `run` never writes `perf.yml` — absent config means
+   defaults plus one line saying so. Only `init` writes config, and it names every file.)*
 2. Measures **build time** and **bundle size** for the working tree.
 3. Checks out the base commit (default: `main`) into a `git worktree`, measures it **through the
    same measurement path as the working tree**, caches the result keyed by (commit SHA, protocol

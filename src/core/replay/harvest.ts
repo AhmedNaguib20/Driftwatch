@@ -17,6 +17,9 @@ const GIT_BUFFER = 64 * 1024 * 1024
  * tool invented would be circular.
  *
  * Existing candidate folders are never overwritten: a half-filled template is a human's work.
+ *
+ * Written under `.perf/` — the ONE directory driftwatch may write in the user's repo (rule 2,
+ * re-affirmed by spec §9a). The CLI announces every folder it creates.
  */
 
 export interface HarvestOutcome {
@@ -47,7 +50,7 @@ export async function harvestCandidates(
   const missing: string[] = []
 
   for (const [toSha, { fromSha, moved }] of byToSha) {
-    const dir = path.join(gitRoot, 'eval', 'candidates', toSha.slice(0, 12))
+    const dir = path.join(gitRoot, '.perf', 'eval-candidates', toSha.slice(0, 12))
     if (await exists(dir)) {
       skippedExisting.push(dir)
       continue

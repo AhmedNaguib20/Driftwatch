@@ -32,9 +32,11 @@ export async function appendToPerfData(
   sha: string,
   branch: string | null,
   push: boolean,
+  /** CI record mode: installing the workflow IS the consent to create perf-data (spec §6.3). */
+  allowCreate = true,
 ): Promise<AppendOutcome> {
   for (let attempt = 1; attempt <= 2; attempt += 1) {
-    const outcome = await tryAppend(gitRoot, result, sha, branch, push)
+    const outcome = await tryAppend(gitRoot, result, sha, branch, push, allowCreate)
     if (outcome !== 'push-rejected') {
       return {
         ok: outcome === 'appended',
@@ -57,10 +59,11 @@ async function tryAppend(
   sha: string,
   branch: string | null,
   push: boolean,
+  allowCreate: boolean,
 ): Promise<AttemptOutcome> {
   let opened
   try {
-    opened = await openPerfDataTree(gitRoot, push)
+    opened = await openPerfDataTree(gitRoot, push, allowCreate)
   } catch (error) {
     return `perf-data append failed: ${(error as Error).message}`
   }

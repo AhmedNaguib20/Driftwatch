@@ -13,6 +13,7 @@ export async function replayCommand(flags: {
   since?: string
   yes: boolean
   push: boolean
+  writePerfData: boolean
   harvest: boolean
   json: boolean
   serve: boolean
@@ -36,6 +37,7 @@ export async function replayCommand(flags: {
       serve: flags.serve,
       browser: flags.browser,
       push: flags.push,
+      writePerfData: flags.writePerfData,
       // --yes skips the question, never the information: the cost line still prints.
       confirm: flags.yes
         ? async (description) => {

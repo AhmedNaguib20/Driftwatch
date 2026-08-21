@@ -26,7 +26,16 @@ export interface PerfDataTree {
 
 export type OpenOutcome = PerfDataTree | { readonly refusal: string }
 
-export async function openPerfDataTree(gitRoot: string, fetchRemote: boolean): Promise<OpenOutcome> {
+/**
+ * `allowCreate` gates the FIRST write: creating the perf-data branch adds a permanent artifact to
+ * the user's repository, so it needs consent (spec §9a — the same sin as run's silent perf.yml).
+ * Appending to a branch that already exists is what the user consented to when it was created.
+ */
+export async function openPerfDataTree(
+  gitRoot: string,
+  fetchRemote: boolean,
+  allowCreate: boolean,
+): Promise<OpenOutcome> {
   const parent = await mkdtemp(path.join(tmpdir(), 'driftwatch-perfdata-'))
   const tree = path.join(parent, 'tree')
   const cleanup = async () => {
@@ -42,6 +51,12 @@ export async function openPerfDataTree(gitRoot: string, fetchRemote: boolean): P
     }
 
     const localRef = await resolvePerfDataRef(gitRoot)
+    if (!localRef && !allowCreate) {
+      await cleanup()
+      return {
+        refusal: `no "${PERF_DATA_BRANCH}" branch exists yet, and creating one adds a permanent orphan branch to this repository — driftwatch will not do that uninvited. Re-run with --write-perf-data to create it (it stores one JSON per measured commit plus a generated dashboard; it never touches your other branches).`,
+      }
+    }
     if (localRef) {
       await git(gitRoot, ['worktree', 'add', '--detach', tree, localRef])
     } else {

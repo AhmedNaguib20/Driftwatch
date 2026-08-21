@@ -37,6 +37,8 @@ export interface ReplayOptions extends ReplayRange {
   readonly serve?: boolean
   readonly browser?: boolean
   readonly push?: boolean
+  /** Explicit consent to CREATE the perf-data branch when it does not exist yet (spec §9a). */
+  readonly writePerfData?: boolean
   /** Shown the estimate; returns whether to proceed. CLI wires the prompt; --yes short-circuits. */
   readonly confirm?: (description: string) => Promise<boolean>
   readonly progress?: (message: string) => void
@@ -129,7 +131,7 @@ export async function replayHistory(options: ReplayOptions): Promise<ReplaySumma
   }
 
   progress(`writing ${batch.length} entr${batch.length === 1 ? 'y' : 'ies'} to perf-data in one update…`)
-  const write = await appendReplayBatch(gitRoot, batch, options.push ?? false)
+  const write = await appendReplayBatch(gitRoot, batch, options.push ?? false, options.writePerfData ?? false)
   if (write.ok) await clearPending(profile.projectRoot)
 
   return { planned: commits.length, alreadyRecorded: commits.length - todo.length, resumed, measured, skipped, write }

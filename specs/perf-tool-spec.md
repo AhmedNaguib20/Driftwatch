@@ -3,7 +3,15 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 19 — 2026-08-19 — M2 complete; M3 in progress (renderer done, API client next)
+> Version 42 — 2026-08-20 — M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
+> 293 tests.**
+> M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
+> M6 verified auto-fix · M7 git history replay. Latest decisions: movement doctrine (§10),
+> the second de-gating (roadmap #1), environment-conditional quanta (§5).
+> Pre-launch items: TRIAGE_MAX_OUTPUT vs model verbosity; Pages/visibility.
+> *(Header note: versions 20–40 were announced in planning but the header line itself went
+> unbumped — the section content for all of them did land. Renumbered accurately here.)*
 
 ---
 
@@ -856,7 +864,32 @@ recurring opinion into a number, permanently.
    and can never count as `partial`; gate-outs are absent from the JSON — rule 3 is about
    reporting attempts, not non-events. Real e2e: the live PR #6 lodash fix verified `restored`,
    ~140KB recovered, fixed within 2KB of base. Verification runs only at the enforceFixRules bar
-   (diff fix, ≥0.8), only on regressed metrics. Schema minor 3. Before
+   (diff fix, ≥0.8) — **superseded, see the second de-gating below** — only on regressed metrics.
+   Schema minor 3.
+   *Step 2 (GitHub side, `ef74e8c`):* `auto_fix: off|propose` (default off); gate-outs make **zero
+   API calls** (tested); branch `driftwatch/fix-pr<N>` off the verified PR head carrying **exactly
+   the measured bytes**, re-gated by `git apply --check` at push time; the PR opens INTO the PR
+   branch; body-marker upsert + stale-diff self-close; fork PRs skip honestly. `contents: write`
+   already existed for record mode — dual purpose documented, not conditionally included.
+   *THE SECOND DE-GATING (decided mid-acceptance):* the ≥0.8 confidence bar on verification was a
+   **pre-M6 rule** — it protected users when the model's self-confidence was the only evidence. M6
+   makes that evidence obsolete: **a 0.7-confidence diff that verifies `restored` is stronger than
+   a 0.9 diff never measured.** Same shape as M2's triage de-gating. Rule: verification runs on any
+   structurally valid diff fix on a confirmed regression (the cost gate stays); **the fix-PR gate
+   is verification outcome only** (`restored`/`partial`). The 0.8 bar survives as a *display* rule;
+   a prose-displayed diff that verifies upgrades to the full diff with its measured numbers —
+   measurement earned the display confidence couldn't. Confidence is self-report shown beside the
+   measured outcome ("model confidence 70% — measured: restored"), never a gate on measured
+   evidence.
+   *Acceptance (seven takes, six findings):* **the resolution gate** — a row whose current↔base gap
+   fits inside the combined noise radii can never certify recovery in either direction (B4 opened a
+   PR titled "partially recovers bundle size 2.34 MB → 2.34 MB"); B5 proved the gate right and the
+   local browser quanta wrong for CI → environment-conditional quanta (§5). Run A closed the full
+   loop live: fix PR #9, deliberate merge, the original comment flipped to no-change in place. Run B
+   closed deterministically: sabotaged diff → `no-recovery` → **no PR, zero API calls** → honest
+   comment line. Also: fix PRs from Actions require the repo setting "Allow GitHub Actions to create
+   and approve pull requests" — documented as an `auto_fix` prerequisite, never flipped by us.
+   Before
    opening any fix PR, apply the AI's diff in a fresh temp copy and MEASURE it — same protocol,
    same invocation, three-way comparison (fixed vs current vs base). The PR opens carrying its own
    measured evidence ("this fix was measured: bundle returns 2.33→2.20MB") or does not open at all,
@@ -868,7 +901,7 @@ recurring opinion into a number, permanently.
 3. **Cost translation** — express regressions in money, not milliseconds. Milliseconds don't get
    budget approved; dollars do.
 4. **Pre-merge prediction** — flag likely regressions before merge.
-5. **Git History Replay** — see §10. **← M7, in progress.**
+5. **Git History Replay** — see §10. **← M7, CLOSED.**
 6. **Layer 3 instruction counting** — precision tier.
 
 ---
@@ -883,7 +916,44 @@ recurring opinion into a number, permanently.
 
 ---
 
-## 10. Git History Replay — M7, IN PROGRESS (opened 2026-08-19)
+## 9a. Real-world trial (jinni, 2026-08-20) — the findings that became M8
+
+First contact with a codebase we didn't build. Nothing measured (8/8 metrics skipped in 8.3s) — and
+the trial was worth more than any green run.
+
+**🔴 Rule-2 violation — the headline.** `driftwatch run` wrote `perf.yml` into the user's working
+tree, untracked, on his feature branch, **and never said so**. It is M1's specified behaviour
+("writes a perf.yml if absent") and it is still a violation *in spirit*: `run`'s contract is
+measure-don't-touch, and a silent file appears in `git status` days later as a mystery.
+**Rule: `run` never writes to the user's tree. Config generation belongs to `init` alone, which
+announces every file it writes.** Absent config → run on defaults and say so in one line.
+
+**The blocking gap: pnpm workspaces.** Detection guessed npm; npm cannot resolve `workspace:*`
+(EUNSUPPORTEDPROTOCOL), so both sides failed identically. The symmetry machinery worked perfectly —
+`protocolsMatch: true`, both sides failed the same way, correctly `inconclusive`, rule 3 held under
+total failure, cleanup flawless. But "works on any codebase" does not survive contact with a
+monorepo.
+
+**Failure legibility — a named principle now:** *every failure must carry its own fix.* The M3/M6
+error stanzas ship the exact YAML to paste; the measurement path ships none of that discipline.
+Specific defects:
+- The terminal shows `reason.split('\n')[0]` — for install failures the first line is *"install
+  exited with code 1; last output:"*, a sentence ending in a colon that then delivers nothing. The
+  real error (`EUNSUPPORTEDPROTOCOL`) lives only in `--json`, unhinted. **Render the last line, or
+  drop the promising tail when the content can't be shown.**
+- *"dependencies are not installed in the workspace"* — "workspace" means our temp copy; in a pnpm
+  monorepo it means something else entirely. Guaranteed misread. **Rename the concept in
+  user-facing text.**
+- A knowable risk went unwarned: `workspace:*` + assumed-npm is a guaranteed failure, detectable at
+  detect time.
+- Eight `—` rows read as "ran and found nothing" rather than "never ran"; *"both sides measured
+  fresh this run"* sits under a table where nothing was measured.
+
+**Stale-base finding.** Base defaulted to `main`, which was 143 commits / 2 months behind — the team
+merges to `staging` and main lags until release. Even a successful comparison would have been
+meaningless. **Warn when the resolved base is far behind the branch's likely integration target.**
+
+## 10. Git History Replay — M7, CLOSED (2026-08-20)
 
 Checkout, build, and measure the last N commits to reconstruct a performance timeline
 retroactively. Delivers a "wow" moment in the first hour instead of after a month of data

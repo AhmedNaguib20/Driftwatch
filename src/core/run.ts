@@ -2,10 +2,9 @@ import { measureBaseSide } from './baseline/baseline.js'
 import type { BaseSideResult } from './baseline/baseline.js'
 import { planBaseline } from './baseline/plan.js'
 import type { BaselinePlan, BaselineUnavailable } from './baseline/plan.js'
-import { loadConfig } from './detect/config-load.js'
+import { NO_CONFIG_NOTICE, loadConfig } from './detect/config-load.js'
 import { configFromProfile } from './detect/config-schema.js'
 import type { ResolvedConfig } from './detect/config-schema.js'
-import { writeConfigIfAbsent } from './detect/config-write.js'
 import { detectProject } from './detect/detect.js'
 import type { ProjectProfile } from './detect/types.js'
 import { measureWorkingTree } from './measure/measure.js'
@@ -47,9 +46,11 @@ export async function runDriftwatch(options: RunOptions = {}): Promise<ResultJso
   progress('detecting project…')
   const profile = await detectProject({ cwd: options.cwd })
 
-  // DoD step 1: write perf.yml if absent, then load it (the user's file wins if present).
-  await writeConfigIfAbsent(profile.projectRoot, configFromProfile(profile))
+  // `run` NEVER writes to the user's tree (spec §9a — the jinni trial's headline finding).
+  // Config generation belongs to `init` alone, which announces every file it writes. Absent
+  // config means run on defaults and say so, once.
   const config = await loadConfig(profile.projectRoot, configFromProfile(profile))
+  if (config.sourcePath === null) progress(NO_CONFIG_NOTICE)
 
   const baseRef = options.base ?? config.base
   const plan = await planBaseline(profile, baseRef, options.baseLabel)

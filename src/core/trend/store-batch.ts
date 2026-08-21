@@ -36,11 +36,13 @@ export async function appendReplayBatch(
   gitRoot: string,
   batch: readonly ReplayBatchItem[],
   push: boolean,
+  /** Creating perf-data adds a branch to the user's repo — never uninvited (spec §9a). */
+  allowCreate = false,
 ): Promise<BatchOutcome> {
   if (batch.length === 0) return { ok: true, detail: 'nothing to write' }
 
   for (let attempt = 1; attempt <= 2; attempt += 1) {
-    const outcome = await tryBatch(gitRoot, batch, push)
+    const outcome = await tryBatch(gitRoot, batch, push, allowCreate)
     if (outcome !== 'push-rejected') {
       return {
         ok: outcome === 'written',
@@ -59,10 +61,11 @@ async function tryBatch(
   gitRoot: string,
   batch: readonly ReplayBatchItem[],
   push: boolean,
+  allowCreate: boolean,
 ): Promise<'written' | 'push-rejected' | string> {
   let opened
   try {
-    opened = await openPerfDataTree(gitRoot, push)
+    opened = await openPerfDataTree(gitRoot, push, allowCreate)
   } catch (error) {
     return `perf-data batch write failed: ${(error as Error).message}`
   }

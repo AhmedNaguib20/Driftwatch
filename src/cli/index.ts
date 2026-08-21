@@ -45,13 +45,14 @@ program
   .option('--last <n>', 'how many first-parent commits of the default branch to replay', '10')
   .option('--since <ref>', 'replay every mainline commit after <ref> instead of a count')
   .option('--yes', 'skip the cost-estimate confirmation', false)
+  .option('--write-perf-data', 'consent to CREATE the perf-data branch in this repo if absent', false)
   .option('--push', 'push the batched perf-data update to origin (default: local only)', false)
   .option('--harvest', 'write eval candidate folders for each movement (human completes the truth)', false)
   .option('--json', 'print the replay summary as JSON', false)
   .option('--no-serve', 'skip booting the app and route-latency metrics')
   .option('--no-browser', 'skip Lighthouse browser metrics')
   .option('--cwd <dir>', 'project directory', process.cwd())
-  .action(async (flags: { last?: string; since?: string; yes: boolean; push: boolean; harvest: boolean; json: boolean; serve: boolean; browser: boolean; cwd: string }) => {
+  .action(async (flags: { last?: string; since?: string; yes: boolean; push: boolean; writePerfData: boolean; harvest: boolean; json: boolean; serve: boolean; browser: boolean; cwd: string }) => {
     const { replayCommand } = await import('./replay-command.js')
     await replayCommand(flags)
   })

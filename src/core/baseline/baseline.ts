@@ -82,13 +82,19 @@ export async function measureBaseSide(
   }
 
   progress(`checking out base ${plan.baseSha.slice(0, 12)} into a temp worktree…`)
+  // In a monorepo the base side installs at the workspace root too — both sides, same shape.
+  const workspaceRootInRepo = profile.workspaceRoot
+    ? path.relative(gitRoot, profile.workspaceRoot) || '.'
+    : null
+  const nodeModulesSource = profile.workspaceRoot ?? profile.projectRoot
   const workspace = await createBaseWorkspace({
     gitRoot,
     pathInRepo: profile.pathInRepo!,
+    installPathInRepo: workspaceRootInRepo,
     sha: plan.baseSha,
     dependencies: plan.dependencies,
-    sourceNodeModules: (await exists(path.join(profile.projectRoot, 'node_modules')))
-      ? path.join(profile.projectRoot, 'node_modules')
+    sourceNodeModules: (await exists(path.join(nodeModulesSource, 'node_modules')))
+      ? path.join(nodeModulesSource, 'node_modules')
       : null,
   })
 

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import type { NodeModulesState } from '../measure/types.js'
-import { cloneDirectory } from '../measure/workspace.js'
+import { cloneNodeModulesForest } from '../measure/workspace.js'
 import type { Workspace } from '../measure/workspace.js'
 
 const exec = promisify(execFile)
@@ -31,6 +31,8 @@ export interface BaseWorkspaceOptions {
   readonly dependencies: 'clone' | 'install'
   /** Absolute path of the user's node_modules, for the 'clone' strategy. */
   readonly sourceNodeModules: string | null
+  /** Workspace root relative to the repo, when the project is one package of a monorepo. */
+  readonly installPathInRepo?: string | null
 }
 
 export async function createBaseWorkspace(options: BaseWorkspaceOptions): Promise<Workspace> {
@@ -55,6 +57,14 @@ export async function createBaseWorkspace(options: BaseWorkspaceOptions): Promis
 
     const projectDir =
       options.pathInRepo === '.' ? tree : path.join(tree, options.pathInRepo)
+    // A worktree already contains the whole repo, so the workspace root is simply the directory
+    // the profile named — install there, build in projectDir (spec §9a).
+    const installDir =
+      options.installPathInRepo && options.installPathInRepo !== '.'
+        ? path.join(tree, options.installPathInRepo)
+        : options.installPathInRepo === '.'
+          ? tree
+          : projectDir
 
     // Containment assertion — defense in depth for hard rule 2. If pathInRepo is ever wrong
     // (symlinked tmpdirs bit us once), refusing to run beats measuring — or installing into —
@@ -68,10 +78,9 @@ export async function createBaseWorkspace(options: BaseWorkspaceOptions): Promis
 
     let nodeModules: NodeModulesState = 'absent'
     if (options.dependencies === 'clone' && options.sourceNodeModules) {
-      nodeModules = await cloneDirectory(
-        options.sourceNodeModules,
-        path.join(projectDir, 'node_modules'),
-      )
+      // sourceNodeModules names the node_modules itself; the forest is cloned from its parent so
+      // a workspace's per-package node_modules come along with the root store (spec §9a).
+      nodeModules = await cloneNodeModulesForest(path.dirname(options.sourceNodeModules), installDir)
     }
 
     const fileCount = await countTrackedFiles(options.gitRoot, options.sha, options.pathInRepo)
@@ -85,6 +94,7 @@ export async function createBaseWorkspace(options: BaseWorkspaceOptions): Promis
 
     return {
       dir: projectDir,
+      installDir,
       kind: 'worktree',
       nodeModules,
       copiedBy: `git worktree add --detach @ ${options.sha.slice(0, 12)}`,

@@ -71,7 +71,10 @@ export async function planBaseline(
   evidence.push(lock.evidence)
   warnings.push(...lock.warnings)
 
-  const nodeModulesPresent = await exists(path.join(profile.projectRoot, 'node_modules'))
+  // In a workspace the dependencies that matter live at the root (the store the app links into).
+  const nodeModulesPresent = await exists(
+    path.join(profile.workspaceRoot ?? profile.projectRoot, 'node_modules'),
+  )
 
   // Clone is only sound when the lockfile proves both sides want the same tree AND there is a
   // node_modules to clone. Everything else forces the state achievable on both: fresh install.

@@ -223,10 +223,12 @@ commit topology/date, not append order.
 2. **Monorepo support:** detect the workspace root (`pnpm-workspace.yaml`, `packageManager`,
    lockfile kind), install at the root with the right package manager, measure the chosen app.
    Multi-app repos: ask/choose explicitly, never guess silently.
-3. **Failure legibility:** every failure carries its own fix (the M3/M6 stanza discipline, applied
-   to the measurement path). Render the *last* reason line not the first; rename "workspace" in
-   user-facing text; warn on knowable risks at detect time; make "never ran" distinguishable from
-   "ran and found nothing".
+3. **Failure legibility — DONE (`a6b4a46`, 304 tests).** Shared `summariseReason`; colon-ending
+   lines are promises (trimmed, not shown empty); the pointer to `--json`/summary never lies
+   because the summary now carries the full error; "workspace" renamed everywhere user-facing;
+   `not measured` cells + "unavailable, not unchanged"; fix stanzas (schema 5) only where a remedy
+   is knowable — fabricated helpfulness is rule 3 in reverse. Goldens byte-identical except the new
+   `comment-nothing-measured.md`.
 4. **Stale-base warning:** flag when the resolved base is far behind the likely integration target.
 
 **Later:** drift alerting (recommended — activates the namesake loop: scheduled run →

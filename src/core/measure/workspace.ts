@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { cp, mkdtemp, rm, stat } from 'node:fs/promises'
+import { cp, mkdtemp, readdir, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
@@ -22,6 +22,12 @@ const exec = promisify(execFile)
 export interface Workspace {
   /** Absolute path of the directory to measure (the project inside the temp dir). */
   readonly dir: string
+  /**
+   * Where dependencies install. In a monorepo this is the copied WORKSPACE ROOT, not the app:
+   * `workspace:*` deps resolve only from there, and pnpm's node_modules is a symlink farm rooted
+   * there (spec §9a). Equal to `dir` for a standalone project.
+   */
+  readonly installDir: string
   readonly kind: WorkspaceKind
   readonly nodeModules: NodeModulesState
   /** How the file list was produced — evidence for the copy's fidelity. */
@@ -59,9 +65,15 @@ export async function createWorkingTreeWorkspace(
   const warnings: string[] = []
 
   try {
-    const pathInRepo = profile.pathInRepo ?? '.'
-    const projectDir =
-      pathInRepo === '.' ? path.join(root, 'tree') : path.join(root, 'tree', pathInRepo)
+    // The copy always begins at the workspace root when there is one — only the app builds, but
+    // the whole workspace must be present for the install to resolve (spec §9a).
+    const copySource = profile.workspaceRoot ?? profile.projectRoot
+    const sourceRelativeToRepo = profile.gitRoot ? path.relative(profile.gitRoot, copySource) || '.' : '.'
+    const appInCopy = profile.workspaceRoot ? (profile.pathInWorkspace ?? '.') : '.'
+
+    const pathInRepo = sourceRelativeToRepo
+    const copyRoot = pathInRepo === '.' ? path.join(root, 'tree') : path.join(root, 'tree', pathInRepo)
+    const projectDir = appInCopy === '.' ? copyRoot : path.join(copyRoot, appInCopy)
 
     // Containment — defense in depth for hard rule 2 (a symlinked tmpdir once produced a
     // pathInRepo that escaped the temp tree). Refusing to run beats measuring the wrong dir.
@@ -78,16 +90,13 @@ export async function createWorkingTreeWorkspace(
       ),
     )
 
-    const listed = await listFiles(profile, excluded)
-    const copied = await copyFiles(profile.projectRoot, projectDir, listed.files)
+    const listed = await listFiles(profile, excluded, copySource)
+    const copied = await copyFiles(copySource, copyRoot, listed.files)
 
     const nodeModules =
       options.dependencies === 'install'
         ? 'absent'
-        : await cloneDirectory(
-            path.join(profile.projectRoot, 'node_modules'),
-            path.join(projectDir, 'node_modules'),
-          )
+        : await cloneNodeModulesForest(copySource, copyRoot)
     if (nodeModules === 'copied') {
       warnings.push(
         'node_modules was copied file-by-file (copy-on-write clone unavailable on this filesystem) — first run may be slow.',
@@ -98,6 +107,7 @@ export async function createWorkingTreeWorkspace(
 
     return {
       dir: projectDir,
+      installDir: copyRoot,
       kind: 'copy',
       nodeModules,
       copiedBy: listed.method,
@@ -140,4 +150,47 @@ export async function cloneDirectory(
 
   await cp(source, target, { recursive: true, verbatimSymlinks: true })
   return 'copied'
+}
+
+/**
+ * Clones every `node_modules` under a workspace, not just the app's.
+ *
+ * A pnpm workspace stores real packages once under `<root>/node_modules/.pnpm` and links to them
+ * from each package's own `node_modules` with RELATIVE symlinks. Copy the whole forest verbatim
+ * and those links keep resolving inside the copy; copy only the app's and every link dangles —
+ * which is exactly how the jinni trial failed. On APFS each clone is copy-on-write, so the cost
+ * is bounded even for a large monorepo.
+ *
+ * Shared by both sides (working-tree copy and base worktree) so dependencies arrive identically —
+ * protocol symmetry by construction, not by discipline (§5.1).
+ */
+export async function cloneNodeModulesForest(
+  source: string,
+  target: string,
+): Promise<NodeModulesState> {
+  let outcome: NodeModulesState = 'absent'
+  for (const dir of await packageDirs(source)) {
+    const state = await cloneDirectory(path.join(source, dir, 'node_modules'), path.join(target, dir, 'node_modules'))
+    if (state === 'absent') continue
+    // A single file-by-file copy anywhere in the forest makes the whole clone a 'copied' one.
+    outcome = outcome === 'copied' || state === 'copied' ? 'copied' : 'cloned'
+  }
+  return outcome
+}
+
+/** The root plus every directory two levels down — where workspaces actually put packages. */
+async function packageDirs(root: string): Promise<string[]> {
+  const dirs = ['.']
+  const skip = new Set(['node_modules', '.git', '.next', 'dist', 'build', '.turbo'])
+  const top = await readdir(root, { withFileTypes: true }).catch(() => [])
+  for (const entry of top) {
+    if (!entry.isDirectory() || skip.has(entry.name) || entry.name.startsWith('.')) continue
+    dirs.push(entry.name)
+    const inner = await readdir(path.join(root, entry.name), { withFileTypes: true }).catch(() => [])
+    for (const child of inner) {
+      if (!child.isDirectory() || skip.has(child.name) || child.name.startsWith('.')) continue
+      dirs.push(path.join(entry.name, child.name))
+    }
+  }
+  return dirs
 }

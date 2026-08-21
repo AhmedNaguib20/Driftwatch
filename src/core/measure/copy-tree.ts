@@ -23,12 +23,14 @@ export interface FileListing {
 export async function listFiles(
   profile: ProjectProfile,
   excluded: ReadonlySet<string>,
+  /** Where the listing starts — the workspace root in a monorepo, else the project (spec §9a). */
+  sourceDir: string = profile.projectRoot,
 ): Promise<FileListing> {
   if (profile.gitRoot) {
     const { stdout } = await exec(
       'git',
       ['ls-files', '-z', '--cached', '--others', '--exclude-standard'],
-      { cwd: profile.projectRoot, maxBuffer: 64 * 1024 * 1024 },
+      { cwd: sourceDir, maxBuffer: 64 * 1024 * 1024 },
     )
     const files = stdout
       .split('\0')
@@ -38,7 +40,7 @@ export async function listFiles(
   }
 
   const files: string[] = []
-  await walk(profile.projectRoot, '', excluded, files)
+  await walk(sourceDir, '', excluded, files)
   return { files, method: 'directory walk (not a git repository)' }
 }
 

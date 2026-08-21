@@ -72,3 +72,24 @@ export const NO_SERVER_FIX =
 export function describeWorkspace(kind: 'copy' | 'worktree'): string {
   return kind === 'worktree' ? 'base checkout (temp worktree)' : 'measurement copy'
 }
+
+/**
+ * The package-manager binary itself failed to start — the build never ran, so this is not a
+ * performance signal at all. Two causes seen in practice, and the error text names neither:
+ * a corepack shim that cannot resolve its pinned version (corepack reads `packageManager` from
+ * the nearest package.json, and an absent or incompatible pin breaks the shim), or an inherited
+ * NODE_OPTIONS loader from the process that started driftwatch.
+ */
+export function toolStartupFix(command: string, errorTail: string): string | undefined {
+  if (!/ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING|corepack|NODE_OPTIONS/i.test(errorTail)) return undefined
+  const bin = command.split(' ')[0] ?? 'the package manager'
+  return [
+    `\`${bin}\` failed to start, so the build never ran. Check it outside driftwatch:`,
+    '',
+    `    ${bin} --version`,
+    '',
+    'If that fails too: corepack resolves the version from the nearest package.json',
+    '`packageManager` field — pin a known-good one there — or start driftwatch from a shell with',
+    'no NODE_OPTIONS loader set.',
+  ].join('\n')
+}

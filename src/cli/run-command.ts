@@ -1,4 +1,5 @@
 import pc from 'picocolors'
+import { SelectionRefused } from '../core/index.js'
 import { attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, runDriftwatch, verifyFix } from '../core/index.js'
 import type { AnalysisReport, ResultJson, StageStats } from '../core/index.js'
 import { renderAnalysis } from './render-analysis.js'
@@ -29,6 +30,8 @@ export interface RunFlags {
   readonly serve: boolean
   readonly browser: boolean
   readonly verify: boolean
+  /** `--app <path>` — which workspace package to measure (monorepos). */
+  readonly app?: string
   readonly cwd?: string
 }
 
@@ -45,6 +48,7 @@ export async function runCommand(flags: RunFlags): Promise<void> {
       readCache: flags.cache,
       serve: flags.serve,
       browser: flags.browser,
+      app: flags.app ?? null,
       progress,
     })
 
@@ -66,6 +70,13 @@ export async function runCommand(flags: RunFlags): Promise<void> {
       if (rendered) console.log(rendered)
     }
   } catch (error) {
+    // A refusal is a decision, not a crash: print it as written, with no stack and no blame.
+    if (error instanceof SelectionRefused) {
+      console.error(pc.yellow(error.message))
+      process.exitCode = 1
+      if (flags.json) console.log(JSON.stringify({ refused: error.message }))
+      return
+    }
     const message = error instanceof Error ? (error.stack ?? error.message) : String(error)
     console.error(pc.red(`driftwatch could not complete the run: ${message}`))
     console.error(pc.red('This is a driftwatch failure, not a verdict about your code.'))

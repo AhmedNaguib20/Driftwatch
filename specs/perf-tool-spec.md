@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 43 — 2026-08-20 — M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 44 — 2026-08-20 — M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -965,6 +965,20 @@ Specific defects:
   detect time.
 - Eight `—` rows read as "ran and found nothing" rather than "never ran"; *"both sides measured
   fresh this run"* sits under a table where nothing was measured.
+
+*Step 2 (failure legibility, `a6b4a46`) — DONE.* One shared `summariseReason` in core (terminal,
+comment, details cannot drift); **a line ending in a colon is a promise** — trim it rather than show
+it empty; the pointer names where the rest lives *and the summary genuinely carries the full
+multi-line error, so the pointer never lies* (that was the difference between a fix and a cosmetic).
+"workspace" renamed in every user-facing string (→ measurement copy / base checkout) — the collision
+mattered precisely in the project type that hit it. Cells read `not measured`, with an explicit
+"unavailable, not unchanged" line and measurement-assuming lines suppressed. **Fix stanzas** (schema
+minor 5) for `workspace:*`+npm, frozen-lockfile, permissions, network, deps-missing,
+no-build-output, no-server — deduplicated, grouped by remedy, and **emitted only where a remedy is
+knowable: fabricated helpfulness is rule 3 in reverse.** Asymmetric failures keep their
+`base:`/`current:` prefix — which side failed is the reader's first question (a test caught the
+first attempt hiding it). Golden diff near-empty: every healthy path byte-identical, one new file
+`comment-nothing-measured.md` preserving the jinni failure as a permanent contract.
 
 **Stale-base finding.** Base defaulted to `main`, which was 143 commits / 2 months behind — the team
 merges to `staging` and main lags until release. Even a successful comparison would have been

@@ -5,7 +5,8 @@ import type { BaselinePlan, BaselineUnavailable } from './baseline/plan.js'
 import { NO_CONFIG_NOTICE, loadConfig } from './detect/config-load.js'
 import { configFromProfile } from './detect/config-schema.js'
 import type { ResolvedConfig } from './detect/config-schema.js'
-import { detectProject } from './detect/detect.js'
+import { selectApp } from './detect/select-app.js'
+import { SelectionRefused } from './detect/refusal.js'
 import type { ProjectProfile } from './detect/types.js'
 import { measureWorkingTree } from './measure/measure.js'
 import type { ProgressReporter } from './measure/measure.js'
@@ -38,13 +39,24 @@ export interface RunOptions {
   /** Skip Lighthouse browser metrics (--no-browser). perf.yml `browser: false` also disables. */
   readonly browser?: boolean
   readonly progress?: ProgressReporter
+  /** `--app <path>`: which workspace package to measure (spec §9a). */
+  readonly app?: string | null
 }
 
 export async function runDriftwatch(options: RunOptions = {}): Promise<ResultJson> {
   const progress = options.progress ?? (() => {})
 
   progress('detecting project…')
-  const profile = await detectProject({ cwd: options.cwd })
+  // `app:` in perf.yml is as good as `--app`; the flag wins. The config is read from wherever the
+  // caller stands BEFORE the app is chosen — in a workspace that is usually the root.
+  const preConfig = await loadConfig(options.cwd ?? process.cwd())
+  const selection = await selectApp({
+    cwd: options.cwd,
+    app: options.app ?? preConfig.app,
+    configPath: preConfig.sourcePath,
+  })
+  if (selection.refusal) throw new SelectionRefused(selection.refusal)
+  const profile = selection.profile
 
   // `run` NEVER writes to the user's tree (spec §9a — the jinni trial's headline finding).
   // Config generation belongs to `init` alone, which announces every file it writes. Absent

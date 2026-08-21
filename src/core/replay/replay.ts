@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { promisify } from 'node:util'
-import { detectProject } from '../detect/detect.js'
+import { selectApp } from '../detect/select-app.js'
+import { SelectionRefused } from '../detect/refusal.js'
 import { recordRun } from '../record.js'
 import type { ResultJson } from '../report/types.js'
 import { readPerfDataIndex } from '../trend/read.js'
@@ -42,6 +43,8 @@ export interface ReplayOptions extends ReplayRange {
   /** Shown the estimate; returns whether to proceed. CLI wires the prompt; --yes short-circuits. */
   readonly confirm?: (description: string) => Promise<boolean>
   readonly progress?: (message: string) => void
+  /** `--app <path>`: which workspace package to measure (spec §9a). */
+  readonly app?: string | null
   /** Injectable for tests; defaults to the real record-mode measurement. */
   readonly recordFn?: typeof recordRun
 }
@@ -59,7 +62,9 @@ export async function replayHistory(options: ReplayOptions): Promise<ReplaySumma
   const progress = options.progress ?? (() => {})
   const record = options.recordFn ?? recordRun
 
-  const profile = await detectProject({ cwd: options.cwd })
+  const selection = await selectApp({ cwd: options.cwd, app: options.app ?? null })
+  if (selection.refusal) throw new SelectionRefused(selection.refusal)
+  const profile = selection.profile
   if (!profile.gitRoot) throw new Error('replay needs a git repository — no .git found above the project')
   const gitRoot = profile.gitRoot
   const pathInRepo = profile.pathInRepo ?? '.'

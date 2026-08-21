@@ -21,8 +21,9 @@ program
   .option('--no-serve', 'skip booting the app and route-latency metrics')
   .option('--no-browser', 'skip Lighthouse browser metrics')
   .option('--no-verify', 'skip measuring the AI\'s suggested diff fix')
+  .option('--app <path>', 'which workspace package to measure (monorepos)')
   .option('--cwd <dir>', 'project directory', process.cwd())
-  .action(async (flags: { base?: string; baseLabel?: string; json: boolean; cache: boolean; ai: boolean; serve: boolean; browser: boolean; verify: boolean; cwd: string }) => {
+  .action(async (flags: { base?: string; baseLabel?: string; json: boolean; cache: boolean; ai: boolean; serve: boolean; browser: boolean; verify: boolean; app?: string; cwd: string }) => {
     await runCommand(flags)
   })
 
@@ -33,8 +34,9 @@ program
   .option('--no-serve', 'skip booting the app and route-latency metrics')
   .option('--no-browser', 'skip Lighthouse browser metrics')
   .option('--no-verify', 'skip measuring the AI\'s suggested diff fix')
+  .option('--app <path>', 'which workspace package to measure (monorepos)')
   .option('--cwd <dir>', 'project directory', process.cwd())
-  .action(async (flags: { json: boolean; serve: boolean; browser: boolean; cwd: string }) => {
+  .action(async (flags: { json: boolean; serve: boolean; browser: boolean; app?: string; cwd: string }) => {
     const { recordCommand } = await import('./record-command.js')
     await recordCommand(flags)
   })
@@ -48,11 +50,12 @@ program
   .option('--write-perf-data', 'consent to CREATE the perf-data branch in this repo if absent', false)
   .option('--push', 'push the batched perf-data update to origin (default: local only)', false)
   .option('--harvest', 'write eval candidate folders for each movement (human completes the truth)', false)
+  .option('--app <path>', 'which workspace package to measure (monorepos)')
   .option('--json', 'print the replay summary as JSON', false)
   .option('--no-serve', 'skip booting the app and route-latency metrics')
   .option('--no-browser', 'skip Lighthouse browser metrics')
   .option('--cwd <dir>', 'project directory', process.cwd())
-  .action(async (flags: { last?: string; since?: string; yes: boolean; push: boolean; writePerfData: boolean; harvest: boolean; json: boolean; serve: boolean; browser: boolean; cwd: string }) => {
+  .action(async (flags: { last?: string; since?: string; yes: boolean; push: boolean; writePerfData: boolean; harvest: boolean; app?: string; json: boolean; serve: boolean; browser: boolean; cwd: string }) => {
     const { replayCommand } = await import('./replay-command.js')
     await replayCommand(flags)
   })
@@ -94,9 +97,10 @@ program
   .description('Detect the stack and write perf.yml')
   .option('--cwd <dir>', 'directory to detect in', process.cwd())
   .option('--json', 'print the project profile as JSON', false)
+  .option('--app <path>', 'which workspace package to measure (monorepos)')
   .option('--github', 'also write .github/workflows/driftwatch.yml', false)
   .option('--force', 'overwrite an existing workflow file', false)
-  .action(async (options: { cwd: string; json: boolean; github: boolean; force: boolean }) => {
+  .action(async (options: { cwd: string; json: boolean; github: boolean; force: boolean; app?: string }) => {
     await initCommand(options)
   })
 

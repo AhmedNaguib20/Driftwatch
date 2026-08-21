@@ -24,3 +24,10 @@ export type {
   PackageManager,
   ProjectProfile,
 } from './types.js'
+export { selectApp } from './select-app.js'
+export type { AppSelection, SelectOptions } from './select-app.js'
+export { detectWorkspaceRoot, parsePnpmWorkspace } from './workspace-root.js'
+export type { WorkspaceDetection, WorkspacePackage } from './workspace-root.js'
+export { WORKSPACE_PROTOCOL_WARNING, multiAppRefusal } from './workspace-warnings.js'
+export { hasWorkspaceProtocolDeps } from './package-manager.js'
+export { SelectionRefused } from './refusal.js'

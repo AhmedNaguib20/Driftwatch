@@ -35,7 +35,7 @@ export async function collectInstallTime(
 
   progress(`installing dependencies with \`${formatCommand(profile.commands.install)}\`…`)
   const outcome = await runCommand(profile.commands.install, {
-    cwd: workspace.dir,
+    cwd: workspace.installDir,
     env: MEASUREMENT_ENV,
     timeoutMs: INSTALL_TIMEOUT_MS,
   })

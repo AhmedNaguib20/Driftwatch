@@ -33,11 +33,61 @@ export interface PackageManagerDetection {
   readonly evidence: readonly Evidence[]
 }
 
+export interface WorkspaceContext {
+  /** Absolute workspace root, when this project is one package of a larger install. */
+  readonly root: string
+  readonly declaredBy: string
+  readonly impliedManager: PackageManager | null
+  readonly lockfile: string | null
+  /** Root package.json, read once by the caller. */
+  readonly rootPkg: PackageJson | null
+}
+
+/**
+ * Resolution priority (spec §9a, decided at M8 step 3): `packageManager` field → lockfile kind →
+ * workspace-file kind → npm as the honest default. In a workspace the ROOT is the authority: its
+ * lockfile is the one the install obeys (§5.1 second instance), and the app directory usually has
+ * neither lockfile nor packageManager field.
+ *
+ * The one place a default is forbidden: a package with `workspace:*` dependencies and no evidence
+ * of which manager owns it. npm cannot resolve that protocol at all, so guessing produces a
+ * guaranteed failure — the caller turns this into an error carrying its fix, never an attempt.
+ */
 export async function detectPackageManager(
   projectRoot: string,
   pkg: PackageJson | null,
+  workspace?: WorkspaceContext,
 ): Promise<PackageManagerDetection> {
   const evidence: Evidence[] = []
+
+  if (workspace) {
+    const corepackRoot = parseCorepackField(workspace.rootPkg?.packageManager)
+    if (corepackRoot) {
+      evidence.push({
+        fact: `package manager: ${corepackRoot}`,
+        source: `${path.basename(workspace.root)}/package.json`,
+        detail: `packageManager: "${workspace.rootPkg?.packageManager}" at the workspace root`,
+      })
+      return { manager: corepackRoot, lockfile: workspace.lockfile, evidence }
+    }
+    const byLockfile = LOCKFILES.find((l) => l.file === workspace.lockfile)
+    if (byLockfile) {
+      evidence.push({
+        fact: `package manager: ${byLockfile.manager}`,
+        source: `${byLockfile.file} (workspace root)`,
+        detail: 'the root lockfile is what the install obeys',
+      })
+      return { manager: byLockfile.manager, lockfile: workspace.lockfile, evidence }
+    }
+    if (workspace.impliedManager) {
+      evidence.push({
+        fact: `package manager: ${workspace.impliedManager}`,
+        source: workspace.declaredBy,
+        detail: 'implied by the workspace declaration — no root lockfile or packageManager field',
+      })
+      return { manager: workspace.impliedManager, lockfile: null, evidence }
+    }
+  }
 
   const found: LockfileSignal[] = []
   for (const signal of LOCKFILES) {
@@ -86,6 +136,14 @@ function parseCorepackField(field: string | undefined): PackageManager | null {
     default:
       return null
   }
+}
+
+/** True when any dependency uses the `workspace:` protocol — only resolvable inside a workspace. */
+export function hasWorkspaceProtocolDeps(pkg: PackageJson | null): boolean {
+  const groups = [pkg?.dependencies, pkg?.devDependencies, pkg?.peerDependencies]
+  return groups.some((group) =>
+    Object.values(group ?? {}).some((v) => typeof v === 'string' && v.startsWith('workspace:')),
+  )
 }
 
 /** `<pm> run <script>` — spelled the way each manager expects. */

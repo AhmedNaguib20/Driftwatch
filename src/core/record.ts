@@ -4,7 +4,8 @@ import { promisify } from 'node:util'
 import { loadConfig } from './detect/config-load.js'
 import { exists } from './detect/fs-probe.js'
 import { configFromProfile } from './detect/config-schema.js'
-import { detectProject } from './detect/detect.js'
+import { selectApp } from './detect/select-app.js'
+import { SelectionRefused } from './detect/refusal.js'
 import { measureWorkingTree } from './measure/measure.js'
 import type { ProgressReporter } from './measure/measure.js'
 import { buildRecordResult } from './report/record-result.js'
@@ -22,13 +23,17 @@ export interface RecordOptions {
   readonly serve?: boolean
   readonly browser?: boolean
   readonly progress?: ProgressReporter
+  /** `--app <path>`: which workspace package to measure (spec §9a). */
+  readonly app?: string | null
 }
 
 export async function recordRun(options: RecordOptions = {}): Promise<ResultJson> {
   const progress = options.progress ?? (() => {})
 
   progress('detecting project…')
-  const profile = await detectProject({ cwd: options.cwd })
+  const selection = await selectApp({ cwd: options.cwd, app: options.app ?? null })
+  if (selection.refusal) throw new SelectionRefused(selection.refusal)
+  const profile = selection.profile
   const config = await loadConfig(profile.projectRoot, configFromProfile(profile))
 
   const sha = profile.gitRoot ? await headSha(profile.gitRoot) : null

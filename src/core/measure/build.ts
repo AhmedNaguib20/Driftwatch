@@ -2,7 +2,7 @@ import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import type { ProjectProfile } from '../detect/types.js'
 import { BUILD_SAMPLES, BUILD_TIMEOUT_MS, MEASUREMENT_ENV, WARMUP_SAMPLES, median } from './protocol.js'
-import { DEPS_MISSING_FIX, describeWorkspace } from './fixes.js'
+import { DEPS_MISSING_FIX, describeWorkspace, toolStartupFix } from './fixes.js'
 import { formatCommand, runCommand } from './run-command.js'
 import type { MetricResult } from './types.js'
 import type { Workspace } from './workspace.js'
@@ -66,9 +66,12 @@ export async function collectBuildTime(
           id: 'build_time',
           status: 'skipped',
           label,
+          // Multi-line by convention: the summary first, the tool's own last word last —
+          // renderers show the last line (spec §9a).
           reason:
-            `${isWarmup ? 'warm-up build' : `build sample ${i}/${BUILD_SAMPLES}`} exited with ${outcome.exitCode === null ? 'no code (failed to start or killed)' : `code ${outcome.exitCode}`}` +
-            (tail ? `; last output:\n${tail}` : ''),
+            `${isWarmup ? 'warm-up build' : `build sample ${i}/${BUILD_SAMPLES}`} failed (${outcome.exitCode === null ? 'no exit code — failed to start or killed' : `exit code ${outcome.exitCode}`})` +
+            (tail ? `:\n${tail}` : ''),
+          ...(toolStartupFix(formatCommand(profile.commands.build!), tail) ? { fix: toolStartupFix(formatCommand(profile.commands.build!), tail)! } : {}),
         },
       }
     }

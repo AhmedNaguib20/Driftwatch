@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import pc from 'picocolors'
 import { WORKFLOW_PATH, renderWorkflow } from '../adapters/github/workflow-template.js'
-import { configFromProfile, detectProject, writeConfigIfAbsent } from '../core/index.js'
+import { configFromProfile, selectApp, writeConfigIfAbsent } from '../core/index.js'
 import type { ProjectProfile } from '../core/index.js'
 
 /** `driftwatch init` — detect the stack, print what was concluded and why, write perf.yml. */
@@ -11,8 +11,17 @@ export async function initCommand(options: {
   json: boolean
   github?: boolean
   force?: boolean
+  app?: string
 }): Promise<void> {
-  const profile = await detectProject({ cwd: options.cwd })
+  const selection = await selectApp({ cwd: options.cwd, app: options.app ?? null })
+  if (selection.refusal) {
+    // A workspace with several apps: name them and stop. Choosing for the user would measure
+    // the wrong thing and report it with full confidence (spec §9a).
+    console.error(pc.yellow(selection.refusal))
+    process.exitCode = 1
+    return
+  }
+  const profile = selection.profile
 
   if (options.json) {
     console.log(JSON.stringify(profile, null, 2))

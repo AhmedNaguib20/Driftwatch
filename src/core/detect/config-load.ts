@@ -46,6 +46,8 @@ export async function loadConfig(
   const record = parsed as Record<string, unknown>
   const config: PerfConfig = {
     detect: pickFramework(record.detect, fallback.detect, warnings),
+    app: pickOptionalString(record.app, fallback.app, 'app', warnings),
+    package_manager: pickOptionalString(record.package_manager, fallback.package_manager, 'package_manager', warnings),
     measure: pickMetrics(record.measure, fallback.measure, warnings),
     serve: pickBoolean(record.serve, fallback.serve, 'serve', warnings),
     browser: pickBoolean(record.browser, fallback.browser, 'browser', warnings),
@@ -169,3 +171,18 @@ function pickBoolean(value: unknown, fallback: boolean, key: string, warnings: s
  */
 export const NO_CONFIG_NOTICE =
   'no perf.yml — using defaults; run `driftwatch init` to customise'
+
+/** Optional string setting: absent keeps the fallback, a non-string is a warning, not a crash. */
+function pickOptionalString(
+  value: unknown,
+  fallback: string | null,
+  key: string,
+  warnings: string[],
+): string | null {
+  if (value === undefined || value === null) return fallback
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    warnings.push(`${CONFIG_FILENAME}: ${key} must be a non-empty string — ignoring it.`)
+    return fallback
+  }
+  return value.trim()
+}

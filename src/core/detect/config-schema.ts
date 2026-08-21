@@ -17,6 +17,13 @@ export const CONFIG_FILENAME = 'perf.yml'
 
 export interface PerfConfig {
   readonly detect: Framework
+  /**
+   * Which package of a monorepo to measure, relative to the workspace root. Null when the project
+   * stands alone. In a multi-app workspace this is required — driftwatch refuses to pick (§9a).
+   */
+  readonly app: string | null
+  /** Package manager override — the escape hatch when detection has no evidence to go on. */
+  readonly package_manager: string | null
   /** Metric ids or class tokens ('route_latency', 'lcp', …) that count as KEY metrics. */
   readonly measure: readonly string[]
   /** Boot the built app and measure routes (Layer 2a). CLI --no-serve overrides per run. */
@@ -37,6 +44,8 @@ export interface PerfConfig {
 
 export const DEFAULT_CONFIG: PerfConfig = {
   detect: 'unknown',
+  app: null,
+  package_manager: null,
   measure: [],
   serve: true,
   browser: true,

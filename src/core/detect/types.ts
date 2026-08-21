@@ -57,8 +57,22 @@ export interface ProjectProfile {
   readonly frameworkVersion: string | null
 
   readonly packageManager: PackageManager
-  /** Lockfile name relative to the project root, e.g. `package-lock.json`. */
+  /**
+   * Lockfile name relative to the directory that owns it — the WORKSPACE ROOT when this project
+   * is one package of a monorepo, since that is the lockfile the install obeys (§5.1).
+   */
   readonly lockfile: string | null
+
+  /**
+   * Monorepo support (M8 step 3). Null when the project stands alone; otherwise the absolute
+   * workspace root, where dependencies install and where the measurement copy begins. The app
+   * still builds in `projectRoot` — install at the root, measure the app.
+   */
+  readonly workspaceRoot: string | null
+  /** Path of this app relative to `workspaceRoot` ('.' when they are the same directory). */
+  readonly pathInWorkspace: string | null
+  /** Every buildable package the workspace declares — the choices `--app` selects between. */
+  readonly workspaceApps: readonly string[]
 
   readonly commands: {
     readonly install: Command | null

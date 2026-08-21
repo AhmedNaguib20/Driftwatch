@@ -55,7 +55,7 @@ function side(metrics: MetricResult[], proto = protocol()): SideMeasurement {
 
 function config(overrides: Partial<ResolvedConfig> = {}): ResolvedConfig {
   return {
-    detect: 'nextjs',
+    detect: 'nextjs', app: null, package_manager: null,
     measure: ['build_time', 'bundle_size'],
     serve: true,
     browser: true,
@@ -83,7 +83,7 @@ function profile(): ProjectProfile {
     framework: 'nextjs',
     frameworkVersion: '15.1.3',
     packageManager: 'npm',
-    lockfile: 'package-lock.json',
+    lockfile: 'package-lock.json', workspaceRoot: null, pathInWorkspace: null, workspaceApps: [],
     commands: {
       install: { bin: 'npm', args: ['ci'] },
       build: { bin: 'npm', args: ['run', 'build'] },

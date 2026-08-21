@@ -155,14 +155,14 @@ function regressionResult(
   sides?: { base: MetricResult[]; current: MetricResult[] },
 ): ResultJson {
   const config = {
-    detect: 'nextjs' as const, measure: ['bundle_size'], serve: true, browser: true, verify: true, auto_fix: 'off' as const,
+    detect: 'nextjs' as const, app: null, package_manager: null, measure: ['bundle_size'], serve: true, browser: true, verify: true, auto_fix: 'off' as const,
     threshold: '5%', block_merge: false, base: 'main', provider: 'deepseek', model: 'm',
     thresholdPercent: 5, noiseFloorPercent: 2, sourcePath: null, warnings: [],
   }
   const profile = {
     projectRoot: '/x', gitRoot: '/x', pathInRepo: '.', language: 'javascript' as const,
     framework: 'nextjs' as const, frameworkVersion: null, packageManager: 'npm' as const,
-    lockfile: null, commands: { install: null, build: { bin: 'node', args: ['build.js'] }, serve: null },
+    lockfile: null, workspaceRoot: null, pathInWorkspace: null, workspaceApps: [], commands: { install: null, build: { bin: 'node', args: ['build.js'] }, serve: null },
     buildOutputDirs: ['.next'], cacheDirs: ['.next'], routes: [], supportedMetrics: ['bundle_size'],
     warnings: [], evidence: [],
   }

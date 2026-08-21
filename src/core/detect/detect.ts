@@ -3,7 +3,9 @@ import { realpath } from 'node:fs/promises'
 import type { Command, Evidence, ProjectProfile } from './types.js'
 import { exists, readPackageJson } from './fs-probe.js'
 import type { PackageJson } from './fs-probe.js'
-import { detectPackageManager, installCommand, runScript } from './package-manager.js'
+import { detectPackageManager, hasWorkspaceProtocolDeps, installCommand, runScript } from './package-manager.js'
+import { detectWorkspaceRoot } from './workspace-root.js'
+import { WORKSPACE_PROTOCOL_WARNING } from './workspace-warnings.js'
 import { detectFramework } from './framework.js'
 import { detectRoutes } from './routes.js'
 import { findGitRoot } from './git.js'
@@ -40,7 +42,7 @@ export async function detectProject(options: DetectOptions = {}): Promise<Projec
     })
   } else {
     warnings.push(
-      `No package.json found at or above ${startDir}. Nothing to measure — Driftwatch supports JS/TS projects in M1.`,
+      `No package.json found at or above ${startDir}. Nothing to measure — Driftwatch measures JS/TS projects.`,
     )
   }
 
@@ -59,8 +61,32 @@ export async function detectProject(options: DetectOptions = {}): Promise<Projec
     )
   }
 
-  const pm = await detectPackageManager(projectRoot, pkg)
+  // Monorepo first: a package inside a workspace installs from the ROOT, so everything after
+  // this — package manager, lockfile, install command, the measurement copy — depends on it.
+  const workspace = await detectWorkspaceRoot(projectRoot, gitRoot)
+  evidence.push(...workspace.evidence)
+  warnings.push(...workspace.warnings)
+
+  const workspaceContext =
+    workspace.root !== null && workspace.root !== projectRoot
+      ? {
+          root: workspace.root,
+          declaredBy: workspace.declaredBy!,
+          impliedManager: workspace.impliedManager,
+          lockfile: workspace.lockfile,
+          rootPkg: await readPackageJson(workspace.root),
+        }
+      : undefined
+
+  const pm = await detectPackageManager(projectRoot, pkg, workspaceContext)
   evidence.push(...pm.evidence)
+
+  // The one combination that must never be attempted (spec §9a): `workspace:*` deps with a
+  // guessed manager. npm cannot resolve that protocol, so an attempt is a guaranteed failure —
+  // it becomes a warning carrying its remedy, before a single command runs.
+  if (pm.evidence.some((e) => e.source === 'default') && hasWorkspaceProtocolDeps(pkg)) {
+    warnings.push(WORKSPACE_PROTOCOL_WARNING)
+  }
 
   const framework = await detectFramework(projectRoot, pkg)
   evidence.push(...framework.evidence)
@@ -78,12 +104,24 @@ export async function detectProject(options: DetectOptions = {}): Promise<Projec
   const build = await resolveBuildCommand(projectRoot, pkg, pm.manager, warnings, evidence)
   const install = installCommand(pm.manager, pm.lockfile !== null)
 
+  const workspaceRoot = workspaceContext ? workspace.root : null
+  const pathInWorkspace = workspaceRoot ? path.relative(workspaceRoot, projectRoot) || '.' : null
+  const workspaceApps = workspace.packages.filter((p) => p.buildable).map((p) => p.path)
+
   const canBuild = build !== null && framework.buildOutputDirs.length > 0
   // Only metrics with a collector behind them and a project able to produce them (hard rule 3).
   const supportedMetrics: string[] = canBuild ? ['build_time', 'bundle_size'] : []
 
   if (!canBuild && pkg) {
-    warnings.push('build_time and bundle_size are unavailable: no usable build command.')
+    warnings.push(
+      build === null
+        ? 'build_time and bundle_size are unavailable: no build script to run.'
+        : `build_time and bundle_size are unavailable: \`${[build.bin, ...build.args].join(' ')}\` was found, but no known ` +
+          'build output directory — driftwatch weighs what a recognised framework produces, and none was detected here.' +
+          (workspaceApps.length > 0
+            ? `\nThis looks like a workspace root. Measure one of its apps instead:\n\n    driftwatch run --app ${workspaceApps[0]}`
+            : ''),
+    )
   }
 
   return {
@@ -95,6 +133,9 @@ export async function detectProject(options: DetectOptions = {}): Promise<Projec
     frameworkVersion: framework.version,
     packageManager: pm.manager,
     lockfile: pm.lockfile,
+    workspaceRoot,
+    pathInWorkspace,
+    workspaceApps,
     commands: { install, build, serve: framework.serve },
     buildOutputDirs: framework.buildOutputDirs,
     cacheDirs: framework.cacheDirs,

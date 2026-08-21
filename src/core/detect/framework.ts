@@ -42,7 +42,8 @@ export async function detectFramework(
 
   if (!declared && !configFile) {
     warnings.push(
-      'No supported framework detected. M1 supports Next.js only; build and bundle metrics will be skipped.',
+      'No supported framework detected here. Driftwatch measures Next.js projects today; ' +
+        'build and bundle metrics need one, so they will be skipped.',
     )
     return {
       framework: 'unknown',

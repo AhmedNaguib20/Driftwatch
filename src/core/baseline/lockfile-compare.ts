@@ -45,7 +45,12 @@ export async function compareLockfiles(
     }
   }
 
-  const current = await readText(path.join(profile.projectRoot, lockfile))
+  // The lockfile lives at the WORKSPACE ROOT in a monorepo — that is the one the install obeys,
+  // so that is the one the rule reads (spec §5.1 second instance, extended by §9a).
+  const lockfileDir = profile.workspaceRoot ?? profile.projectRoot
+  const lockfileInRepo = profile.gitRoot ? path.relative(profile.gitRoot, lockfileDir) || '.' : '.'
+
+  const current = await readText(path.join(lockfileDir, lockfile))
   if (current === null) {
     return {
       status: 'unreadable',
@@ -59,7 +64,7 @@ export async function compareLockfiles(
     }
   }
 
-  const base = await gitShow(profile.gitRoot!, baseSha, toRepoPath(profile.pathInRepo!, lockfile))
+  const base = await gitShow(profile.gitRoot!, baseSha, toRepoPath(lockfileInRepo, lockfile))
   if (base === null) {
     return {
       status: 'added',

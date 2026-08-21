@@ -1,5 +1,6 @@
 import type { ProjectProfile } from '../detect/types.js'
 import { INSTALL_TIMEOUT_MS, MEASUREMENT_ENV } from './protocol.js'
+import { describeWorkspace, installFixHint } from './fixes.js'
 import { formatCommand, runCommand } from './run-command.js'
 import type { MetricResult } from './types.js'
 import type { Workspace } from './workspace.js'
@@ -41,15 +42,18 @@ export async function collectInstallTime(
 
   if (outcome.exitCode !== 0) {
     const tail = outcome.outputTail.split('\n').slice(-15).join('\n')
+    const code = outcome.exitCode === null ? 'no code (failed to start or killed)' : `code ${outcome.exitCode}`
+    const hint = installFixHint(profile, tail)
     return {
       succeeded: false,
       metric: {
         id: 'install_time',
         status: 'skipped',
         label,
-        reason:
-          `install exited with ${outcome.exitCode === null ? 'no code (failed to start or killed)' : `code ${outcome.exitCode}`}` +
-          (tail ? `; last output:\n${tail}` : ''),
+        // Multi-line by convention: first line summarises, the LAST line is the most specific
+        // thing the package manager said — which is what renderers show (spec §9a).
+        reason: tail ? `install failed (${code}):\n${tail}` : `install failed (${code})`,
+        ...(hint ? { fix: hint } : {}),
       },
     }
   }
@@ -62,7 +66,7 @@ export async function collectInstallTime(
       value: Math.round(outcome.durationMs),
       unit: 'ms',
       label,
-      collectedBy: `wall clock around \`${formatCommand(profile.commands.install)}\` in a ${workspace.kind}; single sample, package-manager cache shared with the machine`,
+      collectedBy: `wall clock around \`${formatCommand(profile.commands.install)}\` in a ${describeWorkspace(workspace.kind)}; single sample, package-manager cache shared with the machine`,
       samples: 1,
     },
   }

@@ -103,12 +103,17 @@ function compareOne(
     const policyOnly = [base, current]
       .filter((m): m is MetricResult => m !== null)
       .every((m) => m.status === 'skipped' && m.excluded === true)
+    // Carry the remedy through: whichever side knows the fix, the reader sees it once.
+    const fix = [current, base].find(
+      (m): m is MetricResult & { fix: string } => m?.status === 'skipped' && typeof m.fix === 'string',
+    )?.fix
     return {
       ...shell,
       delta: null,
       verdict: 'skipped',
       exceedsThreshold: false,
       reason: skipReason,
+      ...(fix ? { fix } : {}),
       ...(policyOnly ? { excluded: true } : {}),
     }
   }
@@ -189,15 +194,22 @@ function compareOne(
   }
 }
 
+/**
+ * Both sides usually fail identically (same tree, same protocol) — say it once. When they differ,
+ * each side gets its own line rather than a " | " run-on: reasons are multi-line by convention
+ * (spec §9a) and interleaving them made the detail unreadable.
+ */
 function skippedReason(base: MetricResult | null, current: MetricResult | null): string | null {
-  const parts: string[] = []
-  if (!base || base.status === 'skipped') {
-    parts.push(`base: ${base ? base.reason : 'metric not collected'}`)
+  const reasonOf = (m: MetricResult | null) => (m ? (m.status === 'skipped' ? m.reason : null) : 'metric not collected')
+  const baseReason = !base || base.status === 'skipped' ? reasonOf(base) : null
+  const currentReason = !current || current.status === 'skipped' ? reasonOf(current) : null
+
+  if (baseReason !== null && currentReason !== null) {
+    return baseReason === currentReason ? baseReason : `base: ${baseReason}\ncurrent: ${currentReason}`
   }
-  if (!current || current.status === 'skipped') {
-    parts.push(`current: ${current ? current.reason : 'metric not collected'}`)
-  }
-  return parts.length > 0 ? parts.join(' | ') : null
+  // Only one side failed — WHICH side is the reader's first question, so the prefix stays.
+  if (baseReason !== null) return `base: ${baseReason}`
+  return currentReason !== null ? `current: ${currentReason}` : null
 }
 
 function pickUnit(

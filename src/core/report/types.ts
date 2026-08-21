@@ -19,7 +19,7 @@ export const RESULT_SCHEMA_VERSION = 1
  * Minor: additive changes only — new fields, new optional blocks. A 1.0 consumer reading a 1.1
  * result must keep working; anything that would break one bumps the major instead.
  */
-export const RESULT_SCHEMA_MINOR = 4
+export const RESULT_SCHEMA_MINOR = 5
 
 export interface ResultJson {
   readonly schemaVersion: typeof RESULT_SCHEMA_VERSION
@@ -143,6 +143,8 @@ export interface MetricComparison {
   readonly exceedsThreshold: boolean
   /** Present for skipped / not_comparable / no_change — why there is no reported delta. */
   readonly reason: string | null
+  /** The remedy when one is knowable, carried through from the side that failed (spec §9a). */
+  readonly fix?: string
   /** True when a skipped row is a policy exclusion (never gates the verdict). */
   readonly excluded?: boolean
 }

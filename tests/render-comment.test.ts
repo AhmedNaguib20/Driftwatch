@@ -38,7 +38,8 @@ function policyRow(route: string, reason: string): MetricComparison {
   return {
     id: `route_latency:${route}`, label: `route ${route}`, unit: null,
     base: null, current: null, delta: null, verdict: 'skipped',
-    exceedsThreshold: false, reason: `base: ${reason} | current: ${reason}`, excluded: true,
+    // Both sides skip identically, so core emits the reason ONCE (no base:/current: prefixes).
+    exceedsThreshold: false, reason, excluded: true,
   }
 }
 
@@ -122,6 +123,37 @@ async function scenario(name: string): Promise<ResultJson> {
           devOverride: true,
         },
       }
+    case 'nothing-measured': {
+      // The jinni shape (spec §9a): every metric skipped, the real error multi-line, a fix known.
+      const npmError = [
+        'install failed (code 1):',
+        'npm error code EUNSUPPORTEDPROTOCOL',
+        'npm error Unsupported URL Type "workspace:": workspace:*',
+      ].join('\n')
+      const fix = [
+        '`npm install` cannot resolve `workspace:*` dependencies — those exist only inside a',
+        'pnpm/yarn workspace, and driftwatch measured this app on its own.',
+        'This project looks like a monorepo package. Point driftwatch at the workspace root, or',
+        'set the package manager explicitly in perf.yml:',
+        '',
+        '    package_manager: pnpm',
+      ].join('\n')
+      const skip = (m: MetricComparison, reason: string, withFix = false): MetricComparison => ({
+        ...m, verdict: 'skipped', base: null, current: null, delta: null,
+        exceedsThreshold: false, reason, ...(withFix ? { fix } : {}),
+      })
+      return {
+        ...result,
+        verdict: 'inconclusive',
+        analysis: { outcome: 'skipped', reason: 'analysis runs only on a regression verdict' },
+        comparison: {
+          ...result.comparison,
+          metrics: result.comparison.metrics.map((m, i) =>
+            m.excluded ? m : skip(m, i === 0 ? npmError : 'no build output to weigh (build did not succeed)', i === 0),
+          ),
+        },
+      }
+    }
     case 'inconclusive-measurement':
       return {
         ...result,
@@ -147,6 +179,7 @@ async function scenario(name: string): Promise<ResultJson> {
 }
 
 const SCENARIOS = [
+  'nothing-measured',
   'regression-analysed',
   'regression-verified-upgrade',
   'regression-verify-failed',
@@ -243,6 +276,36 @@ describe('PR comment renderer — golden contract', () => {
     const file = golden('summary-regression-analysed.md')
     if (process.env.UPDATE_GOLDEN === '1') await writeFile(file, summary, 'utf8')
     expect(summary).toBe(await readFile(file, 'utf8'))
+  })
+
+  it('never-ran reads as "not measured", never as eight quiet em-dashes', async () => {
+    const rendered = renderComment(await scenario('nothing-measured'))
+    expect(rendered).toContain('_not measured_')
+    expect(rendered).toContain('Nothing was measured this run')
+    // The provenance line that assumes measurement happened must be gone.
+    expect(rendered).not.toContain('both sides measured fresh')
+  })
+
+  it('shows the LAST reason line and points at the full error — never a dangling promise', async () => {
+    const rendered = renderComment(await scenario('nothing-measured'))
+    expect(rendered).toContain('npm error Unsupported URL Type')
+    expect(rendered).toContain('(full error in the run summary)')
+    // The first line ended in a colon promising output it could not show — never rendered alone.
+    expect(rendered).not.toMatch(/skipped — install failed \(code 1\):\s*\|/)
+  })
+
+  it('every failure carries its own fix — the exact config, not advice', async () => {
+    const rendered = renderComment(await scenario('nothing-measured'))
+    expect(rendered).toContain('How to get these numbers')
+    expect(rendered).toContain('package_manager: pnpm')
+  })
+
+  it('the run summary carries the FULL multi-line error the comment abbreviated', async () => {
+    const summary = renderSummary(await scenario('nothing-measured'), { commentUrl: null, checkUrl: null })
+    expect(summary).toContain('Why metrics are missing')
+    expect(summary).toContain('npm error code EUNSUPPORTEDPROTOCOL')
+    expect(summary).toContain('npm error Unsupported URL Type "workspace:": workspace:*')
+    expect(summary).toContain('How to get this number')
   })
 
   it('a prose-displayed diff that verifies gets the diff display back with its measured numbers', async () => {

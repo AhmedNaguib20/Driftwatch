@@ -1,4 +1,5 @@
 import { readdir, stat } from 'node:fs/promises'
+import { buildOutputFix } from './fixes.js'
 import path from 'node:path'
 import type { ProjectProfile } from '../detect/types.js'
 import type { MetricResult } from './types.js'
@@ -28,6 +29,7 @@ export async function collectBundleSize(
       status: 'skipped',
       label,
       reason: 'no build output to weigh (build did not succeed)',
+      fix: buildOutputFix(profile),
     }
   }
 

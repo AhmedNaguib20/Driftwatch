@@ -215,8 +215,11 @@ commit topology/date, not append order.
         (unit tests encode its lessons in ~7s vs 8min). M7 CLOSED (`a61a1c0` lineage).
 
 **M8 — Real-world readiness (current).** Opened by the jinni trial (spec §9a). In order:
-1. **Rule-2 fix (urgent):** `run` never writes to the user's tree. Only `init` writes config, and
-   it announces every file. Missing config → defaults + one line saying so.
+1. **Rule-2 fix — DONE (`b278014`, 299 tests).** Audit found three uninvited writes: `perf.yml`
+   (removed), `eval/candidates/` (→ `.perf/eval-candidates/`), and perf-data branch creation (now
+   `--write-perf-data`). Consent doctrine: creating needs consent, appending doesn't; CI keeps
+   implicit consent (installing the workflow is the consent). Refusal shape: do the work, refuse
+   the write, say how to keep it — nothing re-measured on retry.
 2. **Monorepo support:** detect the workspace root (`pnpm-workspace.yaml`, `packageManager`,
    lockfile kind), install at the root with the right package manager, measure the chosen app.
    Multi-app repos: ask/choose explicitly, never guess silently.
@@ -238,8 +241,7 @@ Do not start a milestone before the previous one's definition of done is met.
 
 `npx driftwatch run` inside a Next.js project:
 
-1. Detects the stack. *(Superseded by M8.1: `run` never writes `perf.yml` — absent config means
-   defaults plus one line saying so. Only `init` writes config, and it names every file.)*
+1. Detects the stack and writes a `perf.yml` if absent.
 2. Measures **build time** and **bundle size** for the working tree.
 3. Checks out the base commit (default: `main`) into a `git worktree`, measures it **through the
    same measurement path as the working tree**, caches the result keyed by (commit SHA, protocol

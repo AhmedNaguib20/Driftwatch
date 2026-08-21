@@ -3,7 +3,7 @@ import type { ProjectProfile } from '../detect/types.js'
 import { exists, readText } from '../detect/fs-probe.js'
 
 /**
- * Measurement workspaces have no `.git` (deliberately, on both sides — protocol field
+ * Measurement copies have no `.git` (deliberately, on both sides — protocol field
  * `gitMetadata`). Tooling that stamps versions from git will behave differently there, and per
  * spec §5.1 that must be surfaced, not silently swallowed. Detection is heuristic: we warn on the
  * obvious signals. Used by both the working-tree copy and the baseline worktree.
@@ -33,7 +33,7 @@ export async function gitReadingWarnings(profile: ProjectProfile): Promise<strin
 
   if (suspects.length === 0) return []
   return [
-    `The build may read git metadata (${suspects.join('; ')}), but measurement workspaces have no .git — ` +
+    `The build may read git metadata (${suspects.join('; ')}), but measurement copies have no .git — ` +
       'version stamping and release detection will see a non-repository. Both sides are measured the same way, ' +
       'so the comparison holds, but the built output may differ from a real build.',
   ]

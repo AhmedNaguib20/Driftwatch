@@ -69,8 +69,17 @@ export interface SkippedMetric {
   readonly id: MetricId
   readonly status: 'skipped'
   readonly label: string
-  /** Why we have no number. Skipped is a first-class outcome, never a silent omission (rule 3). */
+  /**
+   * Why we have no number. Skipped is a first-class outcome, never a silent omission (rule 3).
+   * May be multi-line: the FIRST line is the summary, the LAST line the most specific detail
+   * (renderers show the last line — spec §9a).
+   */
   readonly reason: string
+  /**
+   * The remedy, when one is knowable: the exact command or config to paste, in the M3/M6 stanza
+   * style — never advice ("check your setup"). Every failure carries its own fix (spec §9a).
+   */
+  readonly fix?: string
   /**
    * True when the skip is POLICY (SSG exclusion, dynamic segment, cap, user-disabled layer) as
    * opposed to a failed measurement (boot/build failure). Policy skips never gate the verdict.

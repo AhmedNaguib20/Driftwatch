@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "schemaMinorVersion": 4,
+  "schemaMinorVersion": 5,
   "driftwatchVersion": "<driftwatch-version>",
   "mode": "compare",
   "createdAt": "2026-08-19T12:00:00.000Z",
@@ -178,7 +178,7 @@
         "delta": null,
         "verdict": "skipped",
         "exceedsThreshold": false,
-        "reason": "base: dependencies provided by cloning the existing node_modules — install not measured | current: dependencies provided by cloning the existing node_modules — install not measured"
+        "reason": "dependencies provided by cloning the existing node_modules — install not measured"
       },
       {
         "id": "build_time",

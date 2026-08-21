@@ -2,6 +2,7 @@ import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import type { ProjectProfile } from '../detect/types.js'
 import { BUILD_SAMPLES, BUILD_TIMEOUT_MS, MEASUREMENT_ENV, WARMUP_SAMPLES, median } from './protocol.js'
+import { DEPS_MISSING_FIX, describeWorkspace } from './fixes.js'
 import { formatCommand, runCommand } from './run-command.js'
 import type { MetricResult } from './types.js'
 import type { Workspace } from './workspace.js'
@@ -33,7 +34,8 @@ export async function collectBuildTime(
         id: 'build_time',
         status: 'skipped',
         label,
-        reason: 'dependencies are not installed in the workspace',
+        reason: 'dependencies are not installed in the measurement copy',
+        fix: DEPS_MISSING_FIX,
       },
     }
   }
@@ -82,7 +84,7 @@ export async function collectBuildTime(
       value: median(samples),
       unit: 'ms',
       label,
-      collectedBy: `median of ${BUILD_SAMPLES} cold builds after ${WARMUP_SAMPLES} discarded warm-up, wall clock around \`${formatCommand(profile.commands.build)}\` in a ${workspace.kind}`,
+      collectedBy: `median of ${BUILD_SAMPLES} cold builds after ${WARMUP_SAMPLES} discarded warm-up, wall clock around \`${formatCommand(profile.commands.build)}\` in a ${describeWorkspace(workspace.kind)}`,
       samples: BUILD_SAMPLES,
       sampleValues: samples,
     },

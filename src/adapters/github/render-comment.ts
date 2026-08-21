@@ -1,3 +1,4 @@
+import { summariseReason } from '../../core/index.js'
 import type { MetricComparison, ResultJson } from '../../core/index.js'
 import { formatPercent, formatValue } from './format.js'
 import { renderAnalysisFooterParts, renderAnalysisSection } from './render-analysis.js'
@@ -43,6 +44,7 @@ export function renderComment(result: ResultJson, options: CommentOptions = {}):
   }
   lines.push('')
   lines.push(...comparisonTable(result))
+  lines.push(...fixBlocks(result))
   lines.push(...renderAnalysisSection(result))
   lines.push('')
   lines.push(renderHowMeasuredSlim(result, options.runUrl ?? null))
@@ -139,11 +141,14 @@ export function comparisonTable(result: ResultJson): string[] {
     }
   }
 
+  // Never-ran must not read as ran-and-quiet (spec §9a).
+  const neverRan = rows.length > 0 && rows.every((m) => m.base === null && m.current === null)
+  const cell = (v: number | null, unit: MetricComparison['unit']) =>
+    v === null && neverRan ? '_not measured_' : formatValue(v, unit)
+
   const lines = ['| Metric | Base | This PR | Change |', '|---|---|---|---|']
   for (const m of singles) {
-    lines.push(
-      `| ${m.label} | ${formatValue(m.base, m.unit)} | ${formatValue(m.current, m.unit)} | ${changeCell(m)} |`,
-    )
+    lines.push(`| ${m.label} | ${cell(m.base, m.unit)} | ${cell(m.current, m.unit)} | ${changeCell(m)} |`)
   }
   const groupedRows: { reason: string; members: MetricComparison[] }[] = []
   for (const [reason, members] of grouped) {
@@ -156,6 +161,11 @@ export function comparisonTable(result: ResultJson): string[] {
       lines.push(`| ${members.length} rows excluded by policy | — | — | ${shortPolicyReason(reason)} |`)
       groupedRows.push({ reason, members })
     }
+  }
+
+  if (neverRan) {
+    lines.push('')
+    lines.push('> Nothing was measured this run — every row above is **unavailable**, not unchanged.')
   }
 
   if (groupedRows.length > 0) {
@@ -192,11 +202,35 @@ function changeCell(m: MetricComparison): string {
   }
 }
 
-/** Table cells must escape pipes, and "base: X | current: X" reads twice as long as it is. */
+/** Table cells show the LAST reason line (the specific one) and escape pipes (spec §9a). */
 function compactReason(reason: string): string {
-  const firstLine = reason.split('\n')[0]!
-  const match = /^base: (.*) \| current: (.*)$/.exec(firstLine)
-  const text = match && match[1] === match[2] ? match[1]! : firstLine
+  const { text, truncated } = summariseReason(reason)
+  return (truncated ? `${text} (full error in the run summary)` : text).replaceAll('|', '\\|')
+}
+
+/**
+ * Every failure carries its own fix (spec §9a) — one block per distinct remedy, naming the
+ * metrics it unblocks. Rendered as a fenced block so the command survives copy-paste.
+ */
+function fixBlocks(result: ResultJson): string[] {
+  const byFix = new Map<string, string[]>()
+  for (const m of result.comparison.metrics) {
+    if (!m.fix || m.excluded) continue
+    if (!byFix.has(m.fix)) byFix.set(m.fix, [])
+    byFix.get(m.fix)!.push(m.label)
+  }
+  if (byFix.size === 0) return []
+
+  const lines: string[] = ['', '<details>', '<summary>How to get these numbers</summary>', '']
+  for (const [fix, labels] of byFix) {
+    const shown = labels.length > 3 ? `${labels.slice(0, 3).join(', ')} +${labels.length - 3} more` : labels.join(', ')
+    lines.push(`**${escapeText(shown)}**`, '', '```', ...fix.split('\n'), '```', '')
+  }
+  lines.push('</details>')
+  return lines
+}
+
+function escapeText(text: string): string {
   return text.replaceAll('|', '\\|')
 }
 

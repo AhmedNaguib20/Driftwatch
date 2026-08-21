@@ -1,4 +1,5 @@
 import pc from 'picocolors'
+import { summariseReason } from '../core/index.js'
 import type { MetricComparison, ResultJson } from '../core/index.js'
 import { formatPercent, formatValue, padVisible, visibleLength } from './format.js'
 
@@ -17,10 +18,11 @@ export function renderResult(result: ResultJson): string {
   if (result.mode === 'record' && 'metrics' in result.current) {
     lines.push(...recordTable(result))
   } else {
-    lines.push(...table(sortForDisplay(result.comparison.metrics)))
+    lines.push(...table(sortForDisplay(result.comparison.metrics), nothingMeasured(result)))
   }
   lines.push('')
   lines.push(...footer(result))
+  lines.push(...fixStanzas(result))
 
   const warnings = [...result.warnings, ...result.project.warnings]
   if (warnings.length > 0) {
@@ -76,18 +78,22 @@ function recordTable(result: ResultJson): string[] {
   const rows = result.current.metrics.map((m) => [
     m.label,
     m.status === 'measured' ? formatValue(m.value, m.unit) : '—',
-    m.status === 'measured' ? '' : pc.dim(`skipped — ${m.reason.split('\n')[0]}`),
+    m.status === 'measured' ? '' : pc.dim(`skipped — ${summariseReason(m.reason).text}`),
   ])
   const width = Math.max(...rows.map((r) => visibleLength(r[0]!)))
   return rows.map((r) => `  ${padVisible(r[0]!, width)}   ${r[1]}${r[2] ? '   ' + r[2] : ''}`)
 }
 
-function table(metrics: MetricComparison[]): string[] {
+function table(metrics: MetricComparison[], neverRan: boolean): string[] {
   const header = ['metric', 'base', 'current', 'delta']
+  // Never-ran must not look like ran-and-quiet: a column of em-dashes reads as "we looked and
+  // found nothing" when in fact nothing was measured at all (spec §9a).
+  const cell = (v: number | null, unit: MetricComparison['unit']) =>
+    v === null && neverRan ? pc.dim('not measured') : formatValue(v, unit)
   const rows = metrics.map((m) => [
     m.label,
-    formatValue(m.base, m.unit),
-    formatValue(m.current, m.unit),
+    cell(m.base, m.unit),
+    cell(m.current, m.unit),
     deltaCell(m),
   ])
 
@@ -117,15 +123,19 @@ function deltaCell(m: MetricComparison): string {
       return pc.dim('no change')
     case 'not_comparable':
       return pc.yellow('not comparable')
-    case 'skipped':
-      return pc.dim(`skipped \u2014 ${compactSkipReason(m.reason ?? 'not collected')}`)
+    case 'skipped': {
+      const { text, truncated } = summariseReason(m.reason ?? 'not collected')
+      return pc.dim(`skipped \u2014 ${text}${truncated ? ' (full error: --json)' : ''}`)
+    }
   }
 }
 
 function footer(result: ResultJson): string[] {
   const lines: string[] = []
 
-  if (result.base.available) {
+  // "both sides measured fresh this run" under a table where nothing was measured is the
+  // sentence the trial caught (spec §9a) — the provenance line assumes measurement happened.
+  if (result.base.available && !nothingMeasured(result)) {
     const how =
       result.comparison.measurementPath === 'screened'
         ? `base from cache (measured ${result.base.measuredAt ?? 'earlier'})`
@@ -133,6 +143,9 @@ function footer(result: ResultJson): string[] {
           ? 'cached screening crossed the noise floor \u2014 both sides re-measured fresh this run'
           : 'both sides measured fresh this run'
     lines.push(pc.dim(`  ${how}`))
+  }
+  if (nothingMeasured(result)) {
+    lines.push(pc.yellow('  nothing was measured this run \u2014 every metric above is unavailable, not unchanged'))
   }
 
   if (result.comparison.dependenciesChanged === true) {
@@ -148,13 +161,31 @@ function footer(result: ResultJson): string[] {
   return lines
 }
 
-function firstLine(text: string): string {
-  return text.split('\n')[0] ?? text
+/** True when this run produced no number at all — every row skipped or uncomparable. */
+export function nothingMeasured(result: ResultJson): boolean {
+  const rows = result.comparison.metrics
+  return rows.length > 0 && rows.every((m) => m.base === null && m.current === null)
 }
 
-/** "base: X | current: X" reads twice as long as it is — collapse when both reasons match. */
-function compactSkipReason(reason: string): string {
-  const match = /^base: (.*) \| current: (.*)$/.exec(firstLine(reason))
-  if (match && match[1] === match[2]) return match[1]!
-  return firstLine(reason)
+/**
+ * Every failure carries its own fix (spec §9a). Deduplicated — one stanza per distinct remedy,
+ * naming the metrics it unblocks, in the M3/M6 style: the exact command, never advice.
+ */
+function fixStanzas(result: ResultJson): string[] {
+  const byFix = new Map<string, string[]>()
+  for (const m of result.comparison.metrics) {
+    if (!m.fix || m.excluded) continue
+    if (!byFix.has(m.fix)) byFix.set(m.fix, [])
+    byFix.get(m.fix)!.push(m.label)
+  }
+  if (byFix.size === 0) return []
+
+  const lines: string[] = ['']
+  for (const [fix, labels] of byFix) {
+    const shown = labels.length > 3 ? `${labels.slice(0, 3).join(', ')} +${labels.length - 3} more` : labels.join(', ')
+    lines.push(pc.bold(`to measure ${shown}:`))
+    for (const line of fix.split('\n')) lines.push(line ? `  ${line}` : '')
+    lines.push('')
+  }
+  return lines.slice(0, -1)
 }

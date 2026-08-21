@@ -1,4 +1,5 @@
 import { performance } from 'node:perf_hooks'
+import { NO_SERVER_FIX } from './fixes.js'
 import type { ProjectProfile } from '../detect/types.js'
 import { collectBuildTime } from './build.js'
 import { collectBundleSize } from './bundle.js'
@@ -160,7 +161,8 @@ async function collectLayer2a(
   }
   if (!buildSucceeded) {
     const reason = 'no server to boot (build did not succeed)'
-    return none([...skipRoutes(reason), ...skipLighthouse(reason)])
+    const withFix = (m: MetricResult) => ({ ...m, fix: NO_SERVER_FIX }) as MetricResult
+    return none([...skipRoutes(reason).map(withFix), ...skipLighthouse(reason).map(withFix)])
   }
 
   await sweepStaleServers().catch(() => [])
@@ -210,7 +212,7 @@ export async function measureWorkingTree(
   progress: ProgressReporter = silent,
   options: WorkspaceOptions & MeasureOptions = {},
 ): Promise<SideMeasurement> {
-  progress('copying working tree to a measurement workspace…')
+  progress('copying the working tree into a measurement copy…')
   const workspace = await createWorkingTreeWorkspace(profile, options)
   try {
     return await measureWorkspace(profile, workspace, progress, options)

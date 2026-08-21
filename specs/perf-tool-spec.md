@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 42 — 2026-08-20 — M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 43 — 2026-08-20 — M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -927,6 +927,23 @@ tree, untracked, on his feature branch, **and never said so**. It is M1's specif
 measure-don't-touch, and a silent file appears in `git status` days later as a mystery.
 **Rule: `run` never writes to the user's tree. Config generation belongs to `init` alone, which
 announces every file it writes.** Absent config → run on defaults and say so in one line.
+
+*The audit found three writes, not one (M8 step 1, `b278014`):* `run` → `perf.yml` (the reported
+one); `replay --harvest` → `eval/candidates/` at repo root (same sin, unreported → moved to
+`.perf/eval-candidates/`); and `record`/`replay` → **creating the `perf-data` orphan branch**
+uninvited — the worst of the three, since a branch is harder to notice and harder to undo than an
+untracked file. The jinni run only escaped the last two because it died at install first.
+
+**Consent doctrine (decided):** *creating* the perf-data branch requires explicit consent
+(`--write-perf-data`); *appending* to a branch that already exists was consented when it was
+created. CI record mode keeps implicit consent — installing a workflow with `contents: write` **is**
+the act of consent, and a prompt in CI would hang. The refusal shape is the model for every future
+gate: **do the work, refuse the write, and say exactly how to keep it** — measured results wait in
+`.perf/replay-pending/`, so consenting later writes them without re-measuring. Guarantees are
+phrased as the user experiences them: `git status --porcelain` byte-identical across `run`,
+`record`, and `replay`. M1's definition of done ("writes a perf.yml if absent" — the contract that
+produced the violation) is marked **superseded**, not deleted, so the decision history stays
+legible.
 
 **The blocking gap: pnpm workspaces.** Detection guessed npm; npm cannot resolve `workspace:*`
 (EUNSUPPORTEDPROTOCOL), so both sides failed identically. The symmetry machinery worked perfectly —

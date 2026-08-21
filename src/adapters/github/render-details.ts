@@ -1,3 +1,4 @@
+import { summariseReason } from '../../core/index.js'
 import type { ContextManifest, MetricResult, ResultJson } from '../../core/index.js'
 import { formatValue } from './format.js'
 
@@ -43,7 +44,7 @@ function dedupedMethodology(base: MetricResult | null, current: MetricResult | n
 function sideLine(name: string, metric: MetricResult | null): string {
   if (!metric) return `- ${name}: not collected`
   if (metric.status === 'skipped') {
-    return `- ${name}: skipped — ${metric.reason.split('\n')[0]}`
+    return `- ${name}: skipped — ${summariseReason(metric.reason).text}`
   }
   const samples = metric.sampleValues ? ` (samples: ${metric.sampleValues.join(', ')})` : ''
   return `- ${name}: ${formatValue(metric.value, metric.unit)}${samples}`

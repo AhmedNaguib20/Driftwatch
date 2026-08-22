@@ -108,7 +108,7 @@
         ]
       },
       {
-        "id": "bundle_size",
+        "id": "build_output_size",
         "status": "measured",
         "value": 2322637,
         "unit": "bytes",
@@ -143,28 +143,28 @@
         "id": "route_latency:/",
         "status": "skipped",
         "label": "route /",
-        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {
         "id": "route_latency:/blog",
         "status": "skipped",
         "label": "route /blog",
-        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {
         "id": "route_latency:/about",
         "status": "skipped",
         "label": "route /about",
-        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {
         "id": "route_latency:/dashboard",
         "status": "skipped",
         "label": "route /dashboard",
-        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {
@@ -385,7 +385,7 @@
         ]
       },
       {
-        "id": "bundle_size",
+        "id": "build_output_size",
         "status": "measured",
         "value": 2626586,
         "unit": "bytes",
@@ -420,28 +420,28 @@
         "id": "route_latency:/",
         "status": "skipped",
         "label": "route /",
-        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {
         "id": "route_latency:/blog",
         "status": "skipped",
         "label": "route /blog",
-        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {
         "id": "route_latency:/about",
         "status": "skipped",
         "label": "route /about",
-        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {
         "id": "route_latency:/dashboard",
         "status": "skipped",
         "label": "route /dashboard",
-        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {
@@ -671,7 +671,7 @@
         "reason": null
       },
       {
-        "id": "bundle_size",
+        "id": "build_output_size",
         "label": "bundle size",
         "unit": "bytes",
         "base": 2322637,
@@ -693,7 +693,7 @@
         "delta": null,
         "verdict": "skipped",
         "exceedsThreshold": false,
-        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {
@@ -705,7 +705,7 @@
         "delta": null,
         "verdict": "skipped",
         "exceedsThreshold": false,
-        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {
@@ -717,7 +717,7 @@
         "delta": null,
         "verdict": "skipped",
         "exceedsThreshold": false,
-        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {
@@ -741,7 +741,7 @@
         "delta": null,
         "verdict": "skipped",
         "exceedsThreshold": false,
-        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)",
+        "reason": "base: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse) | current: prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in build_output_size / Lighthouse)",
         "excluded": true
       },
       {

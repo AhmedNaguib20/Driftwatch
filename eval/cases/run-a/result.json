@@ -136,7 +136,7 @@
         ]
       },
       {
-        "id": "bundle_size",
+        "id": "build_output_size",
         "status": "measured",
         "value": 2305493,
         "unit": "bytes",
@@ -188,7 +188,7 @@
         ]
       },
       {
-        "id": "bundle_size",
+        "id": "build_output_size",
         "status": "measured",
         "value": 7010517,
         "unit": "bytes",
@@ -249,7 +249,7 @@
         "reason": null
       },
       {
-        "id": "bundle_size",
+        "id": "build_output_size",
         "label": "bundle size",
         "unit": "bytes",
         "base": 2305493,

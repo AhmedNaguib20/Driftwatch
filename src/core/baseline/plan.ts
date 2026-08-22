@@ -32,6 +32,11 @@ export interface BaselinePlan {
   readonly dependenciesChanged: boolean | null
   /** Dependency strategy applied to BOTH sides. */
   readonly dependencies: 'clone' | 'install'
+  /** How far the branch has moved past the base — verdict-softening input (spec §9a). */
+  readonly commitsAhead: number | null
+  readonly baseAgeDays: number | null
+  /** The branch this work most likely integrates into, when it is not the base itself. */
+  readonly likelyIntegrationTarget: string | null
   readonly warnings: readonly string[]
   readonly evidence: readonly Evidence[]
 }
@@ -87,10 +92,13 @@ export async function planBaseline(
     )
   }
 
+  const staleness = await measureStaleness(profile.gitRoot!, baseSha, baseRef)
+
   return {
     available: true,
     baseRef: baseLabel ?? baseRef,
     baseSha,
+    ...staleness,
     lockfileStatus: lock.status,
     dependenciesChanged:
       lock.status === 'identical'
@@ -116,6 +124,73 @@ async function resolveCommit(gitRoot: string, ref: string): Promise<string | nul
     ])
     const sha = stdout.trim()
     return sha.length === 40 ? sha : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * How far the current branch has run past its base, and where it probably should have compared.
+ * Read-only git; every field is null when git cannot answer rather than guessed (rule 3).
+ */
+async function measureStaleness(
+  gitRoot: string,
+  baseSha: string,
+  baseRef: string,
+): Promise<{ commitsAhead: number | null; baseAgeDays: number | null; likelyIntegrationTarget: string | null }> {
+  const count = await git(gitRoot, ['rev-list', '--count', `${baseSha}..HEAD`])
+  const commitsAhead = count === null ? null : Number.parseInt(count.trim(), 10)
+
+  const committed = await git(gitRoot, ['show', '-s', '--format=%cI', baseSha])
+  const baseAgeDays =
+    committed === null
+      ? null
+      : Math.max(0, Math.round((Date.now() - new Date(committed.trim()).getTime()) / 86_400_000))
+
+  return {
+    commitsAhead: Number.isFinite(commitsAhead) ? commitsAhead : null,
+    baseAgeDays: Number.isFinite(baseAgeDays as number) ? baseAgeDays : null,
+    likelyIntegrationTarget: await findIntegrationTarget(gitRoot, baseRef, commitsAhead ?? 0),
+  }
+}
+
+/**
+ * A branch that is closer to this HEAD than the configured base is the likelier integration
+ * target — teams that merge into `staging` or `develop` leave `main` behind, which is exactly the
+ * jinni case. Only named when it is genuinely closer, never as a guess.
+ */
+async function findIntegrationTarget(
+  gitRoot: string,
+  baseRef: string,
+  baseDistance: number,
+): Promise<string | null> {
+  if (baseDistance === 0) return null
+  const candidates = ['staging', 'develop', 'development', 'main', 'master']
+  let best: { ref: string; distance: number } | null = null
+
+  for (const candidate of candidates) {
+    if (candidate === baseRef) continue
+    for (const ref of [`refs/remotes/origin/${candidate}`, `refs/heads/${candidate}`]) {
+      const sha = await git(gitRoot, ['rev-parse', '--verify', '--quiet', ref])
+      if (sha === null) continue
+      const merged = await git(gitRoot, ['merge-base', sha.trim(), 'HEAD'])
+      if (merged === null) break
+      const ahead = await git(gitRoot, ['rev-list', '--count', `${merged.trim()}..HEAD`])
+      if (ahead === null) break
+      const distance = Number.parseInt(ahead.trim(), 10)
+      if (Number.isFinite(distance) && distance < baseDistance && (best === null || distance < best.distance)) {
+        best = { ref: candidate, distance }
+      }
+      break
+    }
+  }
+  return best?.ref ?? null
+}
+
+async function git(cwd: string, args: string[]): Promise<string | null> {
+  try {
+    const { stdout } = await exec('git', ['-C', cwd, ...args])
+    return stdout
   } catch {
     return null
   }

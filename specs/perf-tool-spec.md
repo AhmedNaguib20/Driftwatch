@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 44 — 2026-08-20 — M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 45 — 2026-08-20 — M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -980,9 +980,30 @@ knowable: fabricated helpfulness is rule 3 in reverse.** Asymmetric failures kee
 first attempt hiding it). Golden diff near-empty: every healthy path byte-identical, one new file
 `comment-nothing-measured.md` preserving the jinni failure as a permanent contract.
 
+*Step 3 (monorepo support) — DONE. The jinni project measured for the first time:* pnpm detected
+from the root `packageManager` pin, root lockfile read, whole workspace copied, install at the root,
+build in the app. 189s total, base 92s / current 94s — near-perfect symmetry on a 12-package
+monorepo. `install time … not comparable` fired correctly (§5.1 sixth) on a real project.
+**Cache-key bug found and fixed in the same step (`066cd08`)** — the (SHA, protocol hash) key
+excluded the build command because "the tree at that commit determines it", true for one app per
+repo and false the moment `--app` existed: `--app apps/admin-web` would have read the entry
+`apps/storefront-web` wrote. **The key now includes the measured project.** A one-app assumption
+hiding inside a protocol rule.
+
+**Open decisions raised by the trial (M8 step 4+):**
+
+| # | Finding | Decision |
+|---|---|---|
+| 1 | **"bundle size" is 69 MB and isn't a bundle** — it's all of `.next` minus cache (3,224 files, ~11 MB server, ~9.6 MB client JS). A server-only change moves the headline metric though nothing shipped to a browser changed. `collectedBy` is honest; the label oversells. | **Split the metric**: `client_bundle_size` (what ships to browsers — the headline) and `build_output_size` (everything). Renaming a headline metric is a schema break; do it now, before anyone depends on it. |
+| 2 | **Stale base + changed dependencies still yields a confident verdict.** 143 commits / 2 months behind, 395 lockfile lines different, and the tool still says "regression +6.5%" with the dependency change as a quiet footnote. | Both are **verdict-softening conditions, not annotations**: when the base is far behind or the lockfile differs, the verdict downgrades to `inconclusive-context` — the numbers stand, the *attribution* doesn't. Same doctrine as movement-vs-drift: the strong claim needs a licence. |
+| 3 | Terminal doesn't group identical policy skips (the comment renderer does) — 24 rows of noise around 4 of signal. | Group in the terminal too; one renderer rule, both surfaces. |
+| 4 | `(full error: --json)` printed where there is **no error** — an absent base row for branch-only routes. | The pointer must not lie (v44 principle) — suppress it when there is nothing to point at. |
+| 5 | The output never names which app was measured. | Header names the app in multi-app repos. |
+
 **Stale-base finding.** Base defaulted to `main`, which was 143 commits / 2 months behind — the team
 merges to `staging` and main lags until release. Even a successful comparison would have been
-meaningless. **Warn when the resolved base is far behind the branch's likely integration target.**
+meaningless. **Warn when the resolved base is far behind the branch's likely integration target**
+(and see open decision 2 — warning is not enough).
 
 ## 10. Git History Replay — M7, CLOSED (2026-08-20)
 

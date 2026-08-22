@@ -38,7 +38,7 @@ export async function prerenderedRoutes(
 
 /**
  * Route-latency scope (spec §5 scope note): prerendered routes measure the file server, not the
- * app — excluded by default (their regressions surface in bundle_size; client cost lands with
+ * app — excluded by default (their regressions surface in client_bundle_size; client cost lands with
  * Lighthouse). Dynamic/SSR routes first, '/' leads its group, shortest next — deterministic.
  * Dynamic segments ([slug]) have no concrete URL and are skipped, not guessed at.
  */
@@ -66,7 +66,7 @@ export function selectRoutes(
     skipped.push({
       route,
       reason:
-        'prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in bundle_size / Lighthouse)',
+        'prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in client_bundle_size / Lighthouse)',
     })
   }
 

@@ -14,7 +14,7 @@ export {
   median,
 } from './protocol.js'
 export { collectBuildTime } from './build.js'
-export { collectBundleSize } from './bundle.js'
+export { collectBundleSizes } from './bundle.js'
 export { collectInstallTime } from './install.js'
 export { copyFiles, listFiles } from './copy-tree.js'
 export { formatCommand, runCommand } from './run-command.js'

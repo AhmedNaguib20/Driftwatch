@@ -66,9 +66,10 @@ const profile: ProjectProfile = {
     serve: { bin: 'node_modules/.bin/next', args: ['start'] },
   },
   buildOutputDirs: ['.next'],
+    clientOutputDirs: ['.next/static'],
   cacheDirs: ['.next', 'node_modules/.cache'],
   routes: ['/', '/about', '/blog/[slug]'],
-  supportedMetrics: ['build_time', 'bundle_size'],
+  supportedMetrics: ['build_time', 'client_bundle_size', 'build_output_size'],
   warnings: ['a project-level warning, verbatim'],
   evidence: [
     { fact: 'framework: nextjs', source: 'package.json', detail: 'depends on next@15.1.3' },
@@ -77,7 +78,7 @@ const profile: ProjectProfile = {
 
 const config: ResolvedConfig = {
   detect: 'nextjs', app: null, package_manager: null,
-  measure: ['build_time', 'bundle_size'],
+  measure: ['build_time', 'client_bundle_size', 'build_output_size'],
   serve: true,
   browser: true,
   verify: true,
@@ -99,7 +100,7 @@ const plan: BaselinePlan = {
   baseSha: 'c0ffee0000000000000000000000000000000000',
   lockfileStatus: 'identical',
   dependenciesChanged: false,
-  dependencies: 'clone',
+  dependencies: 'clone', commitsAhead: 1, baseAgeDays: 0, likelyIntegrationTarget: null,
   warnings: [],
   evidence: [{ fact: 'base: main @ c0ffee000000', source: 'git' }],
 }
@@ -123,12 +124,21 @@ const baseSide: SideMeasurement = {
       sampleValues: [11143, 8629, 8724],
     },
     {
-      id: 'bundle_size',
+      id: 'client_bundle_size',
+      status: 'measured',
+      value: 921 * 1024,
+      unit: 'bytes',
+      label: 'client bundle size',
+      collectedBy: 'sum of file sizes in .next/static (41 files, shipped to browsers), excluding internal caches and diagnostics',
+      samples: 1,
+    },
+    {
+      id: 'build_output_size',
       status: 'measured',
       value: 2305491,
       unit: 'bytes',
-      label: 'bundle size',
-      collectedBy: 'sum of file sizes in .next (113 files), excluding internal caches and diagnostics',
+      label: 'build output size',
+      collectedBy: 'sum of file sizes in .next (113 files, all build output, server code included), excluding internal caches and diagnostics',
       samples: 1,
     },
   ],
@@ -157,12 +167,21 @@ const currentSide: SideMeasurement = {
       sampleValues: [11810, 9350, 9349],
     },
     {
-      id: 'bundle_size',
+      id: 'client_bundle_size',
+      status: 'measured',
+      value: 921 * 1024 - 4,
+      unit: 'bytes',
+      label: 'client bundle size',
+      collectedBy: 'sum of file sizes in .next/static (41 files, shipped to browsers), excluding internal caches and diagnostics',
+      samples: 1,
+    },
+    {
+      id: 'build_output_size',
       status: 'measured',
       value: 2305487,
       unit: 'bytes',
-      label: 'bundle size',
-      collectedBy: 'sum of file sizes in .next (113 files), excluding internal caches and diagnostics',
+      label: 'build output size',
+      collectedBy: 'sum of file sizes in .next (113 files, all build output, server code included), excluding internal caches and diagnostics',
       samples: 1,
     },
   ],
@@ -231,9 +250,11 @@ describe('result JSON contract (schema v1)', () => {
     expect(rendered + '\n').toBe(await readFile(GOLDEN_11, 'utf8'))
   })
 
-  it('1.1 is a strict superset of 1.0 — every 1.0 field survives with its value', async () => {
-    // The 1.0 golden is frozen history: it is never regenerated. A 1.0 consumer must be able to
-    // read a 1.1 result, so every leaf present in 1.0 must exist unchanged in 1.1.
+  it('2.0 BREAKS 1.x, and the break is exactly the metric rename — nothing else', async () => {
+    // The 1.0 golden is frozen history: it is never regenerated. Through 1.1 it was a strict
+    // superset — every 1.0 leaf survived. The metric split (spec §9a decision 1) ends that, which
+    // is why the major bumped. This test pins the break to the rename ALONE: if anything else
+    // stopped surviving, that is an unplanned break and this fails.
     const v10 = JSON.parse(await readFile(GOLDEN, 'utf8'))
     const v11 = JSON.parse(await readFile(GOLDEN_11, 'utf8'))
 
@@ -262,12 +283,26 @@ describe('result JSON contract (schema v1)', () => {
     }
     compare(v10, v11, '$')
 
-    expect(missing).toEqual([])
+    // Three explained differences, and no others:
+    //  1. the major bump itself;
+    //  2. the renamed id at the byte slot;
+    //  3. the VALUE at that slot — client bundle (943 KB) is not full build output (2.3 MB),
+    //     which is the entire point of the split: the old number counted server code.
+    // Anything else here is a break nobody decided on.
+    const EXPLAINED = [
+      /^\$\.schemaVersion: 1 → 2$/,
+      /\.id: "bundle_size" → "client_bundle_size"$/,
+      /^\$\.(base|current)\.metrics\[2\]\.value: \d+ → \d+$/,
+      /^\$\.comparison\.metrics\[2\]\.(base|current): \d+ → \d+$/,
+    ]
+    const unexplained = missing.filter((m) => !EXPLAINED.some((rule) => rule.test(m)))
+    expect(unexplained).toEqual([])
+    expect(missing.length).toBeGreaterThan(0) // the break is real, not theoretical
   })
 
   it('the deterministic scenario exercises the interesting rows', async () => {
     const golden = JSON.parse(
-      (await readFile(GOLDEN, 'utf8')).replaceAll('<driftwatch-version>', '0.0.0'),
+      (await readFile(GOLDEN_11, 'utf8')).replaceAll('<driftwatch-version>', '0.0.0'),
     )
     const verdicts = Object.fromEntries(
       golden.comparison.metrics.map((m: { id: string; verdict: string }) => [m.id, m.verdict]),
@@ -276,9 +311,10 @@ describe('result JSON contract (schema v1)', () => {
     expect(verdicts).toEqual({
       install_time: 'skipped',
       build_time: 'regressed',
-      bundle_size: 'no_change',
+      client_bundle_size: 'no_change',
+      build_output_size: 'no_change',
     })
     expect(golden.verdict).toBe('regression')
-    expect(golden.schemaVersion).toBe(1)
+    expect(golden.schemaVersion).toBe(2)
   })
 })

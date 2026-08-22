@@ -42,11 +42,11 @@ function mixedIndex(): IndexFile {
     ...emptyIndex(),
     entries: [
       entry({}), // the real branch's empty first entry
-      entry({ build_time: 30000, bundle_size: 2313028, 'route_latency:/live': 15, 'lcp:/': 1880 }),
-      entry({ build_time: 30240, bundle_size: 2313100, 'lcp:/': 1890 }), // route missing → gap
-      entry({ build_time: 30480, bundle_size: 2313150, 'route_latency:/live': 14, 'lcp:/': 1885 }),
-      entry({ build_time: 31600, bundle_size: 2410000, 'route_latency:/live': 15, 'lcp:/': 1930 }, protocol({ browser: 'chrome/151.0.7922.140' })),
-      entry({ build_time: 31700, bundle_size: 2410400, 'route_latency:/live': 15, 'lcp:/': 1928 }, protocol({ browser: 'chrome/151.0.7922.140' })),
+      entry({ build_time: 30000, client_bundle_size: 2313028, 'route_latency:/live': 15, 'lcp:/': 1880 }),
+      entry({ build_time: 30240, client_bundle_size: 2313100, 'lcp:/': 1890 }), // route missing → gap
+      entry({ build_time: 30480, client_bundle_size: 2313150, 'route_latency:/live': 14, 'lcp:/': 1885 }),
+      entry({ build_time: 31600, client_bundle_size: 2410000, 'route_latency:/live': 15, 'lcp:/': 1930 }, protocol({ browser: 'chrome/151.0.7922.140' })),
+      entry({ build_time: 31700, client_bundle_size: 2410400, 'route_latency:/live': 15, 'lcp:/': 1928 }, protocol({ browser: 'chrome/151.0.7922.140' })),
     ],
   }
 }
@@ -54,9 +54,9 @@ function mixedIndex(): IndexFile {
 describe('replayed points and movement emphasis (M7)', () => {
   it('replayed points render hollow with the two-dates tooltip; movement commits get the ring', () => {
     counter = 0
-    const a: IndexEntry = { ...entry({ bundle_size: 100_000 }), committedAt: '2026-06-01T00:00:00Z', parentSha: null, replayed: true }
-    const b: IndexEntry = { ...entry({ bundle_size: 145_000 }), committedAt: '2026-06-02T00:00:00Z', parentSha: a.sha, replayed: true }
-    const live = entry({ bundle_size: 145_200, build_time: 30_000 })
+    const a: IndexEntry = { ...entry({ client_bundle_size: 100_000 }), committedAt: '2026-06-01T00:00:00Z', parentSha: null, replayed: true }
+    const b: IndexEntry = { ...entry({ client_bundle_size: 145_000 }), committedAt: '2026-06-02T00:00:00Z', parentSha: a.sha, replayed: true }
+    const live = entry({ client_bundle_size: 145_200, build_time: 30_000 })
     const html = render({ ...emptyIndex(), entries: [live, a, b] })
 
     expect(html).toContain('class="dot dot-replayed"')
@@ -120,9 +120,9 @@ describe('dashboard generation', () => {
     const drifting = render({
       ...emptyIndex(),
       entries: [
-        entry({ build_time: 30000, bundle_size: 100000 }),
-        entry({ build_time: 31500, bundle_size: 99000 }),
-        entry({ build_time: 33500, bundle_size: 97000 }),
+        entry({ build_time: 30000, client_bundle_size: 100000 }),
+        entry({ build_time: 31500, client_bundle_size: 99000 }),
+        entry({ build_time: 33500, client_bundle_size: 97000 }),
       ],
     })
     expect(drifting).toContain('▲ drifted +11.7% over 3 points')

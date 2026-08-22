@@ -7,7 +7,8 @@ All measured deltas are under the 2% noise floor or below the 5% threshold, agai
 | Metric | Base | This PR | Change |
 |---|---|---|---|
 | build time (cold) | 8.72 s | 8.72 s | no change |
-| bundle size | 2.20 MB | 2.20 MB | no change |
+| client bundle size | 921.0 kB | 921.0 kB | no change |
+| build output size | 2.20 MB | 2.20 MB | no change |
 | install time | — | — | skipped — dependencies provided by cloning the existing node_modules — install not measured |
 | 4 rows excluded by policy | — | — | prerendered (SSG) |
 | route /blog/[slug] | — | — | skipped — dynamic segment — no concrete URL to measure |

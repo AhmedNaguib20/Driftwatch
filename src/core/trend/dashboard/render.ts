@@ -21,7 +21,7 @@ export interface DashboardInput {
   readonly sourceLabel: string | null
 }
 
-const KEY_ORDER = ['build_time', 'bundle_size', 'install_time']
+const KEY_ORDER = ['build_time', 'client_bundle_size', 'build_output_size', 'install_time']
 
 export function renderDashboard(input: DashboardInput): string {
   // History order, not append order (M7): x-positions and "latest" follow commit topology.

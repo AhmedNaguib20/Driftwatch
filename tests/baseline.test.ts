@@ -473,7 +473,7 @@ describe('cache prediction parity with browser metrics', () => {
   it('predictProtocol with browser fields hashes identically to a measured protocol carrying them', () => {
     const plan: BaselinePlan = {
       available: true, baseRef: 'main', baseSha: 'a'.repeat(40), lockfileStatus: 'identical',
-      dependenciesChanged: false, dependencies: 'clone', warnings: [], evidence: [],
+      dependenciesChanged: false, dependencies: 'clone', commitsAhead: 1, baseAgeDays: 0, likelyIntegrationTarget: null, warnings: [], evidence: [],
     }
     const predicted = predictProtocol(plan, 'chrome/151.0.1', 'simulated/desktop/v2')
     const measuredLike = { ...predicted, workspace: 'copy' as const, buildCommand: 'npm run build' }

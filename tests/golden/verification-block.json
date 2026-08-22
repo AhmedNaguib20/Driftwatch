@@ -1,12 +1,12 @@
 {
-  "schemaMinorVersion": 5,
+  "schemaMinorVersion": 0,
   "verification": {
     "outcome": "restored",
     "reason": null,
     "metrics": [
       {
-        "id": "bundle_size",
-        "label": "bundle_size",
+        "id": "client_bundle_size",
+        "label": "client_bundle_size",
         "unit": "bytes",
         "base": 45,
         "current": 5041,

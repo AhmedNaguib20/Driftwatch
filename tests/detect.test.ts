@@ -66,7 +66,7 @@ describe('detectProject on the Next.js fixture', () => {
 
   it('only claims metrics it can actually collect', async () => {
     const profile = await detectProject({ cwd: fixture })
-    expect(profile.supportedMetrics).toEqual(['build_time', 'bundle_size'])
+    expect(profile.supportedMetrics).toEqual(['build_time', 'client_bundle_size', 'build_output_size'])
   })
 
   it('records evidence for what it concluded', async () => {
@@ -242,7 +242,7 @@ describe('perf.yml', () => {
     const yaml = renderConfig(configFromProfile(profile))
 
     expect(yaml).toContain('detect: nextjs')
-    expect(yaml).toContain('measure: [build_time, bundle_size, route_latency, lcp, tbt, fcp, transfer_size]')
+    expect(yaml).toContain('measure: [build_time, client_bundle_size, build_output_size, route_latency, lcp, tbt, fcp, transfer_size]')
     expect(yaml).toContain('threshold: 5%')
     expect(yaml).toContain('block_merge: false')
   })
@@ -256,7 +256,7 @@ describe('perf.yml', () => {
     const loaded = await loadConfig(dir)
 
     expect(loaded.detect).toBe('nextjs')
-    expect(loaded.measure).toEqual(['build_time', 'bundle_size', 'route_latency', 'lcp', 'tbt', 'fcp', 'transfer_size'])
+    expect(loaded.measure).toEqual(['build_time', 'client_bundle_size', 'build_output_size', 'route_latency', 'lcp', 'tbt', 'fcp', 'transfer_size'])
     expect(loaded.thresholdPercent).toBe(5)
     expect(loaded.noiseFloorPercent).toBe(2)
     expect(loaded.block_merge).toBe(false)

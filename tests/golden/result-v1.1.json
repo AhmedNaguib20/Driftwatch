@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "schemaMinorVersion": 5,
+  "schemaVersion": 2,
+  "schemaMinorVersion": 0,
   "driftwatchVersion": "<driftwatch-version>",
   "mode": "compare",
   "createdAt": "2026-08-19T12:00:00.000Z",
@@ -70,12 +70,21 @@
         ]
       },
       {
-        "id": "bundle_size",
+        "id": "client_bundle_size",
+        "status": "measured",
+        "value": 943104,
+        "unit": "bytes",
+        "label": "client bundle size",
+        "collectedBy": "sum of file sizes in .next/static (41 files, shipped to browsers), excluding internal caches and diagnostics",
+        "samples": 1
+      },
+      {
+        "id": "build_output_size",
         "status": "measured",
         "value": 2305491,
         "unit": "bytes",
-        "label": "bundle size",
-        "collectedBy": "sum of file sizes in .next (113 files), excluding internal caches and diagnostics",
+        "label": "build output size",
+        "collectedBy": "sum of file sizes in .next (113 files, all build output, server code included), excluding internal caches and diagnostics",
         "samples": 1
       }
     ],
@@ -128,12 +137,21 @@
         ]
       },
       {
-        "id": "bundle_size",
+        "id": "client_bundle_size",
+        "status": "measured",
+        "value": 943100,
+        "unit": "bytes",
+        "label": "client bundle size",
+        "collectedBy": "sum of file sizes in .next/static (41 files, shipped to browsers), excluding internal caches and diagnostics",
+        "samples": 1
+      },
+      {
+        "id": "build_output_size",
         "status": "measured",
         "value": 2305487,
         "unit": "bytes",
-        "label": "bundle size",
-        "collectedBy": "sum of file sizes in .next (113 files), excluding internal caches and diagnostics",
+        "label": "build output size",
+        "collectedBy": "sum of file sizes in .next (113 files, all build output, server code included), excluding internal caches and diagnostics",
         "samples": 1
       }
     ],
@@ -195,8 +213,19 @@
         "reason": null
       },
       {
-        "id": "bundle_size",
-        "label": "bundle size",
+        "id": "client_bundle_size",
+        "label": "client bundle size",
+        "unit": "bytes",
+        "base": 943104,
+        "current": 943100,
+        "delta": null,
+        "verdict": "no_change",
+        "exceedsThreshold": false,
+        "reason": "delta is under the 2% noise floor"
+      },
+      {
+        "id": "build_output_size",
+        "label": "build output size",
         "unit": "bytes",
         "base": 2305491,
         "current": 2305487,

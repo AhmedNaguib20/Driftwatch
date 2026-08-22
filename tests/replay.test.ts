@@ -51,7 +51,9 @@ async function repo(): Promise<{
   await g('config', 'user.name', 't')
   await w('package.json', JSON.stringify({ name: 'p', scripts: { build: 'node build.js' } }))
   await w('next.config.mjs', 'export default {}\n')
-  await w('app.js', "const payload = 'x'.repeat(100)\n")
+  // Byte deltas must clear the 1KB byte quantum (spec §5) — the growth has to be real content,
+  // not a source-level `repeat(N)` that changes a few characters.
+  await w('app.js', `const payload = '${'x'.repeat(2000)}'\n`)
   await w('build.js', "const fs=require('fs')\nfs.mkdirSync('.next/static',{recursive:true})\nfs.writeFileSync('.next/static/out.js',fs.readFileSync('app.js'))\n")
   await w('node_modules/pkg/index.js', 'x')
   await w('.gitignore', '.next/\n.perf/\nperf.yml\n')
@@ -61,7 +63,7 @@ async function repo(): Promise<{
 
   // c2 lands via a merge so first-parent resolution has something to prove.
   await g('checkout', '-q', '-b', 'feature')
-  await w('app.js', "const payload = 'x'.repeat(5000)\n")
+  await w('app.js', `const payload = '${'x'.repeat(9000)}'\n`)
   await g('add', '-A')
   await g('commit', '-q', '-m', 'fb: grow the app')
   const fb = await sha()
@@ -75,7 +77,7 @@ async function repo(): Promise<{
   const c3 = await sha()
 
   await w('build.js', "const fs=require('fs')\nfs.mkdirSync('.next/static',{recursive:true})\nfs.writeFileSync('.next/static/out.js',fs.readFileSync('app.js'))\n")
-  await w('app.js', "const payload = 'x'.repeat(200)\n")
+  await w('app.js', `const payload = '${'x'.repeat(3000)}'\n`)
   await g('add', '-A')
   await g('commit', '-q', '-m', 'c4: fixed again')
   const c4 = await sha()
@@ -91,7 +93,7 @@ function fakeResult(sha: string): ResultJson {
     createdAt: '2026-08-19T00:00:00.000Z',
     current: {
       metrics: [
-        { id: 'bundle_size', status: 'measured', value: 100, unit: 'bytes', label: 'bundle size', collectedBy: 't', samples: 1 },
+        { id: 'client_bundle_size', status: 'measured', value: 100, unit: 'bytes', label: 'bundle size', collectedBy: 't', samples: 1 },
       ],
       protocol: { nodeVersion: 'v0', platform: 'test', arch: 'test', browser: 'none', hostLabels: [], driftwatchVersion: '0.0.0-test' },
       benchmarkIndex: null,
@@ -164,7 +166,7 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
 
     // ONE segment by construction: all measured points share today's protocol, ordered by
     // topology (c1 → c2 merge → c4), with the skipped commit contributing no point and no break.
-    const timeline = buildTimelines(read.index).find((t) => t.id === 'bundle_size')!
+    const timeline = buildTimelines(read.index).find((t) => t.id === 'client_bundle_size')!
     expect(timeline.segments).toHaveLength(1)
     expect(timeline.segments[0]!.points.map((p) => p.sha)).toEqual([shas.c1, shas.c2, shas.c4])
     // The measurement itself is real: c2 grew the app, c4 shrank it back.
@@ -175,7 +177,7 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
     // The movement report over the same branch: c2's jump pinned to its sha; c4's recovery is a
     // gapped interval — the unbuildable c3 sits inside it and the report says so.
     const report = movementReport(read.index)
-    const bundleMoves = report.moved.find((m) => m.id === 'bundle_size')!.movements
+    const bundleMoves = report.moved.find((m) => m.id === 'client_bundle_size')!.movements
     expect(bundleMoves).toHaveLength(2)
     expect(bundleMoves[0]).toMatchObject({ fromSha: shas.c1, toSha: shas.c2, direction: 'up', gap: null })
     expect(bundleMoves[1]).toMatchObject({
@@ -188,7 +190,8 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
     expect(line).toContain('bundle size moved at 2 commits')
     expect(line).toContain('somewhere across 1 commit, 1 unbuildable')
     // Doctrine (spec §10): wall-clock classes are named, never attributed.
-    expect(report.moved.map((m) => m.id)).toEqual(['bundle_size'])
+    // Both byte classes carry the attribution licence, so both report the same movements.
+    expect([...report.moved.map((m) => m.id)].sort()).toEqual(['build_output_size', 'client_bundle_size'])
     expect(line).toContain('not judged — cross-time-gap timing')
     expect(line).toContain('build time')
 
@@ -200,7 +203,12 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
     // Under .perf/ — the one directory driftwatch may write in the user's repo (spec §9a).
     const candidate = path.join(dir, '.perf', 'eval-candidates', shas.c2.slice(0, 12))
     const tpl = JSON.parse(await readFile(path.join(candidate, 'expected-template.json'), 'utf8'))
-    expect(tpl.movement.metrics[0]).toMatchObject({ id: 'bundle_size', direction: 'up' })
+    // The candidate carries every metric that moved at that commit, both byte classes.
+    expect(tpl.movement.metrics.map((m: { id: string }) => m.id).sort()).toEqual([
+      'build_output_size',
+      'client_bundle_size',
+    ])
+    expect(tpl.movement.metrics.every((m: { direction: string }) => m.direction === 'up')).toBe(true)
     expect(tpl.causeMustContain).toEqual([])
     expect(tpl.suspectsInclude).toEqual([])
     const after = JSON.parse(await readFile(path.join(candidate, 'after.json'), 'utf8'))

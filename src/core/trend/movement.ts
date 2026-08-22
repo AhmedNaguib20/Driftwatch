@@ -55,7 +55,7 @@ export const NOT_JUDGED_REASON =
  * claim the instrument cannot support. They stay in the data and on the dashboard, labeled.
  */
 export function isAttributable(id: string): boolean {
-  return id === 'bundle_size' || id.startsWith('transfer_size:')
+  return id === 'client_bundle_size' || id === 'build_output_size' || id.startsWith('transfer_size:')
 }
 
 /** Only metrics that moved appear; a fully quiet history returns []. */

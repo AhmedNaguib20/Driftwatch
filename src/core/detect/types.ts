@@ -16,7 +16,10 @@ export type Language = 'javascript' | 'unknown'
 /** Metric identifiers. Per-route classes carry the route in the id (M4, Layer 2a). */
 export type MetricId =
   | 'build_time'
-  | 'bundle_size'
+  /** What ships to browsers — the headline byte metric (spec §9a decision 1). */
+  | 'client_bundle_size'
+  /** Everything the build emitted, server code included — informational. */
+  | 'build_output_size'
   | 'install_time'
   | `route_latency:${string}`
   | `lcp:${string}`
@@ -81,8 +84,16 @@ export interface ProjectProfile {
     readonly serve: Command | null
   }
 
-  /** Directories produced by the build — where bundle size is weighed. */
+  /** Directories produced by the build — where build_output_size is weighed. */
   readonly buildOutputDirs: readonly string[]
+
+  /**
+   * The subset of the build output that is SHIPPED TO BROWSERS — where client_bundle_size is
+   * weighed (spec §9a decision 1). On the jinni storefront the full output was 69 MB, of which
+   * ~9.6 MB was client JS: a server-only change moved the old headline metric though nothing a
+   * user downloads had changed. Empty when the framework has no separable client output.
+   */
+  readonly clientOutputDirs: readonly string[]
 
   /**
    * Directories removed before every measured build, on both sides of a comparison.

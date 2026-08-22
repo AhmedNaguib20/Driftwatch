@@ -1,4 +1,5 @@
 import type { AnalysisReport } from './analysis.js'
+import type { SofteningCondition } from './context.js'
 import type { VerificationReport } from './verification.js'
 import type { Evidence, Framework, MetricId, PackageManager } from '../detect/types.js'
 import type { LockfileStatus } from '../baseline/lockfile-compare.js'
@@ -13,13 +14,20 @@ import type { MetricResult, SideMeasurement } from '../measure/types.js'
  * deliberate act, visible in review.
  */
 
-export const RESULT_SCHEMA_VERSION = 1
+/**
+ * 2 since the metric split (spec §9a decision 1): `bundle_size` became `client_bundle_size` +
+ * `build_output_size`. A rename REMOVES a field a 1.x consumer reads, and our own rule says an
+ * additive-only change is a minor while anything that breaks a consumer bumps the major. The
+ * honest bump costs nothing today — no third-party consumer exists — and lying about it would
+ * cost exactly when one does.
+ */
+export const RESULT_SCHEMA_VERSION = 2
 
 /**
  * Minor: additive changes only — new fields, new optional blocks. A 1.0 consumer reading a 1.1
  * result must keep working; anything that would break one bumps the major instead.
  */
-export const RESULT_SCHEMA_MINOR = 5
+export const RESULT_SCHEMA_MINOR = 0
 
 export interface ResultJson {
   readonly schemaVersion: typeof RESULT_SCHEMA_VERSION
@@ -46,12 +54,22 @@ export interface ResultJson {
   readonly analysis?: AnalysisReport
   /** Present when the fix-verification stage ran (M6) — measured evidence about the AI's diff. */
   readonly verification?: VerificationReport
+  /**
+   * Why attribution was withheld, when it was (verdict 'inconclusive-context'). Empty otherwise —
+   * a condition that did not fire is not reported (rule 3 is about attempts, not non-events).
+   */
+  readonly softening?: readonly SofteningCondition[]
   /** Run-level warnings that belong to no single side (config problems, plan warnings). */
   readonly warnings: readonly string[]
 }
 
-/** 'recorded' is record mode's verdict: nothing was compared, so nothing passed or failed. */
-export type RunVerdict = 'ok' | 'regression' | 'inconclusive' | 'recorded'
+/**
+ * 'recorded' is record mode's verdict: nothing was compared, so nothing passed or failed.
+ * 'inconclusive-context' is a MEASURED comparison whose attribution is not licensed — the base is
+ * stale or the dependency trees differ (spec §9a decision 2). The numbers stand; the claim that
+ * this change caused them does not.
+ */
+export type RunVerdict = 'ok' | 'regression' | 'inconclusive' | 'inconclusive-context' | 'recorded'
 
 export interface ProjectReport {
   readonly root: string

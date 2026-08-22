@@ -4,6 +4,7 @@ import { DRIFTWATCH_VERSION } from '../baseline/cache.js'
 import type { ResolvedConfig } from '../detect/config-schema.js'
 import type { ProjectProfile } from '../detect/types.js'
 import type { SideMeasurement } from '../measure/types.js'
+import { softeningConditions } from './context.js'
 import { compareMetrics } from './compare-metrics.js'
 import { protocolMismatches } from './protocol-match.js'
 import type { AnalysisReport } from './analysis.js'
@@ -29,6 +30,18 @@ export function buildResult(input: BuildResultInput): ResultJson {
   const now = input.now ?? (() => new Date())
 
   const comparison = buildComparison(input)
+
+  // Attribution licence (spec §9a decision 2). A measurement failure is already the weaker
+  // verdict, so 'inconclusive' is never softened into 'inconclusive-context' — it stays.
+  const measuredVerdict = runVerdict(comparison, config)
+  const softening = plan.available
+    ? softeningConditions({
+        plan,
+        commitsAhead: plan.commitsAhead,
+        baseAgeDays: plan.baseAgeDays,
+        likelyIntegrationTarget: plan.likelyIntegrationTarget,
+      })
+    : []
 
   return {
     schemaVersion: RESULT_SCHEMA_VERSION,
@@ -73,7 +86,8 @@ export function buildResult(input: BuildResultInput): ResultJson {
         : { available: false, reason: plan.available ? 'base side was not measured' : plan.reason },
     current: { workingTree: true, ...current },
     comparison,
-    verdict: runVerdict(comparison, config),
+    verdict: softening.length > 0 && measuredVerdict !== 'inconclusive' ? 'inconclusive-context' : measuredVerdict,
+    ...(softening.length > 0 && measuredVerdict !== 'inconclusive' ? { softening } : {}),
     warnings: [...config.warnings, ...(plan.available ? plan.warnings : [])],
   }
 }

@@ -9,7 +9,7 @@ import type { Workspace } from './workspace.js'
 
 export interface BuildOutcome {
   readonly metric: MetricResult
-  /** True when the build produced output that bundle_size may weigh. */
+  /** True when the build produced output the byte metrics may weigh. */
   readonly succeeded: boolean
 }
 

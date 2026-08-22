@@ -52,7 +52,7 @@ function verification(outcome: VerificationReport['outcome']): VerificationRepor
     reason: outcome === 'not-applicable' ? 'the suggested diff does not apply cleanly: context drift' : null,
     metrics:
       outcome === 'restored' || outcome === 'partial'
-        ? [{ id: 'bundle_size', label: 'bundle size', unit: 'bytes', base: 2305491, current: 2453493, fixed: 2306000, verdict: outcome === 'restored' ? 'restored' : 'partial' }]
+        ? [{ id: 'client_bundle_size', label: 'bundle size', unit: 'bytes', base: 2305491, current: 2453493, fixed: 2306000, verdict: outcome === 'restored' ? 'restored' : 'partial' }]
         : [],
     diff: outcome === 'skipped' ? null : DIFF,
     elapsedMs: 41200,

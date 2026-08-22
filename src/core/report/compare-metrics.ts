@@ -13,7 +13,7 @@ import type { MetricComparison, MetricVerdict } from './types.js'
  */
 
 /** Every metric is a cost: more milliseconds, more bytes — higher is worse. */
-const FIXED_ORDER: readonly MetricId[] = ['install_time', 'build_time', 'bundle_size']
+const FIXED_ORDER: readonly MetricId[] = ['install_time', 'build_time', 'client_bundle_size', 'build_output_size']
 
 /** Fixed metrics first, then per-route classes in a stable class order — deterministic table. */
 const ROUTE_CLASS_ORDER = ['route_latency:', 'lcp:', 'tbt:', 'fcp:', 'transfer_size:'] as const
@@ -39,6 +39,11 @@ function orderedIds(base: readonly MetricResult[], current: readonly MetricResul
  *    −9.7%…+17.8% on byte-identical trees (measured, M6 acceptance).
  *  - tbt 50ms local / 100ms CI: ±2ms locally; +83% observed on identical code on a runner.
  *  - transfer_size 1KB (bytes): ±2 bytes observed; ≥1KB is a real asset change.
+ *  - client_bundle_size / build_output_size 1KB (bytes): the same instrument as transfer_size —
+ *    a byte count of a built tree, deterministic to within a couple of bytes across runs. NOTE
+ *    the binding constraint for these is the 2% RELATIVE floor, not this quantum: on a 9.6 MB
+ *    client bundle 2% is ~197 KB, so the 140 KB lodash regression M2/M6 were built around scores
+ *    1.42% and reports as "no change". Raising that is a hard-rule-4 decision, not a code one.
  *
  * Browser-timing quanta are environment-conditional (spec §5, decided M6 acceptance): the
  * quantum is the instrument's resolution, and the machine is part of the instrument — shared CI
@@ -47,7 +52,13 @@ function orderedIds(base: readonly MetricResult[], current: readonly MetricResul
  * comparisons are already refused before quanta ever matter.
  */
 export function quantumFor(id: MetricId, unit: 'ms' | 'bytes' | null, ciHost: boolean = isCiHost()): number {
-  if (unit === 'bytes') return id.startsWith('transfer_size:') ? 1024 : 0
+  if (unit === 'bytes') {
+    // Every byte class is the same deterministic instrument; 1KB is the resolution below which a
+    // difference is bookkeeping (manifest hashes, timestamps) rather than shipped content.
+    return id.startsWith('transfer_size:') || id === 'client_bundle_size' || id === 'build_output_size'
+      ? 1024
+      : 0
+  }
   if (id.startsWith('route_latency:')) return 5
   if (id.startsWith('lcp:') || id.startsWith('fcp:')) return ciHost ? 200 : 25
   if (id.startsWith('tbt:')) return ciHost ? 100 : 50
@@ -200,14 +211,21 @@ function compareOne(
  * (spec §9a) and interleaving them made the detail unreadable.
  */
 function skippedReason(base: MetricResult | null, current: MetricResult | null): string | null {
-  const reasonOf = (m: MetricResult | null) => (m ? (m.status === 'skipped' ? m.reason : null) : 'metric not collected')
-  const baseReason = !base || base.status === 'skipped' ? reasonOf(base) : null
-  const currentReason = !current || current.status === 'skipped' ? reasonOf(current) : null
+  const skipOf = (m: MetricResult | null) => (m?.status === 'skipped' ? m.reason : null)
+  const baseReason = skipOf(base)
+  const currentReason = skipOf(current)
+
+  // A side with no row at all did not FAIL — the metric simply does not exist there (a route
+  // added on this branch, say). Saying it once, without a second "reason", is what keeps the
+  // "(full error)" pointer honest: there is nothing further to show (spec §9a decision 4).
+  if (base === null && currentReason !== null) return `${currentReason} (not present at base)`
+  if (current === null && baseReason !== null) return `${baseReason} (present only at base)`
+  if (base === null && current === null) return 'metric not collected on either side'
 
   if (baseReason !== null && currentReason !== null) {
     return baseReason === currentReason ? baseReason : `base: ${baseReason}\ncurrent: ${currentReason}`
   }
-  // Only one side failed — WHICH side is the reader's first question, so the prefix stays.
+  // One side failed while the other measured — WHICH side is the reader's first question.
   if (baseReason !== null) return `base: ${baseReason}`
   return currentReason !== null ? `current: ${currentReason}` : null
 }

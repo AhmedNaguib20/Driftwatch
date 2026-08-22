@@ -92,7 +92,8 @@ function resolve(
 
 const KNOWN_METRIC_TOKENS = [
   'build_time',
-  'bundle_size',
+  'client_bundle_size',
+  'build_output_size',
   'install_time',
   'route_latency',
   'lcp',
@@ -114,6 +115,15 @@ function pickFramework(value: unknown, fallback: Framework, warnings: string[]):
   return fallback
 }
 
+/**
+ * Metrics that existed under another name. A rename silently drops a user's KEY metric — the
+ * fixture's own perf.yml did exactly that during this change — so the warning names the new ids
+ * and the line to paste, not just "unknown" (spec §9a: every failure carries its own fix).
+ */
+const RENAMED_METRICS: Record<string, readonly string[]> = {
+  bundle_size: ['client_bundle_size', 'build_output_size'],
+}
+
 function pickMetrics(
   value: unknown,
   fallback: readonly string[],
@@ -130,7 +140,14 @@ function pickMetrics(
     if (typeof entry === 'string' && isKnownMetric(entry)) {
       kept.push(entry)
     } else {
-      warnings.push(`${CONFIG_FILENAME}: unknown metric "${String(entry)}" ignored.`)
+      const renamed = RENAMED_METRICS[String(entry)]
+      warnings.push(
+        renamed
+          ? `${CONFIG_FILENAME}: "${String(entry)}" was split into ${renamed.join(' and ')} — ` +
+            `it measured all build output, including server code that never reaches a browser. ` +
+            `Replace it:\n\n    measure: [${renamed.join(', ')}, …]`
+          : `${CONFIG_FILENAME}: unknown metric "${String(entry)}" ignored.`,
+      )
     }
   }
   return kept

@@ -88,13 +88,13 @@ describe('segmentation — §5.1 for time-series', () => {
     const timelines = buildTimelines(
       index([
         entry({}), // the empty first live entry
-        entry({ build_time: 9000, bundle_size: 100000 }),
+        entry({ build_time: 9000, client_bundle_size: 100000 }),
         entry({ build_time: 9100 }), // bundle missing here
-        entry({ bundle_size: 101000 }),
+        entry({ client_bundle_size: 101000 }),
       ]),
     )
     const build = timelines.find((t) => t.id === 'build_time')!
-    const bundle = timelines.find((t) => t.id === 'bundle_size')!
+    const bundle = timelines.find((t) => t.id === 'client_bundle_size')!
     expect(build.segments[0]!.points.map((p) => p.value)).toEqual([9000, 9100])
     expect(bundle.segments[0]!.points.map((p) => p.value)).toEqual([100000, 101000])
   })
@@ -258,12 +258,12 @@ describe('movement report (M7) — where history actually changed', () => {
   const at = (e: IndexEntry, extra: Partial<IndexEntry>): IndexEntry => ({ ...e, ...extra })
 
   it('flags crossings of floor+quantum between adjacent points; improvements count with direction', () => {
-    const a = entry({ bundle_size: 100_000 })
-    const b = entry({ bundle_size: 140_000 }) // +40%
-    const c = entry({ bundle_size: 100_500 }) // −28.2%
+    const a = entry({ client_bundle_size: 100_000 })
+    const b = entry({ client_bundle_size: 140_000 }) // +40%
+    const c = entry({ client_bundle_size: 100_500 }) // −28.2%
 
     const reports = findMovements(index([a, b, c]))
-    expect(reports.map((r) => r.id)).toEqual(['bundle_size'])
+    expect(reports.map((r) => r.id)).toEqual(['client_bundle_size'])
     const moves = reports[0]!.movements
     expect(moves).toHaveLength(2)
     expect(moves[0]).toMatchObject({ fromSha: a.sha, toSha: b.sha, direction: 'up', deltaPercent: 40, gap: null })
@@ -292,24 +292,24 @@ describe('movement report (M7) — where history actually changed', () => {
 
   it('a byte delta under the 2% floor is not a movement (the innocent-commit case)', () => {
     // The live proof's innocent commits wobbled bundle_size by 5 bytes on 2.3MB.
-    const a = entry({ bundle_size: 2_319_175 })
-    const b = entry({ bundle_size: 2_319_170 })
+    const a = entry({ client_bundle_size: 2_319_175 })
+    const b = entry({ client_bundle_size: 2_319_170 })
     expect(findMovements(index([a, b]))).toEqual([])
   })
 
   it('never judges across a protocol break', () => {
-    const a = entry({ bundle_size: 100_000 }, protocol({ nodeVersion: 'v20' }))
-    const b = entry({ bundle_size: 150_000 }, protocol({ nodeVersion: 'v24' }))
+    const a = entry({ client_bundle_size: 100_000 }, protocol({ nodeVersion: 'v20' }))
+    const b = entry({ client_bundle_size: 150_000 }, protocol({ nodeVersion: 'v24' }))
     expect(findMovements(index([a, b]))).toEqual([])
   })
 
   it('an unmeasured interval names the gap instead of pinning one sha — unbuildable counted', () => {
-    const a = at(entry({ bundle_size: 100_000 }), { committedAt: '2026-08-01T00:00:00Z', parentSha: null })
+    const a = at(entry({ client_bundle_size: 100_000 }), { committedAt: '2026-08-01T00:00:00Z', parentSha: null })
     const broken = at(entry({}), {
       committedAt: '2026-08-02T00:00:00Z', parentSha: a.sha, replayed: true,
       skipped: { reason: 'build failed' },
     })
-    const c = at(entry({ bundle_size: 150_000 }), { committedAt: '2026-08-03T00:00:00Z', parentSha: broken.sha })
+    const c = at(entry({ client_bundle_size: 150_000 }), { committedAt: '2026-08-03T00:00:00Z', parentSha: broken.sha })
 
     const [report] = findMovements(index([a, broken, c]))
     expect(report!.movements[0]).toMatchObject({
@@ -325,11 +325,11 @@ describe('golden timeline', () => {
     counter = 100
     const mixed = index([
       entry({}),
-      entry({ build_time: 30000, bundle_size: 2313028, 'route_latency:/live': 15 }),
-      entry({ build_time: 30240, bundle_size: 2313030, 'route_latency:/live': 14 }),
+      entry({ build_time: 30000, client_bundle_size: 2313028, 'route_latency:/live': 15 }),
+      entry({ build_time: 30240, client_bundle_size: 2313030, 'route_latency:/live': 14 }),
       entry({ build_time: 30480, 'route_latency:/live': 16 }, protocol({ browser: 'chrome/151.0.7922.140' })),
-      entry({ build_time: 30900, bundle_size: 2410000, 'route_latency:/live': 15 }, protocol({ browser: 'chrome/151.0.7922.140' })),
-      entry({ build_time: 31200, bundle_size: 2410500, 'route_latency:/live': 15 }, protocol({ browser: 'chrome/151.0.7922.140' })),
+      entry({ build_time: 30900, client_bundle_size: 2410000, 'route_latency:/live': 15 }, protocol({ browser: 'chrome/151.0.7922.140' })),
+      entry({ build_time: 31200, client_bundle_size: 2410500, 'route_latency:/live': 15 }, protocol({ browser: 'chrome/151.0.7922.140' })),
     ])
     const rendered =
       JSON.stringify(

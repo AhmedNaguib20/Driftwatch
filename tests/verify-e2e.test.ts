@@ -54,7 +54,7 @@ describe('fix verification — real end-to-end on the fixture', () => {
 
     const result = await runDriftwatch({ cwd: dir, serve: false, browser: false })
     expect(result.verdict).toBe('regression')
-    const bundleRow = result.comparison.metrics.find((m) => m.id === 'bundle_size')!
+    const bundleRow = result.comparison.metrics.find((m) => m.id === 'client_bundle_size')!
     expect(bundleRow.verdict).toBe('regressed')
 
     // The known-good fix, as the AI proposed it live on PR #6: modular import.
@@ -106,10 +106,13 @@ describe('fix verification — real end-to-end on the fixture', () => {
     // overall to 'partial' beside the byte row (timing is the coarser instrument — spec §5).
     // The contract this test protects is the deterministic class: bundle restored, real numbers.
     expect(['restored', 'partial']).toContain(report.outcome)
-    const m = report.metrics.find((x) => x.id === 'bundle_size')!
+    const m = report.metrics.find((x) => x.id === 'client_bundle_size')!
     expect(m.verdict).toBe('restored')
-    // Real numbers: the fix removed what the regression added.
-    expect(m.current - m.fixed).toBeGreaterThan(100_000) // ~140KB of lodash gone
+    // Real numbers: the fix removed what the regression added. ~70KB on the CLIENT bundle —
+    // the old single metric said ~140KB because lodash landed in both the client chunk and the
+    // server bundle, and counted both. Splitting them (spec §9a decision 1) made the headline
+    // mean what it says: this is what a browser stops downloading.
+    expect(m.current - m.fixed).toBeGreaterThan(50_000)
     expect(Math.abs(m.fixed - (m.base ?? 0))).toBeLessThan(2_000) // back to base within noise
   }, 600_000)
 })

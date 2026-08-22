@@ -105,7 +105,7 @@ async function scenario(name: string): Promise<ResultJson> {
         verification: {
           outcome: 'restored',
           reason: null,
-          metrics: [{ id: 'bundle_size', label: 'bundle size', unit: 'bytes', base: 2305491, current: 2453493, fixed: 2306980, verdict: 'restored' }],
+          metrics: [{ id: 'client_bundle_size', label: 'bundle size', unit: 'bytes', base: 2305491, current: 2453493, fixed: 2306980, verdict: 'restored' }],
           diff,
           elapsedMs: 41000,
         },
@@ -117,7 +117,7 @@ async function scenario(name: string): Promise<ResultJson> {
         verification: {
           outcome: 'no-recovery',
           reason: null,
-          metrics: [{ id: 'bundle_size', label: 'bundle size', unit: 'bytes', base: 2305491, current: 2453493, fixed: 2452000, verdict: 'no-recovery' }],
+          metrics: [{ id: 'client_bundle_size', label: 'bundle size', unit: 'bytes', base: 2305491, current: 2453493, fixed: 2452000, verdict: 'no-recovery' }],
           diff: '--- a/x\n+++ b/x\n',
           elapsedMs: 39000,
           devOverride: true,
@@ -250,7 +250,7 @@ describe('PR comment renderer — golden contract', () => {
 
   it('the table keeps explicit no-change rows so the reader knows we looked', async () => {
     const rendered = renderComment(await scenario('regression-analysed'))
-    expect(rendered).toContain('| bundle size |')
+    expect(rendered).toContain('| client bundle size |')
     expect(rendered).toContain('| no change |')
   })
 

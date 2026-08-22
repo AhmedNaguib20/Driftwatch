@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import {
   collectBuildTime,
-  collectBundleSize,
+  collectBundleSizes,
   createWorkingTreeWorkspace,
   detectProject,
   measureWorkspace,
@@ -178,10 +178,14 @@ describe('collectors: honest failure modes', () => {
     const profile = await detectProject({ cwd: dir })
     const ws = await workspaceFor(profile)
 
-    const metric = await collectBundleSize(profile, ws, false)
+    const metrics = await collectBundleSizes(profile, ws, false)
 
-    expect(metric.status).toBe('skipped')
-    if (metric.status === 'skipped') expect(metric.reason).toMatch(/did not succeed/)
+    // Both byte metrics skip together — neither can be weighed without a build.
+    expect(metrics.map((m) => m.id).sort()).toEqual(['build_output_size', 'client_bundle_size'])
+    for (const metric of metrics) {
+      expect(metric.status).toBe('skipped')
+      if (metric.status === 'skipped') expect(metric.reason).toMatch(/did not succeed/)
+    }
   })
 
   it('skips build_time when dependencies are absent instead of failing confusingly', async () => {
@@ -216,7 +220,11 @@ describe('collectors: honest failure modes', () => {
 describe('bundle weighing', () => {
   it('sums output files but excludes the internal cache dir', async () => {
     const dir = await gitProject()
-    const profile = { ...(await detectProject({ cwd: dir })), buildOutputDirs: ['.next'] }
+    const profile = {
+      ...(await detectProject({ cwd: dir })),
+      buildOutputDirs: ['.next'],
+      clientOutputDirs: ['.next/static'],
+    }
     const ws = await workspaceFor(profile)
 
     await writeFileIn(ws.dir, '.next/static/app.js', 'x'.repeat(1000))
@@ -224,13 +232,21 @@ describe('bundle weighing', () => {
     await writeFileIn(ws.dir, '.next/cache/webpack/huge.pack', 'z'.repeat(50_000))
     await writeFileIn(ws.dir, '.next/trace', 't'.repeat(9_000)) // diagnostics, not output
 
-    const metric = await collectBundleSize(profile, ws, true)
+    const metrics = await collectBundleSizes(profile, ws, true)
+    const client = metrics.find((m) => m.id === 'client_bundle_size')!
+    const output = metrics.find((m) => m.id === 'build_output_size')!
 
-    expect(metric.status).toBe('measured')
-    if (metric.status === 'measured') {
-      expect(metric.value).toBe(1500)
-      expect(metric.unit).toBe('bytes')
-      expect(metric.collectedBy).toMatch(/excluding internal cache/)
+    // The split (spec §9a decision 1): the headline counts only what a browser receives, while
+    // build output counts server code too. Cache and diagnostics are excluded from both.
+    expect(client.status).toBe('measured')
+    if (client.status === 'measured') {
+      expect(client.value).toBe(1000) // .next/static only
+      expect(client.collectedBy).toMatch(/shipped to browsers/)
+    }
+    expect(output.status).toBe('measured')
+    if (output.status === 'measured') {
+      expect(output.value).toBe(1500) // static + server, no cache, no trace
+      expect(output.collectedBy).toMatch(/excluding internal cache/)
     }
   })
 })

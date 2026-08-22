@@ -38,3 +38,5 @@ export type {
   SideReport,
   SideUnavailable,
 } from './types.js'
+export { STALE_BASE_COMMITS, STALE_BASE_DAYS, softeningConditions, softeningSummary } from './context.js'
+export type { SofteningCondition } from './context.js'

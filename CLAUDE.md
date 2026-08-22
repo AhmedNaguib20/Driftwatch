@@ -220,16 +220,21 @@ commit topology/date, not append order.
    `--write-perf-data`). Consent doctrine: creating needs consent, appending doesn't; CI keeps
    implicit consent (installing the workflow is the consent). Refusal shape: do the work, refuse
    the write, say how to keep it — nothing re-measured on retry.
-2. **Monorepo support:** detect the workspace root (`pnpm-workspace.yaml`, `packageManager`,
-   lockfile kind), install at the root with the right package manager, measure the chosen app.
-   Multi-app repos: ask/choose explicitly, never guess silently.
+2. **Monorepo support — DONE (321 tests).** pnpm/npm/yarn workspace detection, root install,
+   app-scoped build, explicit multi-app refusal. jinni measured: 189s, symmetric, real numbers.
+   Cache-key bug fixed in-step (`066cd08`): the key now includes the measured project — a one-app
+   assumption had been hiding inside a protocol rule.
 3. **Failure legibility — DONE (`a6b4a46`, 304 tests).** Shared `summariseReason`; colon-ending
    lines are promises (trimmed, not shown empty); the pointer to `--json`/summary never lies
    because the summary now carries the full error; "workspace" renamed everywhere user-facing;
    `not measured` cells + "unavailable, not unchanged"; fix stanzas (schema 5) only where a remedy
    is knowable — fabricated helpfulness is rule 3 in reverse. Goldens byte-identical except the new
    `comment-nothing-measured.md`.
-4. **Stale-base warning:** flag when the resolved base is far behind the likely integration target.
+4. **Verdict licensing + rendering cleanup (current).** From the trial (spec §9a decision table):
+   split `bundle_size` → `client_bundle_size` (headline) + `build_output_size`; stale base and
+   changed lockfile become **verdict-softening conditions** (`inconclusive-context`), not
+   footnotes — numbers stand, attribution doesn't; group policy skips in the terminal; suppress
+   the `--json` pointer where there is no error; name the measured app in the header.
 
 **Later:** drift alerting (recommended — activates the namesake loop: scheduled run →
 drift verdicts → issue/comment) vs launch planning. Pre-launch items list stands (TRIAGE_MAX_OUTPUT

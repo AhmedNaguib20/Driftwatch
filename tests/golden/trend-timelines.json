@@ -114,7 +114,7 @@
   },
   {
     "timeline": {
-      "id": "bundle_size",
+      "id": "client_bundle_size",
       "unit": "bytes",
       "segments": [
         {
@@ -185,7 +185,7 @@
       ]
     },
     "drift": {
-      "id": "bundle_size",
+      "id": "client_bundle_size",
       "unit": "bytes",
       "latest": {
         "sha": "1061061061061061061061061061061061061061",

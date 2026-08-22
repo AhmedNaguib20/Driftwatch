@@ -23,6 +23,7 @@ export interface FrameworkDetection {
   readonly framework: Framework
   readonly version: string | null
   readonly buildOutputDirs: readonly string[]
+  readonly clientOutputDirs: readonly string[]
   readonly cacheDirs: readonly string[]
   /** Boots the built app; the port is appended by the server layer at spawn time. */
   readonly serve: { readonly bin: string; readonly args: readonly string[] } | null
@@ -49,6 +50,7 @@ export async function detectFramework(
       framework: 'unknown',
       version: null,
       buildOutputDirs: [],
+      clientOutputDirs: [],
       cacheDirs: [],
       serve: null,
       evidence,
@@ -94,6 +96,9 @@ export async function detectFramework(
     version: installed ?? declared,
     // `.next` holds both the build output and the build cache, so it serves as both.
     buildOutputDirs: ['.next'],
+    // Next.js serves everything under `.next/static` to the browser (chunks, css, media) —
+    // `.next/server` and the manifests never leave the server.
+    clientOutputDirs: [path.join('.next', 'static')],
     cacheDirs: ['.next', path.join('node_modules', '.cache')],
     // Relative bin, resolved against the workspace at spawn — the workspace's own Next serves
     // the workspace's own build. `-p <port>` is appended by the server layer.

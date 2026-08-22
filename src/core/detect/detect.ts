@@ -110,13 +110,13 @@ export async function detectProject(options: DetectOptions = {}): Promise<Projec
 
   const canBuild = build !== null && framework.buildOutputDirs.length > 0
   // Only metrics with a collector behind them and a project able to produce them (hard rule 3).
-  const supportedMetrics: string[] = canBuild ? ['build_time', 'bundle_size'] : []
+  const supportedMetrics: string[] = canBuild ? ['build_time', 'client_bundle_size', 'build_output_size'] : []
 
   if (!canBuild && pkg) {
     warnings.push(
       build === null
-        ? 'build_time and bundle_size are unavailable: no build script to run.'
-        : `build_time and bundle_size are unavailable: \`${[build.bin, ...build.args].join(' ')}\` was found, but no known ` +
+        ? 'build_time and the byte metrics are unavailable: no build script to run.'
+        : `build_time and the byte metrics are unavailable: \`${[build.bin, ...build.args].join(' ')}\` was found, but no known ` +
           'build output directory — driftwatch weighs what a recognised framework produces, and none was detected here.' +
           (workspaceApps.length > 0
             ? `\nThis looks like a workspace root. Measure one of its apps instead:\n\n    driftwatch run --app ${workspaceApps[0]}`
@@ -138,6 +138,7 @@ export async function detectProject(options: DetectOptions = {}): Promise<Projec
     workspaceApps,
     commands: { install, build, serve: framework.serve },
     buildOutputDirs: framework.buildOutputDirs,
+    clientOutputDirs: framework.clientOutputDirs,
     cacheDirs: framework.cacheDirs,
     routes: routeDetection.routes,
     supportedMetrics,

@@ -2,7 +2,7 @@ import { performance } from 'node:perf_hooks'
 import { NO_SERVER_FIX } from './fixes.js'
 import type { ProjectProfile } from '../detect/types.js'
 import { collectBuildTime } from './build.js'
-import { collectBundleSize } from './bundle.js'
+import { collectBundleSizes } from './bundle.js'
 import { collectInstallTime } from './install.js'
 import { NO_BROWSER_HINT, resolveBrowser } from './browser.js'
 import { LIGHTHOUSE_PROFILE, measureLighthouse, selectLighthouseRoutes } from './lighthouse.js'
@@ -74,7 +74,7 @@ export async function measureWorkspace(
   metrics.push(build.metric)
 
   progress('weighing build output…')
-  metrics.push(await collectBundleSize(profile, effective, build.succeeded))
+  metrics.push(...(await collectBundleSizes(profile, effective, build.succeeded)))
 
   const layer2a = await collectLayer2a(profile, effective, build.succeeded, progress, options)
   metrics.push(...layer2a.metrics)

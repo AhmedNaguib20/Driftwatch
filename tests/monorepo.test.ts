@@ -239,7 +239,7 @@ describe('measuring one app of a workspace', () => {
 
     expect(result.project.root).toBe(path.join(root, 'apps/web'))
     expect(result.project.pathInRepo).toBe('apps/web')
-    const bundle = result.current.metrics.find((m) => m.id === 'bundle_size')!
+    const bundle = result.current.metrics.find((m) => m.id === 'client_bundle_size')!
     expect(bundle.status).toBe('measured')
     // apps/web weighs ~4KB, apps/admin ~20 bytes: the number proves WHICH app was weighed, and
     // that the other app's output never leaked into it.

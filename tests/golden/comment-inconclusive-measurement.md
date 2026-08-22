@@ -8,7 +8,8 @@ base ref "main" does not resolve to a commit in this repository. Baseline: unava
 |---|---|---|---|
 | install time | — | — | skipped — base unavailable: base ref "main" does not resolve to a commit in this repository |
 | build time (cold) | — | 9.35 s | skipped — base unavailable: base ref "main" does not resolve to a commit in this repository |
-| bundle size | — | 2.20 MB | skipped — base unavailable: base ref "main" does not resolve to a commit in this repository |
+| client bundle size | — | 921.0 kB | skipped — base unavailable: base ref "main" does not resolve to a commit in this repository |
+| build output size | — | 2.20 MB | skipped — base unavailable: base ref "main" does not resolve to a commit in this repository |
 | 5 rows excluded by policy | — | — | base unavailable: base ref "main" does not resolve to a commit in this repository |
 
 <details>

@@ -8,7 +8,8 @@ a key metric could not be measured. Baseline: `main@c0ffee0`.
 |---|---|---|---|
 | install time | _not measured_ | _not measured_ | skipped — npm error Unsupported URL Type "workspace:": workspace:* (full error in the run summary) |
 | build time (cold) | _not measured_ | _not measured_ | skipped — no build output to weigh (build did not succeed) |
-| bundle size | _not measured_ | _not measured_ | skipped — no build output to weigh (build did not succeed) |
+| client bundle size | _not measured_ | _not measured_ | skipped — no build output to weigh (build did not succeed) |
+| build output size | _not measured_ | _not measured_ | skipped — no build output to weigh (build did not succeed) |
 | 4 rows excluded by policy | — | — | prerendered (SSG) |
 | route /blog/[slug] | — | — | skipped — dynamic segment — no concrete URL to measure |
 

@@ -1,4 +1,4 @@
-import { summariseReason } from '../../core/index.js'
+import { softeningSummary, summariseReason } from '../../core/index.js'
 import type { MetricComparison, ResultJson } from '../../core/index.js'
 import { formatPercent, formatValue } from './format.js'
 import { renderAnalysisFooterParts, renderAnalysisSection } from './render-analysis.js'
@@ -44,6 +44,7 @@ export function renderComment(result: ResultJson, options: CommentOptions = {}):
   }
   lines.push('')
   lines.push(...comparisonTable(result))
+  lines.push(...softeningBlock(result))
   lines.push(...fixBlocks(result))
   lines.push(...renderAnalysisSection(result))
   lines.push('')
@@ -81,6 +82,8 @@ export function renderCheckTitle(result: ResultJson): string {
       return !result.base.available
         ? `inconclusive: ${result.base.reason}`
         : 'inconclusive: a key metric could not be compared'
+    case 'inconclusive-context':
+      return 'measured, but not attributable to this change'
     case 'recorded':
       return 'trend point recorded (no comparison)'
   }
@@ -117,9 +120,33 @@ function verdictBanner(result: ResultJson): string[] {
           : 'a key metric could not be measured'
       return [`### ❔ Measurement inconclusive`, '', `${why}. Baseline: ${baseline}.`]
     }
+    case 'inconclusive-context':
+      return [
+        `### 〰️ Measured — but not attributable to this change`,
+        '',
+        `${softeningSummary(result.softening ?? [])}. Baseline: ${baseline}.`,
+      ]
     case 'recorded':
       return [`### 📈 Trend point recorded`, '', 'Absolute measurement of this commit — no comparison was made.']
   }
+}
+
+/**
+ * The conditions that withheld attribution, each with its remedy (spec §9a decision 2). Rendered
+ * right under the table: the numbers are real and above it, this is why they are not a verdict.
+ */
+function softeningBlock(result: ResultJson): string[] {
+  const conditions = result.softening ?? []
+  if (conditions.length === 0) return []
+  const lines: string[] = ['', '> **Why this is not called a regression**', '>']
+  for (const condition of conditions) {
+    const [first, ...rest] = condition.text.split('\n')
+    lines.push(`> - ${first}`)
+    for (const line of rest) lines.push(line.trim().length > 0 ? `>   \`${line.trim()}\`` : '>')
+  }
+  lines.push('>')
+  lines.push('> _The measurements above are real. What is withheld is the claim that this change caused them — the same doctrine as movement vs drift._')
+  return lines
 }
 
 export function comparisonTable(result: ResultJson): string[] {

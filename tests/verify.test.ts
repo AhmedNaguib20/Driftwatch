@@ -40,7 +40,7 @@ afterEach(async () => {
 
 describe('three-way assessment', () => {
   const bundle = (fixed: number) =>
-    assessMetric({ id: 'bundle_size', label: 'bundle size', unit: 'bytes', base: 2_200_000, current: 2_340_000, fixed })
+    assessMetric({ id: 'client_bundle_size', label: 'bundle size', unit: 'bytes', base: 2_200_000, current: 2_340_000, fixed })
 
   it('restored: fixed within the floor of base', () => {
     expect(bundle(2_205_000).verdict).toBe('restored') // +0.2% off base
@@ -155,7 +155,7 @@ function regressionResult(
   sides?: { base: MetricResult[]; current: MetricResult[] },
 ): ResultJson {
   const config = {
-    detect: 'nextjs' as const, app: null, package_manager: null, measure: ['bundle_size'], serve: true, browser: true, verify: true, auto_fix: 'off' as const,
+    detect: 'nextjs' as const, app: null, package_manager: null, measure: ['client_bundle_size'], serve: true, browser: true, verify: true, auto_fix: 'off' as const,
     threshold: '5%', block_merge: false, base: 'main', provider: 'deepseek', model: 'm',
     thresholdPercent: 5, noiseFloorPercent: 2, sourcePath: null, warnings: [],
   }
@@ -163,21 +163,21 @@ function regressionResult(
     projectRoot: '/x', gitRoot: '/x', pathInRepo: '.', language: 'javascript' as const,
     framework: 'nextjs' as const, frameworkVersion: null, packageManager: 'npm' as const,
     lockfile: null, workspaceRoot: null, pathInWorkspace: null, workspaceApps: [], commands: { install: null, build: { bin: 'node', args: ['build.js'] }, serve: null },
-    buildOutputDirs: ['.next'], cacheDirs: ['.next'], routes: [], supportedMetrics: ['bundle_size'],
+    buildOutputDirs: ['.next'], clientOutputDirs: ['.next/static'], cacheDirs: ['.next'], routes: [], supportedMetrics: ['client_bundle_size'],
     warnings: [], evidence: [],
   }
   const base = {
-    side: side(sides?.base ?? [measured('build_time', 300, 'ms'), measured('bundle_size', 45, 'bytes')]),
+    side: side(sides?.base ?? [measured('build_time', 300, 'ms'), measured('client_bundle_size', 45, 'bytes')]),
     sha: 'a'.repeat(40), fromCache: false, measuredAt: null, cachePath: null,
   }
   const plan = {
     available: true as const, baseRef: 'main', baseSha: 'a'.repeat(40),
     lockfileStatus: 'identical' as const, dependenciesChanged: false as const,
-    dependencies: 'clone' as const, warnings: [], evidence: [],
+    dependencies: 'clone' as const, commitsAhead: 1, baseAgeDays: 0, likelyIntegrationTarget: null, warnings: [], evidence: [],
   }
   const result = buildResult({
     profile, config, plan, base,
-    current: side(sides?.current ?? [measured('build_time', 305, 'ms'), measured('bundle_size', 5041, 'bytes')], currentProto),
+    current: side(sides?.current ?? [measured('build_time', 305, 'ms'), measured('client_bundle_size', 5041, 'bytes')], currentProto),
     now: () => new Date('2026-08-19T12:00:00Z'),
   })
   return attachAnalysis(result, analysis)
@@ -203,8 +203,8 @@ describe('verifyFix — gates', () => {
     // threshold; bundle_size is the actual regression. The "fix" leaves bundle untouched
     // while build time wobbles back near base — the live Run B sabotage shape.
     const result = regressionResult(analysed(), protocol(), {
-      base: [measured('build_time', 30_000, 'ms'), measured('bundle_size', 45, 'bytes')],
-      current: [measured('build_time', 31_000, 'ms'), measured('bundle_size', 5041, 'bytes')],
+      base: [measured('build_time', 30_000, 'ms'), measured('client_bundle_size', 45, 'bytes')],
+      current: [measured('build_time', 31_000, 'ms'), measured('client_bundle_size', 5041, 'bytes')],
     })
     const buildRow = result.comparison.metrics.find((m) => m.id === 'build_time')!
     expect(buildRow.verdict).toBe('regressed')
@@ -214,10 +214,10 @@ describe('verifyFix — gates', () => {
       serve: false,
       browser: false,
       measureFn: async () =>
-        side([measured('build_time', 30_200, 'ms'), measured('bundle_size', 5041, 'bytes')]),
+        side([measured('build_time', 30_200, 'ms'), measured('client_bundle_size', 5041, 'bytes')]),
     })
 
-    expect(report.metrics.map((m) => m.id)).toEqual(['bundle_size'])
+    expect(report.metrics.map((m) => m.id)).toEqual(['client_bundle_size'])
     expect(report.outcome).toBe('no-recovery')
   })
 
@@ -256,7 +256,7 @@ describe('verifyFix — outcome matrix (real apply, real tiny builds)', () => {
     expect(report.outcome).toBe('restored')
     expect(report.metrics).toHaveLength(1)
     const m = report.metrics[0]!
-    expect(m.id).toBe('bundle_size')
+    expect(m.id).toBe('client_bundle_size')
     expect(m.fixed).toBeLessThan(100) // 'light' payload
     expect(m.verdict).toBe('restored')
     expect(report.diff).toContain('+const payload')
@@ -276,7 +276,7 @@ describe('verifyFix — outcome matrix (real apply, real tiny builds)', () => {
 
   it('refused: a third side measured under a different protocol refuses itself (§5.1)', async () => {
     const { profile } = await project()
-    const mockMeasure = (async (_p: unknown, w: { kind: 'copy' | 'worktree' }) => side([measured('build_time', 300, 'ms'), measured('bundle_size', 41, 'bytes')], protocol({ nodeVersion: 'v99.0.0', workspace: w.kind })) ) as never
+    const mockMeasure = (async (_p: unknown, w: { kind: 'copy' | 'worktree' }) => side([measured('build_time', 300, 'ms'), measured('client_bundle_size', 41, 'bytes')], protocol({ nodeVersion: 'v99.0.0', workspace: w.kind })) ) as never
 
     const report = await verifyFix(profile, regressionResult(analysed()), { serve: false, browser: false, measureFn: mockMeasure })
 
@@ -288,7 +288,7 @@ describe('verifyFix — outcome matrix (real apply, real tiny builds)', () => {
     const { profile } = await project()
     const withFixedBundle = (value: number) =>
       (async (_p: unknown, w: { kind: 'copy' }) =>
-        side([measured('build_time', 300, 'ms'), measured('bundle_size', value, 'bytes')], protocol({ workspace: w.kind }))) as never
+        side([measured('build_time', 300, 'ms'), measured('client_bundle_size', value, 'bytes')], protocol({ workspace: w.kind }))) as never
 
     const none = await verifyFix(profile, regressionResult(analysed()), { serve: false, browser: false, measureFn: withFixedBundle(5030) })
     expect(none.outcome).toBe('no-recovery')

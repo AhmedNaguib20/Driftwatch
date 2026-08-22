@@ -56,7 +56,7 @@ function side(metrics: MetricResult[], proto = protocol()): SideMeasurement {
 function config(overrides: Partial<ResolvedConfig> = {}): ResolvedConfig {
   return {
     detect: 'nextjs', app: null, package_manager: null,
-    measure: ['build_time', 'bundle_size'],
+    measure: ['build_time', 'client_bundle_size'],
     serve: true,
     browser: true,
     verify: true,
@@ -90,9 +90,10 @@ function profile(): ProjectProfile {
       serve: { bin: 'node_modules/.bin/next', args: ['start'] },
     },
     buildOutputDirs: ['.next'],
+    clientOutputDirs: ['.next/static'],
     cacheDirs: ['.next', 'node_modules/.cache'],
     routes: ['/', '/about'],
-    supportedMetrics: ['build_time', 'bundle_size'],
+    supportedMetrics: ['build_time', 'client_bundle_size'],
     warnings: [],
     evidence: [{ fact: 'framework: nextjs', source: 'package.json' }],
   }
@@ -105,7 +106,7 @@ function plan(overrides: Partial<BaselinePlan> = {}): BaselinePlan {
     baseSha: 'c0ffee0000000000000000000000000000000000',
     lockfileStatus: 'identical',
     dependenciesChanged: false,
-    dependencies: 'clone',
+    dependencies: 'clone', commitsAhead: 1, baseAgeDays: 0, likelyIntegrationTarget: null,
     warnings: [],
     evidence: [{ fact: 'base: main @ c0ffee000000', source: 'git' }],
     ...overrides,
@@ -151,8 +152,8 @@ describe('metric verdicts', () => {
 
   it('improved never trips the threshold — it applies to regressions only', () => {
     const [m] = compareMetrics(
-      [measured('bundle_size', 100000, 'bytes', 's')],
-      [measured('bundle_size', 80000, 'bytes', 's')],
+      [measured('client_bundle_size', 100000, 'bytes', 's')],
+      [measured('client_bundle_size', 80000, 'bytes', 's')],
       OPTS,
     )
     expect(m!.verdict).toBe('improved')
@@ -174,8 +175,8 @@ describe('metric verdicts', () => {
 
   it('a zero baseline yields not_comparable, not a made-up percent', () => {
     const [m] = compareMetrics(
-      [measured('bundle_size', 0, 'bytes', 's')],
-      [measured('bundle_size', 500, 'bytes', 's')],
+      [measured('client_bundle_size', 0, 'bytes', 's')],
+      [measured('client_bundle_size', 500, 'bytes', 's')],
       OPTS,
     )
     expect(m!.verdict).toBe('not_comparable')
@@ -229,8 +230,8 @@ describe('run verdict', () => {
   }
 
   const cleanPair = () => [
-    [measured('build_time', 10000, 'ms', 'b'), measured('bundle_size', 100000, 'bytes', 's')],
-    [measured('build_time', 10100, 'ms', 'b'), measured('bundle_size', 100100, 'bytes', 's')],
+    [measured('build_time', 10000, 'ms', 'b'), measured('client_bundle_size', 100000, 'bytes', 's')],
+    [measured('build_time', 10100, 'ms', 'b'), measured('client_bundle_size', 100100, 'bytes', 's')],
   ] as [MetricResult[], MetricResult[]]
 
   it('ok when key metrics are no_change', () => {
@@ -240,8 +241,8 @@ describe('run verdict', () => {
 
   it('ok on a regression below the threshold — reported, but not a verdict', () => {
     const r = result(
-      [measured('build_time', 10000, 'ms', 'b'), measured('bundle_size', 100000, 'bytes', 's')],
-      [measured('build_time', 10300, 'ms', 'b'), measured('bundle_size', 100100, 'bytes', 's')],
+      [measured('build_time', 10000, 'ms', 'b'), measured('client_bundle_size', 100000, 'bytes', 's')],
+      [measured('build_time', 10300, 'ms', 'b'), measured('client_bundle_size', 100100, 'bytes', 's')],
     )
     expect(r.comparison.metrics.find((m) => m.id === 'build_time')!.verdict).toBe('regressed')
     expect(r.verdict).toBe('ok')
@@ -249,16 +250,16 @@ describe('run verdict', () => {
 
   it('regression when a key metric crosses the threshold', () => {
     const r = result(
-      [measured('build_time', 10000, 'ms', 'b'), measured('bundle_size', 100000, 'bytes', 's')],
-      [measured('build_time', 11000, 'ms', 'b'), measured('bundle_size', 100100, 'bytes', 's')],
+      [measured('build_time', 10000, 'ms', 'b'), measured('client_bundle_size', 100000, 'bytes', 's')],
+      [measured('build_time', 11000, 'ms', 'b'), measured('client_bundle_size', 100100, 'bytes', 's')],
     )
     expect(r.verdict).toBe('regression')
   })
 
   it('inconclusive when a key metric is skipped', () => {
     const r = result(
-      [skipped('build_time', 'b', 'build failed'), measured('bundle_size', 100000, 'bytes', 's')],
-      [measured('build_time', 10000, 'ms', 'b'), measured('bundle_size', 100100, 'bytes', 's')],
+      [skipped('build_time', 'b', 'build failed'), measured('client_bundle_size', 100000, 'bytes', 's')],
+      [measured('build_time', 10000, 'ms', 'b'), measured('client_bundle_size', 100100, 'bytes', 's')],
     )
     expect(r.verdict).toBe('inconclusive')
   })
@@ -288,8 +289,8 @@ describe('run verdict', () => {
 
   it('install deltas are refused — §5.1 sixth instance: cache state differs between sides', () => {
     const r = result(
-      [measured('install_time', 30000, 'ms', 'install time'), measured('build_time', 10000, 'ms', 'b'), measured('bundle_size', 100000, 'bytes', 's')],
-      [measured('install_time', 42000, 'ms', 'install time'), measured('build_time', 10100, 'ms', 'b'), measured('bundle_size', 100100, 'bytes', 's')],
+      [measured('install_time', 30000, 'ms', 'install time'), measured('build_time', 10000, 'ms', 'b'), measured('client_bundle_size', 100000, 'bytes', 's')],
+      [measured('install_time', 42000, 'ms', 'install time'), measured('build_time', 10100, 'ms', 'b'), measured('client_bundle_size', 100100, 'bytes', 's')],
       { plan: { lockfileStatus: 'changed', dependenciesChanged: true, dependencies: 'install' }, baseProto: { nodeModules: 'fresh-install' }, currentProto: { nodeModules: 'fresh-install' } },
     )
     expect(r.comparison.dependenciesChanged).toBe(true)
@@ -301,8 +302,19 @@ describe('run verdict', () => {
     expect(install.current).toBe(42000)
     expect(install.delta).toBeNull()
     expect(install.reason).toMatch(/cache state differs/)
-    // Contextual metric: its refusal does not make the run inconclusive.
+    // Contextual metric: its refusal alone never makes a run inconclusive. But this scenario
+    // ALSO changed the lockfile, which is a verdict-softening condition (spec §9a decision 2):
+    // the two sides resolved different dependency trees, so no delta is this change's to claim.
+    expect(r.verdict).toBe('inconclusive-context')
+    expect(r.softening?.map((c) => c.kind)).toEqual(['dependencies-differ'])
+    expect(r.softening?.[0]?.text).toMatch(/lockfile differs/)
+  })
+
+  it('a clean pair with an equal lockfile and a fresh base keeps its plain verdict', () => {
+    const [b, c] = cleanPair()
+    const r = result(b, c)
     expect(r.verdict).toBe('ok')
+    expect(r.softening).toBeUndefined()
   })
 
   it('keeps the evidence trail through to the result', () => {
@@ -325,13 +337,22 @@ describe('timing resolution quantum', () => {
     expect(m!.reason).toMatch(/metric class's 100ms resolution/)
   })
 
-  it('does not apply the quantum to bytes', () => {
-    const [m] = compareMetrics(
-      [measured('bundle_size', 1000, 'bytes', 's')],
-      [measured('bundle_size', 1090, 'bytes', 's')], // +9%, 90 "units"
+  it('applies a 1KB quantum to the byte classes — bookkeeping bytes are not a regression', () => {
+    // The byte metrics are deterministic to a couple of bytes, so their quantum is the point
+    // below which a difference is manifest hashes rather than shipped content (spec §5).
+    const [under] = compareMetrics(
+      [measured('client_bundle_size', 1000, 'bytes', 's')],
+      [measured('client_bundle_size', 1090, 'bytes', 's')], // +9% but only 90 bytes
       OPTS,
     )
-    expect(m!.verdict).toBe('regressed')
+    expect(under!.verdict).toBe('no_change')
+
+    const [over] = compareMetrics(
+      [measured('client_bundle_size', 1_000_000, 'bytes', 's')],
+      [measured('client_bundle_size', 1_100_000, 'bytes', 's')], // +10%, 100KB
+      OPTS,
+    )
+    expect(over!.verdict).toBe('regressed')
   })
 
   // Spec §5 (decided M6 acceptance): the machine is part of the instrument — browser-timing
@@ -382,10 +403,10 @@ describe('Layer 2a verdict wiring', () => {
   it('class tokens in measure make per-route metrics KEY', async () => {
     const r = buildResult({
       profile: profile(),
-      config: config({ measure: ['build_time', 'bundle_size', 'route_latency'] }),
+      config: config({ measure: ['build_time', 'client_bundle_size', 'route_latency'] }),
       plan: plan(),
-      base: baseResult(side([measured('route_latency:/live', 4, 'ms', 'route /live'), measured('build_time', 10000, 'ms', 'b'), measured('bundle_size', 100000, 'bytes', 's')])),
-      current: side([measured('route_latency:/live', 90, 'ms', 'route /live'), measured('build_time', 10100, 'ms', 'b'), measured('bundle_size', 100100, 'bytes', 's')], protocol({ workspace: 'copy' })),
+      base: baseResult(side([measured('route_latency:/live', 4, 'ms', 'route /live'), measured('build_time', 10000, 'ms', 'b'), measured('client_bundle_size', 100000, 'bytes', 's')])),
+      current: side([measured('route_latency:/live', 90, 'ms', 'route /live'), measured('build_time', 10100, 'ms', 'b'), measured('client_bundle_size', 100100, 'bytes', 's')], protocol({ workspace: 'copy' })),
       now: () => new Date('2026-08-19T12:00:00Z'),
     })
     expect(r.comparison.metrics.find((m) => m.id === 'route_latency:/live')!.verdict).toBe('regressed')
@@ -403,11 +424,11 @@ describe('policy exclusions never gate the verdict', () => {
       id: 'route_latency:/live', status: 'skipped', label: 'route /live',
       reason: 'server did not answer 200 within 60s',
     }
-    const clean = [measured('build_time', 10000, 'ms', 'b'), measured('bundle_size', 100000, 'bytes', 's')]
+    const clean = [measured('build_time', 10000, 'ms', 'b'), measured('client_bundle_size', 100000, 'bytes', 's')]
     const build = (extra: MetricResult) =>
       buildResult({
         profile: profile(),
-        config: config({ measure: ['build_time', 'bundle_size', 'route_latency'] }),
+        config: config({ measure: ['build_time', 'client_bundle_size', 'route_latency'] }),
         plan: plan(),
         base: baseResult(side([...clean, extra])),
         current: side([...clean.map((m) => ({ ...m })), extra], protocol({ workspace: 'copy' })),

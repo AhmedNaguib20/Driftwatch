@@ -1,5 +1,5 @@
 import pc from 'picocolors'
-import { summariseReason } from '../core/index.js'
+import { softeningSummary, summariseReason } from '../core/index.js'
 import type { MetricComparison, ResultJson } from '../core/index.js'
 import { formatPercent, formatValue, padVisible, visibleLength } from './format.js'
 
@@ -13,6 +13,8 @@ import { formatPercent, formatValue, padVisible, visibleLength } from './format.
 export function renderResult(result: ResultJson): string {
   const lines: string[] = []
 
+  const app = measuredApp(result)
+  if (app) lines.push(pc.dim(`measuring ${app}`))
   lines.push(verdictLine(result))
   lines.push('')
   if (result.mode === 'record' && 'metrics' in result.current) {
@@ -22,6 +24,7 @@ export function renderResult(result: ResultJson): string {
   }
   lines.push('')
   lines.push(...footer(result))
+  lines.push(...softeningBlock(result))
   lines.push(...fixStanzas(result))
 
   const warnings = [...result.warnings, ...result.project.warnings]
@@ -58,6 +61,11 @@ function verdictLine(result: ResultJson): string {
           : 'a key metric could not be measured'
       return pc.yellow(`? inconclusive ${vs}: ${why}`.trim())
     }
+    case 'inconclusive-context': {
+      // Measured fine; the attribution is what is withheld (spec §9a decision 2).
+      const summary = softeningSummary(result.softening ?? [])
+      return pc.yellow(`~ measured, but not attributable ${vs}: ${summary}`.trim())
+    }
     case 'recorded': {
       const measured = 'metrics' in result.current
         ? result.current.metrics.filter((m) => m.status === 'measured').length
@@ -65,6 +73,17 @@ function verdictLine(result: ResultJson): string {
       return pc.green(`● recorded ${measured} metrics (trend point — no comparison)`)
     }
   }
+}
+
+/**
+ * In a multi-app repo the table is otherwise anonymous — four apps, one set of numbers, no way to
+ * tell which (spec §9a decision 5). Named only when it disambiguates: a single-project repo does
+ * not need to be told which project it is.
+ */
+function measuredApp(result: ResultJson): string | null {
+  const inRepo = result.project.pathInRepo
+  if (!inRepo || inRepo === '.') return null
+  return inRepo
 }
 
 /** Changed rows first — the reader's question is "what moved", then "what else was checked". */
@@ -84,18 +103,50 @@ function recordTable(result: ResultJson): string[] {
   return rows.map((r) => `  ${padVisible(r[0]!, width)}   ${r[1]}${r[2] ? '   ' + r[2] : ''}`)
 }
 
+/**
+ * Identical-reason POLICY skips collapse into one row, exactly as the PR comment does — one rule,
+ * both surfaces (spec §9a decision 3). The jinni run printed 24 dynamic-route rows around 4 rows
+ * of signal; they are one fact, not 24.
+ */
+function groupPolicySkips(metrics: MetricComparison[]): {
+  rows: MetricComparison[]
+  groups: { reason: string; members: MetricComparison[] }[]
+} {
+  const grouped = new Map<string, MetricComparison[]>()
+  const rows: MetricComparison[] = []
+  for (const m of metrics) {
+    if (m.verdict === 'skipped' && m.excluded) {
+      const key = summariseReason(m.reason ?? 'not collected').text
+      if (!grouped.has(key)) grouped.set(key, [])
+      grouped.get(key)!.push(m)
+    } else {
+      rows.push(m)
+    }
+  }
+  const groups: { reason: string; members: MetricComparison[] }[] = []
+  for (const [reason, members] of grouped) {
+    if (members.length === 1) rows.push(members[0]!)
+    else groups.push({ reason, members })
+  }
+  return { rows, groups }
+}
+
 function table(metrics: MetricComparison[], neverRan: boolean): string[] {
   const header = ['metric', 'base', 'current', 'delta']
   // Never-ran must not look like ran-and-quiet: a column of em-dashes reads as "we looked and
   // found nothing" when in fact nothing was measured at all (spec §9a).
   const cell = (v: number | null, unit: MetricComparison['unit']) =>
     v === null && neverRan ? pc.dim('not measured') : formatValue(v, unit)
-  const rows = metrics.map((m) => [
-    m.label,
-    cell(m.base, m.unit),
-    cell(m.current, m.unit),
-    deltaCell(m),
-  ])
+  const { rows: singles, groups } = groupPolicySkips(metrics)
+  const rows = [
+    ...singles.map((m) => [m.label, cell(m.base, m.unit), cell(m.current, m.unit), deltaCell(m)]),
+    ...groups.map((g) => [
+      `${g.members.length} rows excluded by policy`,
+      pc.dim('—'),
+      pc.dim('—'),
+      pc.dim(g.reason.split(' — ')[0]!),
+    ]),
+  ]
 
   const widths = header.map((h, col) =>
     Math.max(h.length, ...rows.map((r) => visibleLength(r[col]!))),
@@ -108,7 +159,11 @@ function table(metrics: MetricComparison[], neverRan: boolean): string[] {
       .map((c, i) => (i === cells.length - 1 ? c : padVisible(c, widths[i]!)))
       .join('   ')
 
-  return [pc.dim(render(header)), ...rows.map(render)]
+  const out = [pc.dim(render(header)), ...rows.map(render)]
+  for (const g of groups) {
+    out.push(pc.dim(`    ${g.members.map((m) => m.label).join(', ')}`))
+  }
+  return out
 }
 
 function deltaCell(m: MetricComparison): string {
@@ -158,6 +213,23 @@ function footer(result: ResultJson): string[] {
     lines.push(pc.yellow(`  protocol mismatch \u2014 ${mismatch}`))
   }
 
+  return lines
+}
+
+/**
+ * Why attribution was withheld, stated plainly with what to do about it — the same shape as a fix
+ * stanza, because it is one: the reader can act on it (spec §9a decision 2).
+ */
+function softeningBlock(result: ResultJson): string[] {
+  const conditions = result.softening ?? []
+  if (conditions.length === 0) return []
+  const lines: string[] = ['', pc.bold('why the numbers are not attributed to this change:')]
+  for (const condition of conditions) {
+    const [first, ...rest] = condition.text.split('\n')
+    lines.push(pc.yellow(`  · ${first}`))
+    for (const line of rest) lines.push(line ? `  ${line}` : '')
+  }
+  lines.push(pc.dim('  (same doctrine as movement vs drift: the strong claim needs a licence)'))
   return lines
 }
 

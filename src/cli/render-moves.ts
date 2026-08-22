@@ -42,7 +42,8 @@ const short = (sha: string) => sha.slice(0, 7)
 /** Terminal display names — ids stay ids in the JSON and on the dashboard cards. */
 export function displayName(id: string): string {
   if (id === 'build_time') return 'build time'
-  if (id === 'bundle_size') return 'bundle size'
+  if (id === 'client_bundle_size') return 'client bundle size'
+  if (id === 'build_output_size') return 'build output size'
   if (id === 'install_time') return 'install time'
   const [kind, ...route] = id.split(':')
   const suffix = route.join(':')

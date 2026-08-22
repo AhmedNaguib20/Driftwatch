@@ -443,3 +443,83 @@ describe('policy exclusions never gate the verdict', () => {
     expect(withFailure.verdict).toBe('inconclusive')
   })
 })
+
+describe('verdict licensing — attribution needs a base worth comparing to (spec §9a decision 2)', () => {
+  const now = () => new Date('2026-08-19T12:00:00Z')
+  const pair = (): [MetricResult[], MetricResult[]] => [
+    [measured('build_time', 10000, 'ms', 'b'), measured('client_bundle_size', 100000, 'bytes', 's')],
+    [measured('build_time', 11000, 'ms', 'b'), measured('client_bundle_size', 100100, 'bytes', 's')],
+  ]
+
+  function withPlan(overrides: Partial<BaselinePlan>) {
+    const [b, c] = pair()
+    return buildResult({
+      profile: profile(),
+      config: config(),
+      plan: plan(overrides),
+      base: baseResult(side(b)),
+      current: side(c, protocol({ workspace: 'copy' })),
+      now,
+    })
+  }
+
+  it('a fresh base with an equal lockfile keeps the plain regression verdict', () => {
+    const r = withPlan({ commitsAhead: 3, baseAgeDays: 1, dependenciesChanged: false })
+    expect(r.verdict).toBe('regression')
+    expect(r.softening).toBeUndefined()
+  })
+
+  it('a base far behind in COMMITS softens the verdict and names the remedy', () => {
+    const r = withPlan({ commitsAhead: 143, baseAgeDays: 1, dependenciesChanged: false })
+    expect(r.verdict).toBe('inconclusive-context')
+    expect(r.softening?.map((c) => c.kind)).toEqual(['stale-base'])
+    expect(r.softening?.[0]?.text).toMatch(/143 commits ahead/)
+    expect(r.softening?.[0]?.text).toMatch(/driftwatch run --base/)
+  })
+
+  it('a base far behind in TIME softens it too — either signal alone is enough', () => {
+    const r = withPlan({ commitsAhead: 2, baseAgeDays: 60, dependenciesChanged: false })
+    expect(r.verdict).toBe('inconclusive-context')
+    expect(r.softening?.[0]?.text).toMatch(/60 day\(s\) old/)
+  })
+
+  it('names the likelier integration target when one was found', () => {
+    const r = withPlan({ commitsAhead: 143, baseAgeDays: 60, likelyIntegrationTarget: 'staging' })
+    expect(r.softening?.[0]?.text).toMatch(/integrate into `staging`/)
+    expect(r.softening?.[0]?.text).toMatch(/--base staging/)
+  })
+
+  it('an OK run is softened too — a stale base cannot license "nothing changed" either', () => {
+    const [b] = pair()
+    const r = buildResult({
+      profile: profile(),
+      config: config(),
+      plan: plan({ commitsAhead: 143, baseAgeDays: 60 }),
+      base: baseResult(side(b)),
+      current: side(b, protocol({ workspace: 'copy' })),
+      now,
+    })
+    expect(r.verdict).toBe('inconclusive-context')
+  })
+
+  it('a MEASUREMENT failure stays plain inconclusive — it is already the weaker verdict', () => {
+    const [b] = pair()
+    const r = buildResult({
+      profile: profile(),
+      config: config(),
+      plan: plan({ commitsAhead: 143, baseAgeDays: 60 }),
+      base: baseResult(side([skipped('build_time', 'b', 'build failed'), ...b.slice(1)])),
+      current: side([skipped('build_time', 'b', 'build failed'), ...b.slice(1)], protocol({ workspace: 'copy' })),
+      now,
+    })
+    expect(r.verdict).toBe('inconclusive')
+    expect(r.softening).toBeUndefined()
+  })
+
+  it('the numbers survive softening — only the attribution is withheld', () => {
+    const r = withPlan({ commitsAhead: 143, baseAgeDays: 60 })
+    const build = r.comparison.metrics.find((m) => m.id === 'build_time')!
+    expect(build.verdict).toBe('regressed')
+    expect(build.delta).toEqual({ absolute: 1000, percent: 10 })
+  })
+})

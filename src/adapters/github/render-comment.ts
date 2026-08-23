@@ -1,4 +1,4 @@
-import { softeningSummary, summariseReason } from '../../core/index.js'
+import { shortReason, softeningSummary, summariseReason } from '../../core/index.js'
 import type { MetricComparison, ResultJson } from '../../core/index.js'
 import { formatPercent, formatValue } from './format.js'
 import { renderAnalysisFooterParts, renderAnalysisSection } from './render-analysis.js'
@@ -160,7 +160,7 @@ export function comparisonTable(result: ResultJson): string[] {
   const singles: MetricComparison[] = []
   for (const m of rows) {
     if (m.verdict === 'skipped' && m.excluded) {
-      const key = compactReason(m.reason ?? 'not collected')
+      const key = shortReason(m.reason ?? 'not collected')
       if (!grouped.has(key)) grouped.set(key, [])
       grouped.get(key)!.push(m)
     } else {
@@ -185,7 +185,7 @@ export function comparisonTable(result: ResultJson): string[] {
         `| ${m.label} | ${formatValue(m.base, m.unit)} | ${formatValue(m.current, m.unit)} | ${changeCell(m)} |`,
       )
     } else {
-      lines.push(`| ${members.length} rows excluded by policy | — | — | ${shortPolicyReason(reason)} |`)
+      lines.push(`| ${members.length} rows excluded by policy | — | — | ${reason.replaceAll('|', '\\|')} |`)
       groupedRows.push({ reason, members })
     }
   }
@@ -201,7 +201,7 @@ export function comparisonTable(result: ResultJson): string[] {
     lines.push('<summary>Excluded rows</summary>')
     lines.push('')
     for (const g of groupedRows) {
-      lines.push(`- ${g.members.map((m) => m.label).join(', ')} — ${g.reason}`)
+      lines.push(`- ${g.members.map((m) => m.label).join(', ')} — ${compactReason(g.members[0]!.reason ?? g.reason)}`)
     }
     lines.push('')
     lines.push('</details>')
@@ -209,10 +209,6 @@ export function comparisonTable(result: ResultJson): string[] {
   return lines
 }
 
-/** The grouped row's cell keeps the first clause; the details block carries the whole reason. */
-function shortPolicyReason(reason: string): string {
-  return reason.split(' — ')[0]!.split(';')[0]!
-}
 
 function changeCell(m: MetricComparison): string {
   switch (m.verdict) {

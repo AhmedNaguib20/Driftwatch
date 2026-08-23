@@ -1,5 +1,5 @@
 import pc from 'picocolors'
-import { softeningSummary, summariseReason } from '../core/index.js'
+import { shortReason, softeningSummary, summariseReason } from '../core/index.js'
 import type { MetricComparison, ResultJson } from '../core/index.js'
 import { formatPercent, formatValue, padVisible, visibleLength } from './format.js'
 
@@ -116,7 +116,7 @@ function groupPolicySkips(metrics: MetricComparison[]): {
   const rows: MetricComparison[] = []
   for (const m of metrics) {
     if (m.verdict === 'skipped' && m.excluded) {
-      const key = summariseReason(m.reason ?? 'not collected').text
+      const key = shortReason(m.reason ?? 'not collected')
       if (!grouped.has(key)) grouped.set(key, [])
       grouped.get(key)!.push(m)
     } else {
@@ -144,7 +144,7 @@ function table(metrics: MetricComparison[], neverRan: boolean): string[] {
       `${g.members.length} rows excluded by policy`,
       pc.dim('—'),
       pc.dim('—'),
-      pc.dim(g.reason.split(' — ')[0]!),
+      pc.dim(g.reason),
     ]),
   ]
 

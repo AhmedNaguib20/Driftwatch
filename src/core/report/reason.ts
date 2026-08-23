@@ -49,3 +49,13 @@ export function summariseReasonWith(reason: string, where: string): string {
   const { text, truncated } = summariseReason(reason)
   return truncated ? `${text} (${where})` : text
 }
+
+/**
+ * The short form a policy-skip cell shows: the first clause, before the elaboration. Also the
+ * GROUPING key — rows that display identically must group together, or the reader sees two rows
+ * saying "dynamic segment" with different counts (observed on jinni: 19 + 5, split only because
+ * five routes were new on the branch and carried "(not present at base)").
+ */
+export function shortReason(reason: string): string {
+  return summariseReason(reason).text.split(' — ')[0]!.split(';')[0]!.trim()
+}

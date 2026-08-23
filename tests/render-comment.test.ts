@@ -329,3 +329,26 @@ describe('PR comment renderer — golden contract', () => {
     expect(renderComment(await scenario('no-change'))).not.toContain('What was sent')
   })
 })
+
+describe('policy-skip grouping keys on what the reader SEES', () => {
+  it('rows that display identically group together, however their reasons differ downstream', async () => {
+    // The jinni re-run split "dynamic segment" into two rows (19 + 5): five routes were new on
+    // the branch, so their reason carried "(not present at base)" and hashed differently. Two
+    // rows with the same visible label and different counts is exactly what grouping prevents.
+    const base = await baseResult()
+    const dynamic = 'dynamic segment — no concrete URL to measure'
+    const rows: MetricComparison[] = [
+      policyRow('/a/[id]', dynamic),
+      policyRow('/b/[id]', dynamic),
+      { ...policyRow('/c/[id]', `${dynamic} (not present at base)`) },
+    ]
+    const rendered = renderComment({
+      ...base,
+      comparison: { ...base.comparison, metrics: [...base.comparison.metrics, ...rows] },
+    })
+
+    expect(rendered).toContain('| 3 rows excluded by policy | — | — | dynamic segment |')
+    expect(rendered).not.toMatch(/\| 2 rows excluded by policy .*dynamic segment/)
+    expect(rendered).toContain('route /a/[id], route /b/[id], route /c/[id]')
+  })
+})

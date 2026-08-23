@@ -41,8 +41,15 @@ const DIFF_DATA = {
   lockfileSummaries: [],
 }
 
+/** A response the API cut off at the cap — `finish_reason: "length"` (M9). */
+class Truncated {
+  constructor(readonly text: string, readonly outputTokens: number) {}
+}
+
 /** Scripted provider: pops responses in order; records every request it saw. */
-function scriptedProvider(script: (string | ProviderError)[]): Provider & { requests: ChatRequest[] } {
+function scriptedProvider(
+  script: (string | ProviderError | Truncated)[],
+): Provider & { requests: ChatRequest[] } {
   const requests: ChatRequest[] = []
   return {
     name: 'mock',
@@ -53,7 +60,15 @@ function scriptedProvider(script: (string | ProviderError)[]): Provider & { requ
       const next = script.shift()
       if (next === undefined) throw new Error('scripted provider ran out of responses')
       if (next instanceof ProviderError) throw next
-      return { text: next, tokens: { input: 500, output: 60 }, model: 'mock-model' }
+      if (next instanceof Truncated) {
+        return {
+          text: next.text,
+          tokens: { input: 500, output: next.outputTokens },
+          model: 'mock-model',
+          truncated: true,
+        }
+      }
+      return { text: next, tokens: { input: 500, output: 60 }, model: 'mock-model', truncated: false }
     },
   }
 }
@@ -248,5 +263,50 @@ describe('golden prompts — the prompts are documentation', () => {
 
     if (process.env.UPDATE_GOLDEN === '1') await writeFile(GOLDEN, rendered, 'utf8')
     expect(rendered).toBe(await readFile(GOLDEN, 'utf8'))
+  })
+})
+
+describe('the output ceiling — truncation is its own failure (M9)', () => {
+  /** The real run-a shape: triage names the right file, then the response stops mid-object. */
+  const CUT_OFF = '{\n  "suspects": [\n    {\n      "path": "fixtures/next-app/lib/posts.ts",\n      "reason": "Adds 300 generated posts to the shared array, which every guide page imports and filters over, increa'
+
+  it('retries with a RAISED cap, never the identical request', async () => {
+    const provider = scriptedProvider([new Truncated(CUT_OFF, 1000), TRIAGE_OK, DEEP_OK])
+    const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    expect(analysis.outcome).toBe('analysed')
+    // Two triage requests: the second asks for more ROOM, not for better formatting.
+    expect(provider.requests[1]!.maxOutputTokens).toBe(provider.requests[0]!.maxOutputTokens * 2)
+    expect(provider.requests[1]!.user).toBe(provider.requests[0]!.user)
+    expect(provider.requests[1]!.user).not.toMatch(/was rejected/)
+  })
+
+  it('names truncation with both numbers when even the raised cap is not enough', async () => {
+    const provider = scriptedProvider([new Truncated(CUT_OFF, 1000), new Truncated(CUT_OFF, 6400)])
+    const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    expect(analysis.outcome).toBe('skipped')
+    if (analysis.outcome !== 'skipped') return
+    expect(analysis.reason).toMatch(/truncated at 6400 tokens \(cap 6400\)/)
+    expect(analysis.reason).toMatch(/already retried once with the cap raised from 3200/)
+    // The distinction IS the finding: never call this invalid JSON.
+    expect(analysis.reason).not.toMatch(/invalid JSON/)
+    expect(analysis.reason).toMatch(/ran out of room, not out of ability/)
+  })
+
+  it('malformed output still gets the CORRECTIVE retry — the other failure, the other fix', async () => {
+    const provider = scriptedProvider(['not json at all', TRIAGE_OK, DEEP_OK])
+    const analysis = await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+
+    expect(analysis.outcome).toBe('analysed')
+    expect(provider.requests[1]!.maxOutputTokens).toBe(provider.requests[0]!.maxOutputTokens)
+    expect(provider.requests[1]!.user).toMatch(/was rejected/)
+  })
+
+  it('caps clear the measured worst case: 31-file triage (1559) and a 150-line fix (2360)', async () => {
+    const provider = scriptedProvider([TRIAGE_OK, DEEP_OK])
+    await runAnalysis(await regressionResult(), DIFF_DATA, provider)
+    expect(provider.requests[0]!.maxOutputTokens).toBeGreaterThan(1559 * 1.5)
+    expect(provider.requests[1]!.maxOutputTokens).toBeGreaterThan(2360 * 2)
   })
 })

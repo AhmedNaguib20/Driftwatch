@@ -28,6 +28,8 @@ export interface EvalCaseResult {
   readonly passed: boolean
   readonly checks: readonly { readonly check: string; readonly ok: boolean; readonly detail: string }[]
   readonly tokens: { readonly input: number; readonly output: number }
+  /** Output tokens per stage — the measurement the M9 caps were sized against. */
+  readonly stageOutput: readonly { readonly stage: string; readonly output: number }[]
   readonly costUsd: number | null
   readonly durationMs: number
   readonly promptVersion: number | null

@@ -21,6 +21,13 @@ export interface ChatResponse {
   readonly tokens: TokenUsage
   /** The model that actually served the call, as the API reports it. */
   readonly model: string
+  /**
+   * True when the API stopped because the OUTPUT CAP was reached (`finish_reason: "length"`) —
+   * a transport fact, reported by the provider, never inferred from the text. It is the whole
+   * distinction M9 exists for: a model that cannot format JSON is a different failure from a
+   * model we did not give room to finish.
+   */
+  readonly truncated: boolean
 }
 
 export interface TokenUsage {
@@ -36,7 +43,7 @@ export interface Provider {
   chat(request: ChatRequest): Promise<ChatResponse>
 }
 
-export type ProviderErrorKind = 'auth' | 'http' | 'network' | 'timeout' | 'malformed'
+export type ProviderErrorKind = 'auth' | 'http' | 'network' | 'timeout' | 'malformed' | 'truncated'
 
 /**
  * Every provider failure surfaces as one of these — the analysis layer turns them into an

@@ -18,8 +18,32 @@ import type { DeepOutput } from './schemas.js'
 
 const TRIAGE_TIMEOUT_MS = 60_000
 const DEEP_TIMEOUT_MS = 180_000
-const TRIAGE_MAX_OUTPUT = 1_000
-const DEEP_MAX_OUTPUT = 2_500
+/**
+ * Output caps, measured (M9) — the same discipline as BUILD_SAMPLES: a number with a basis, not
+ * a round guess.
+ *
+ * Triage output scales with the diff's FILE COUNT: it ranks one suspect per plausibly-relevant
+ * changed file, each with a one-sentence reason. Modelled against the four eval cases' real
+ * diffs (our own estimateTokens over a well-formed response):
+ *
+ *     run-b   1 file    104 tokens        run-d   2 files   146 tokens
+ *     run-c   3 files   190 tokens        run-a  31 files  1559 tokens   ← old cap was 1000
+ *
+ * That is why run-a failed at the M6 close and again at the M8 close: ~47 tokens per changed
+ * file, so a 31-file diff needs 1.5x the room it was given. 3200 is 2x the measured largest and
+ * covers ~66 changed files at that rate; beyond it, truncation is now DETECTED, named, and
+ * retried once with the cap doubled rather than re-sent unchanged.
+ *
+ * Deep output is cause + evidence + a fix, and a diff fix has no schema bound. Same method:
+ *
+ *     6-line fix   148 tokens      40-line   725 tokens
+ *     16-line fix  371 tokens      80-line  1315 tokens      150-line  2360 tokens  ← cap was 2500
+ *
+ * A 150-line fix left 140 tokens of headroom. Raised pre-emptively to 6000 (≈2.5x, ~400-line
+ * fixes) because model verbosity grows and this failure mode is silent until it isn't.
+ */
+const TRIAGE_MAX_OUTPUT = 3_200
+const DEEP_MAX_OUTPUT = 6_000
 
 /** Below this confidence a diff fix is DISPLAYED as prose; the diff itself survives for
  * verification (spec v35 — the bar governs presentation, measurement governs proof). */

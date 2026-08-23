@@ -214,7 +214,7 @@ commit topology/date, not append order.
         bundle only + not-judged captions, exactly 3 harvest folders, constructed history retired
         (unit tests encode its lessons in ~7s vs 8min). M7 CLOSED (`a61a1c0` lineage).
 
-**M8 — Real-world readiness (current).** Opened by the jinni trial (spec §9a). In order:
+**M8 — Real-world readiness — CLOSED (334 tests; jinni measures cleanly, eval 3/4).** Opened by the jinni trial (spec §9a). In order:
 1. **Rule-2 fix — DONE (`b278014`, 299 tests).** Audit found three uninvited writes: `perf.yml`
    (removed), `eval/candidates/` (→ `.perf/eval-candidates/`), and perf-data branch creation (now
    `--write-perf-data`). Consent doctrine: creating needs consent, appending doesn't; CI keeps

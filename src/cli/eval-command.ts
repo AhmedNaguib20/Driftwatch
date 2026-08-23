@@ -20,7 +20,11 @@ export async function evalCommand(options: { cases: string }): Promise<void> {
     const cost = result.costUsd !== null ? `$${result.costUsd.toFixed(4)}` : 'cost unknown'
     console.log(
       `${badge} ${result.name} ${pc.dim(
-        `(prompts v${result.promptVersion ?? '?'} · ${result.tokens.input}→${result.tokens.output} tok · ${cost} · ${(result.durationMs / 1000).toFixed(1)}s)`,
+        `(prompts v${result.promptVersion ?? '?'} · ${result.tokens.input}→${result.tokens.output} tok${
+          result.stageOutput.length > 0
+            ? ` [${result.stageOutput.map((s) => `${s.stage} out ${s.output}`).join(', ')}]`
+            : ''
+        } · ${cost} · ${(result.durationMs / 1000).toFixed(1)}s)`,
       )}`,
     )
     for (const check of result.checks) {

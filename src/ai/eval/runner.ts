@@ -66,6 +66,7 @@ export async function runEvalCases(
       passed: verdictOfJudge.passed,
       checks: verdictOfJudge.checks,
       tokens,
+      stageOutput: stageOutputOf(analysis),
       costUsd: costOf(analysis, tokens),
       durationMs,
       promptVersion,
@@ -73,6 +74,14 @@ export async function runEvalCases(
   }
 
   return results
+}
+
+/** Named per stage: a cap is per stage, so the evidence for it has to be too (M9). */
+function stageOutputOf(analysis: { outcome: string }): { stage: string; output: number }[] {
+  const a = analysis as { stages?: Record<string, { tokens?: { output?: number } } | undefined> }
+  return Object.entries(a.stages ?? {})
+    .filter(([, v]) => v?.tokens)
+    .map(([stage, v]) => ({ stage, output: v!.tokens!.output ?? 0 }))
 }
 
 function sumTokens(analysis: { outcome: string }): { input: number; output: number } {

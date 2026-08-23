@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 46 — 2026-08-20 — M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 48 — 2026-08-20 — **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1013,6 +1013,44 @@ names the branch. Two judgement calls: **an `ok` run is softened too** (a stale 
 would be an upgrade to a stronger word. Eval captures renamed to `build_output_size`, not
 `client_bundle_size`: those 2.3 MB numbers weighed all of `.next`, and calling them a client payload
 would assert something never measured.
+
+*Live validation on jinni (M8 close):* `inconclusive-context` fired on a real stale-base
+comparison — both conditions, numbers in full, and **integration-target detection found `staging`
+on real data**, which is exactly the branch jinni's own CLAUDE.md names. Verdict wording:
+*"measured, but not attributable — the numbers below are measured and stand; what they cannot do is
+name this change as the cause."* `measurementPath: confirmed` also fired unprompted on someone
+else's repo (cached base → floor crossed → both sides re-measured fresh, §5.1 fifth).
+
+**The split changed the direction of the signal, not just the label:** client 1.41→1.48 MB
+(+5.1%) vs build output 69.04→71.64 MB (+3.8%, under threshold). The old metric would have
+shrugged at a change browsers actually feel; the headline is now 2% of the old number, and the
+~72KB delta is reportable only because of the byte-class floor exemption. The two decisions
+(split + exemption) only work together.
+
+*Two further fixes from the same session:* the step-2 **last-line rule was calibrated on package
+managers, which print errors last — build tools print a summary after the failure**, so a Next.js
+build error rendered as "ƒ (Dynamic) server-rendered on demand"; it now selects the last line
+carrying a failure signal, falling back to our own self-sufficient summary (`906614a`). And
+**grouping must key on what is displayed, not on what it means internally** (`cea2186`): two groups
+both labelled "dynamic segment" split because branch-only routes carried `(not present at base)`
+in their underlying reason — two rows, same visible label, which is precisely what grouping exists
+to prevent.
+
+*M8-close eval (live, under schema 2.0 + prompts v2):* **3/4 PASS** — run-b 0.6, run-c 0.9,
+run-d 0.7, all bands met, causes and fixes correct under the renamed metric; ~$0.008 total.
+**run-a FAIL is transport, not analysis, and now twice-confirmed** (it also failed this way at
+M6 close): triage returns invalid JSON because the response is *truncated mid-object* — the
+captured text shows it had already correctly identified `lib/posts.ts` before the cut. Served-model
+verbosity has outgrown `TRIAGE_MAX_OUTPUT`. **Promoted from pre-launch item to next work**: a
+reproducible, model-drift-caused failure on the largest case, with the analysis provably correct
+behind it. Fix direction: raise the cap, and make truncation a *named* failure ("response
+truncated at N tokens") rather than generic "invalid JSON" — the retry currently re-sends a prompt
+that cannot fit, so it burns a second call to fail identically.
+
+*Reporting discipline note:* the previous session's 72-minute run and build failure **did not
+reproduce** (same command, 280s, symmetric samples) — reported as fact with the cause withheld,
+and the cause turned out to be transient machine state. Withholding the cause was correct; the
+retraction is recorded rather than quietly dropped.
 
 | 1 | **"bundle size" is 69 MB and isn't a bundle** — it's all of `.next` minus cache (3,224 files, ~11 MB server, ~9.6 MB client JS). A server-only change moves the headline metric though nothing shipped to a browser changed. `collectedBy` is honest; the label oversells. | **Split the metric**: `client_bundle_size` (what ships to browsers — the headline) and `build_output_size` (everything). Renaming a headline metric is a schema break; do it now, before anyone depends on it. |
 | 2 | **Stale base + changed dependencies still yields a confident verdict.** 143 commits / 2 months behind, 395 lockfile lines different, and the tool still says "regression +6.5%" with the dependency change as a quiet footnote. | Both are **verdict-softening conditions, not annotations**: when the base is far behind or the lockfile differs, the verdict downgrades to `inconclusive-context` — the numbers stand, the *attribution* doesn't. Same doctrine as movement-vs-drift: the strong claim needs a licence. |

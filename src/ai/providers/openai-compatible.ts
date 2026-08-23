@@ -80,6 +80,8 @@ export function openAiCompatibleProvider(options: OpenAiCompatibleOptions): Prov
           input: payload?.usage?.prompt_tokens ?? 0,
           output: payload?.usage?.completion_tokens ?? 0,
         },
+        // OpenAI-compatible APIs report "length" when the response hit maxOutputTokens.
+        truncated: payload?.choices?.[0]?.finish_reason === 'length',
       }
     },
   }
@@ -87,6 +89,6 @@ export function openAiCompatibleProvider(options: OpenAiCompatibleOptions): Prov
 
 interface CompletionsPayload {
   model?: string
-  choices?: { message?: { content?: string } }[]
+  choices?: { message?: { content?: string }; finish_reason?: string }[]
   usage?: { prompt_tokens?: number; completion_tokens?: number }
 }

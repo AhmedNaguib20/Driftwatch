@@ -2,11 +2,20 @@ import { ProviderError } from './types.js'
 import type { ChatRequest, Provider, TokenUsage } from './types.js'
 
 /**
- * A validated JSON completion: call, parse, validate — one corrective retry on malformed output,
- * then an honest failure. The validator returns the typed value or a string naming what is wrong;
- * on retry the model is shown its own output and that message. Transport-level and provider-
- * agnostic: no prompt content lives here.
+ * A validated JSON completion: call, parse, validate — one retry, then an honest failure.
+ *
+ * TWO different failures, two different retries (M9). A model that returned malformed JSON gets
+ * the CORRECTIVE retry: shown its own output and what was wrong with it. A response the API cut
+ * off at the output cap (`finish_reason: "length"`) gets a RAISED-CAP retry instead — re-sending
+ * the identical request would produce the identical truncation, so it is never done. If the
+ * doubled cap truncates too, the failure is named as truncation with both numbers, never as
+ * "invalid JSON": one means the model cannot format, the other means we did not give it room.
+ *
+ * Transport-level and provider-agnostic: no prompt content lives here.
  */
+
+/** How much more room the second attempt gets. One doubling, not a search. */
+const TRUNCATION_RETRY_FACTOR = 2
 
 export interface JsonCallResult<T> {
   readonly value: T
@@ -24,32 +33,47 @@ export async function jsonCall<T>(
 ): Promise<JsonCallResult<T>> {
   const first = await provider.chat(request)
   const firstAttempt = parseAndValidate(first.text, validate)
-  if (firstAttempt.ok) {
+  if (firstAttempt.ok && !first.truncated) {
     return { value: firstAttempt.value, tokens: first.tokens, model: first.model, retried: false }
   }
 
-  const corrective: ChatRequest = {
-    ...request,
-    user:
-      `${request.user}\n\n` +
-      `Your previous response was rejected: ${firstAttempt.problem}\n` +
-      `Previous response:\n${first.text.slice(0, 2000)}\n\n` +
-      `Respond again with ONLY the corrected JSON object.`,
-  }
-  const second = await provider.chat(corrective)
+  // Truncation is decided by the API, before the parser gets an opinion: a cut-off response is
+  // usually ALSO unparseable, and reporting it as "invalid JSON" is what hid this failure for two
+  // milestones. The retry differs accordingly — more room, not more scolding.
+  const second = first.truncated
+    ? await provider.chat({ ...request, maxOutputTokens: request.maxOutputTokens * TRUNCATION_RETRY_FACTOR })
+    : await provider.chat({
+        ...request,
+        user:
+          `${request.user}\n\n` +
+          `Your previous response was rejected: ${firstAttempt.ok ? 'unknown' : firstAttempt.problem}\n` +
+          `Previous response:\n${first.text.slice(0, 2000)}\n\n` +
+          `Respond again with ONLY the corrected JSON object.`,
+      })
+
   const tokens = {
     input: first.tokens.input + second.tokens.input,
     output: first.tokens.output + second.tokens.output,
   }
 
   const secondAttempt = parseAndValidate(second.text, validate)
-  if (secondAttempt.ok) {
+  if (secondAttempt.ok && !second.truncated) {
     return { value: secondAttempt.value, tokens, model: second.model, retried: true }
+  }
+
+  if (second.truncated) {
+    const cap = first.truncated ? request.maxOutputTokens * TRUNCATION_RETRY_FACTOR : request.maxOutputTokens
+    throw new ProviderError(
+      'truncated',
+      `${provider.name} response truncated at ${second.tokens.output} tokens (cap ${cap})` +
+        (first.truncated ? ` — already retried once with the cap raised from ${request.maxOutputTokens}` : '') +
+        `. The model ran out of room, not out of ability: raise the stage's output cap.`,
+    )
   }
 
   throw new ProviderError(
     'malformed',
-    `${provider.name} returned invalid JSON twice — last problem: ${secondAttempt.problem}; ` +
+    `${provider.name} returned invalid JSON twice — last problem: ${secondAttempt.ok ? 'unknown' : secondAttempt.problem}; ` +
       `last response started: ${JSON.stringify(second.text.slice(0, 200))}`,
   )
 }

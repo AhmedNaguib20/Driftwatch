@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 2,
+  "schemaMinorVersion": 0,
+  "driftwatchVersion": "0.6.0",
+  "mode": "record",
+  "createdAt": "2026-08-23T07:57:35.954Z",
+  "project": {
+    "root": "/home/runner/work/Driftwatch/Driftwatch/fixtures/next-app",
+    "gitRoot": "/home/runner/work/Driftwatch/Driftwatch",
+    "pathInRepo": "fixtures/next-app",
+    "framework": "nextjs",
+    "frameworkVersion": "15.1.3",
+    "packageManager": "npm",
+    "lockfile": "package-lock.json",
+    "routes": [
+      "/",
+      "/about",
+      "/blog",
+      "/blog/[slug]",
+      "/dashboard",
+      "/live"
+    ],
+    "evidence": [
+      {
+        "fact": "language: javascript",
+        "source": "package.json",
+        "detail": "package \"driftwatch-fixture-next-app\""
+      },
+      {
+        "fact": "git repository: /home/runner/work/Driftwatch/Driftwatch",
+        "source": "git",
+        "detail": "project sits at fixtures/next-app"
+      },
+      {
+        "fact": "package manager: npm",
+        "source": "package-lock.json"
+      },
+      {
+        "fact": "framework: nextjs",
+        "source": "package.json",
+        "detail": "depends on next@15.1.3"
+      },
+      {
+        "fact": "framework: nextjs",
+        "source": "next.config.mjs",
+        "detail": "Next.js config file"
+      },
+      {
+        "fact": "6 route(s) detected",
+        "source": "app",
+        "detail": "app router"
+      },
+      {
+        "fact": "build command: npm run build",
+        "source": "package.json",
+        "detail": "scripts.build = \"next build\""
+      },
+      {
+        "fact": "recorded: main @ cea2186b2eee",
+        "source": "git"
+      }
+    ],
+    "warnings": [
+      "Dependencies are not installed, so the exact Next.js version is unknown — only the declared range is available."
+    ]
+  },
+  "config": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "thresholdPercent": 5,
+    "noiseFloorPercent": 2,
+    "base": "main",
+    "block_merge": false,
+    "auto_fix": "propose",
+    "sourcePath": "/home/runner/work/Driftwatch/Driftwatch/fixtures/next-app/perf.yml"
+  },
+  "base": {
+    "available": false,
+    "reason": "record mode — this run measures one commit; there is no baseline comparison"
+  },
+  "current": {
+    "workingTree": true,
+    "metrics": [
+      {
+        "id": "install_time",
+        "status": "measured",
+        "value": 15094,
+        "unit": "ms",
+        "label": "install time",
+        "collectedBy": "wall clock around `npm ci` in a measurement copy; single sample, package-manager cache shared with the machine",
+        "samples": 1
+      },
+      {
+        "id": "build_time",
+        "status": "measured",
+        "value": 34537,
+        "unit": "ms",
+        "label": "build time (cold)",
+        "collectedBy": "median of 3 cold builds after 1 discarded warm-up, wall clock around `npm run build` in a measurement copy",
+        "samples": 3,
+        "sampleValues": [
+          34537,
+          34888,
+          34468
+        ]
+      },
+      {
+        "id": "client_bundle_size",
+        "status": "measured",
+        "value": 1194527,
+        "unit": "bytes",
+        "label": "client bundle size",
+        "collectedBy": "sum of file sizes in .next/static (22 files, shipped to browsers), excluding internal caches and diagnostics",
+        "samples": 1
+      },
+      {
+        "id": "build_output_size",
+        "status": "measured",
+        "value": 2313023,
+        "unit": "bytes",
+        "label": "build output size",
+        "collectedBy": "sum of file sizes in .next (117 files, all build output, server code included), excluding internal caches and diagnostics",
+        "samples": 1
+      },
+      {
+        "id": "route_latency:/live",
+        "status": "measured",
+        "value": 20,
+        "unit": "ms",
+        "label": "route /live",
+        "collectedBy": "median of 5 sequential requests after 1 discarded warm-up, full response time against the built app",
+        "samples": 5,
+        "sampleValues": [
+          29,
+          20,
+          14,
+          25,
+          14
+        ]
+      },
+      {
+        "id": "route_latency:/blog/[slug]",
+        "status": "skipped",
+        "label": "route /blog/[slug]",
+        "reason": "dynamic segment — no concrete URL to measure",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/",
+        "status": "skipped",
+        "label": "route /",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in client_bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/blog",
+        "status": "skipped",
+        "label": "route /blog",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in client_bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/about",
+        "status": "skipped",
+        "label": "route /about",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in client_bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "route_latency:/dashboard",
+        "status": "skipped",
+        "label": "route /dashboard",
+        "reason": "prerendered (SSG) — served as static files; excluded from route_latency (regressions surface in client_bundle_size / Lighthouse)",
+        "excluded": true
+      },
+      {
+        "id": "lcp:/",
+        "status": "measured",
+        "value": 1771,
+        "unit": "ms",
+        "label": "LCP /",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          1604,
+          1937
+        ]
+      },
+      {
+        "id": "tbt:/",
+        "status": "measured",
+        "value": 133,
+        "unit": "ms",
+        "label": "TBT /",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          140,
+          125
+        ]
+      },
+      {
+        "id": "fcp:/",
+        "status": "measured",
+        "value": 783,
+        "unit": "ms",
+        "label": "FCP /",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          777,
+          789
+        ]
+      },
+      {
+        "id": "transfer_size:/",
+        "status": "measured",
+        "value": 231573,
+        "unit": "bytes",
+        "label": "transfer size /",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          231574,
+          231571
+        ]
+      },
+      {
+        "id": "lcp:/live",
+        "status": "measured",
+        "value": 1742,
+        "unit": "ms",
+        "label": "LCP /live",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          1894,
+          1590
+        ]
+      },
+      {
+        "id": "tbt:/live",
+        "status": "measured",
+        "value": 132,
+        "unit": "ms",
+        "label": "TBT /live",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          144,
+          120
+        ]
+      },
+      {
+        "id": "fcp:/live",
+        "status": "measured",
+        "value": 779,
+        "unit": "ms",
+        "label": "FCP /live",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          784,
+          773
+        ]
+      },
+      {
+        "id": "transfer_size:/live",
+        "status": "measured",
+        "value": 230467,
+        "unit": "bytes",
+        "label": "transfer size /live",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          230465,
+          230468
+        ]
+      },
+      {
+        "id": "lcp:/blog",
+        "status": "measured",
+        "value": 1783,
+        "unit": "ms",
+        "label": "LCP /blog",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          1673,
+          1893
+        ]
+      },
+      {
+        "id": "tbt:/blog",
+        "status": "measured",
+        "value": 135,
+        "unit": "ms",
+        "label": "TBT /blog",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          139,
+          131
+        ]
+      },
+      {
+        "id": "fcp:/blog",
+        "status": "measured",
+        "value": 776,
+        "unit": "ms",
+        "label": "FCP /blog",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          781,
+          771
+        ]
+      },
+      {
+        "id": "transfer_size:/blog",
+        "status": "measured",
+        "value": 235502,
+        "unit": "bytes",
+        "label": "transfer size /blog",
+        "collectedBy": "median of 2 lighthouse runs after 1 discarded per-route warm-up (simulated/desktop/v5, chrome/151.0.7922.77) against the built app",
+        "samples": 2,
+        "sampleValues": [
+          235503,
+          235500
+        ]
+      }
+    ],
+    "protocol": {
+      "version": 1,
+      "workspace": "copy",
+      "cacheState": "cold",
+      "nodeModules": "fresh-install",
+      "gitMetadata": "absent",
+      "nodeVersion": "v24.18.0",
+      "platform": "linux",
+      "arch": "x64",
+      "buildCommand": "npm run build",
+      "buildSamples": 3,
+      "warmupSamples": 1,
+      "routeSamples": 5,
+      "routeWarmupSamples": 1,
+      "browser": "chrome/151.0.7922.77",
+      "lighthouseProfile": "simulated/desktop/v5",
+      "hostLabels": [
+        "arch:X64",
+        "env:github-hosted",
+        "image:ubuntu24",
+        "os:Linux"
+      ],
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      }
+    },
+    "warnings": [],
+    "elapsedMs": 212361,
+    "layer2aElapsedMs": 58765,
+    "benchmarkIndex": 2090
+  },
+  "comparison": {
+    "measurementPath": "fresh",
+    "dependenciesChanged": null,
+    "lockfileStatus": null,
+    "protocolsMatch": true,
+    "protocolMismatches": [],
+    "metrics": []
+  },
+  "verdict": "recorded",
+  "analysis": {
+    "outcome": "skipped",
+    "reason": "record mode — no comparison to analyse"
+  },
+  "warnings": []
+}

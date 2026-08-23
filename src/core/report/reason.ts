@@ -21,11 +21,21 @@ export interface RenderedReason {
   readonly truncated: boolean
 }
 
+/**
+ * A line that carries a failure signal. The last line is usually the most specific — npm and pnpm
+ * print their error last — but a build tool often prints a normal SUMMARY after the thing that
+ * killed it: the jinni re-run rendered *"ƒ (Dynamic) server-rendered on demand"*, Next's route
+ * legend, as the reason a build failed. So: the last line that looks like a failure, else our own
+ * summary line (the first), which is written to stand alone.
+ */
+const FAILURE_SIGNAL =
+  /\berror\b|\bfailed\b|\bcannot\b|\bnot found\b|timed out|killed|ERR_[A-Z_]+|exit code|EACCES|ENOENT|refus/i
+
 export function summariseReason(reason: string): RenderedReason {
   const lines = reason.split('\n').map((l) => l.trim()).filter((l) => l.length > 0)
   if (lines.length === 0) return { text: 'not collected', truncated: false }
 
-  let text = lines.at(-1)!
+  let text = [...lines].reverse().find((l) => FAILURE_SIGNAL.test(l)) ?? lines[0]!
   // Rule 2: a trailing colon promises a continuation that this rendering cannot show.
   if (text.endsWith(':')) {
     const trimmed = text.replace(/[;,]?\s*[^;,]*:$/, '').trim()

@@ -230,7 +230,13 @@ commit topology/date, not append order.
    `not measured` cells + "unavailable, not unchanged"; fix stanzas (schema 5) only where a remedy
    is knowable — fabricated helpfulness is rule 3 in reverse. Goldens byte-identical except the new
    `comment-nothing-measured.md`.
-4. **Verdict licensing + rendering cleanup (current).** From the trial (spec §9a decision table):
+4. **Verdict licensing + rendering cleanup — DONE (329 tests, schema 2.0).** Metric split shipped;
+   `inconclusive-context` on stale base (>50 commits OR >14 days) or differing lockfile — numbers
+   stand, attribution withheld, remedy names the likely integration branch; `ok` softens too, a
+   measurement failure does not. DECIDED: **deterministic byte classes are exempt from the 2%
+   relative floor** (bytes carry no noise; the floor was hiding the 140KB lodash case on a 9.6MB
+   bundle). Awaiting: jinni re-run output; live eval needs the API key.
+   *Superseded plan text:* From the trial (spec §9a decision table):
    split `bundle_size` → `client_bundle_size` (headline) + `build_output_size`; stale base and
    changed lockfile become **verdict-softening conditions** (`inconclusive-context`), not
    footnotes — numbers stand, attribution doesn't; group policy skips in the terminal; suppress

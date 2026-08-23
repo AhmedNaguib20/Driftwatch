@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 45 — 2026-08-20 — M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 46 — 2026-08-20 — M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -240,7 +240,15 @@ a week. Three mitigations, in increasing strength:
    alone is not enough. **No reported delta may span a time gap** — see §5.1 fifth instance.
 3. **Instruction counting (Layer 3).** Eliminates the problem entirely for CPU-bound work.
 
-Anything below a ~2% delta is treated as noise and not reported. **Additionally, each metric class
+Anything below a ~2% delta is treated as noise and not reported — **except the deterministic byte
+classes** (`client_bundle_size`, `build_output_size`, `transfer_size:*`), which are exempt from the
+relative floor and gated by their 1KB quantum alone (decided M8 step 4). *Why:* the floor is a
+**noise** rule, and bytes carry no noise (±2 bytes observed). Keeping it would have made the tool
+blind to its own canonical case — on jinni's 9.6 MB client bundle, 2% is ~197KB, so the 140KB
+lodash regression that M2 and M6 were built around scores 1.42% and reports "no change". A rule
+that hides the founding example on any large app is mis-scoped, not conservative. (Related
+correction: that "~140KB of lodash" was ~70KB client + ~70KB server — the old all-of-`.next`
+metric counted both.) **Additionally, each metric class
 carries its own absolute quantum — the instrument's resolution, a code constant, never config**
 (generalized at M4 step 1 from the M1 build quantum):
 
@@ -994,6 +1002,18 @@ hiding inside a protocol rule.
 
 | # | Finding | Decision |
 |---|---|---|
+*Step 4 (`e648ddb`, `02c329d`, `8f918bc`) — DONE, 329 tests.* Schema went to **major 2**: a rename
+removes a field a 1.x consumer reads, and our own rule says a break bumps the major; the superset
+test pins the break to exactly three explained differences so an *unplanned* break still fails.
+Stale-base thresholds: **>50 commits behind OR >14 days old, either alone** — ~a sprint of team
+activity, and two weeks is where a base predates the dependency bumps that make a delta somebody
+else's; the plan hunts the likelier integration target (staging/develop before main) so the remedy
+names the branch. Two judgement calls: **an `ok` run is softened too** (a stale base cannot license
+"nothing changed" either), and a **measurement failure stays plain `inconclusive`** — softening it
+would be an upgrade to a stronger word. Eval captures renamed to `build_output_size`, not
+`client_bundle_size`: those 2.3 MB numbers weighed all of `.next`, and calling them a client payload
+would assert something never measured.
+
 | 1 | **"bundle size" is 69 MB and isn't a bundle** — it's all of `.next` minus cache (3,224 files, ~11 MB server, ~9.6 MB client JS). A server-only change moves the headline metric though nothing shipped to a browser changed. `collectedBy` is honest; the label oversells. | **Split the metric**: `client_bundle_size` (what ships to browsers — the headline) and `build_output_size` (everything). Renaming a headline metric is a schema break; do it now, before anyone depends on it. |
 | 2 | **Stale base + changed dependencies still yields a confident verdict.** 143 commits / 2 months behind, 395 lockfile lines different, and the tool still says "regression +6.5%" with the dependency change as a quiet footnote. | Both are **verdict-softening conditions, not annotations**: when the base is far behind or the lockfile differs, the verdict downgrades to `inconclusive-context` — the numbers stand, the *attribution* doesn't. Same doctrine as movement-vs-drift: the strong claim needs a licence. |
 | 3 | Terminal doesn't group identical policy skips (the comment renderer does) — 24 rows of noise around 4 of signal. | Group in the terminal too; one renderer rule, both surfaces. |

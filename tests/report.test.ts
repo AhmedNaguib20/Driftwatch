@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildResult, compareMetrics, isCiHost, protocolMismatches, quantumFor } from '../src/core/index.js'
+import { buildResult, compareMetrics, isCiHost, protocolMismatches, quantumFor, summariseReason } from '../src/core/index.js'
 import type {
   BaselinePlan,
   BaseSideResult,
@@ -521,5 +521,41 @@ describe('verdict licensing — attribution needs a base worth comparing to (spe
     const build = r.comparison.metrics.find((m) => m.id === 'build_time')!
     expect(build.verdict).toBe('regressed')
     expect(build.delta).toEqual({ absolute: 1000, percent: 10 })
+  })
+})
+
+describe('reason rendering — the shown line must be the informative one (spec §9a)', () => {
+  it('picks the failure line even when the tool prints a normal summary after it', () => {
+    // Verbatim from the jinni re-run: the build died, then Next printed its route legend, and the
+    // terminal rendered the LEGEND as the reason. The last line is not always the specific one.
+    const reason = [
+      'build sample 2/3 failed (exit code 1):',
+      'Error: Command failed with exit code 1',
+      '○  (Static)   prerendered as static content',
+      'ƒ  (Dynamic)  server-rendered on demand',
+    ].join('\n')
+    const { text, truncated } = summariseReason(reason)
+    expect(text).toBe('Error: Command failed with exit code 1')
+    expect(truncated).toBe(true)
+  })
+
+  it('still prefers the LAST failure line — package managers print their error last', () => {
+    const reason = [
+      'install failed (code 1):',
+      'npm error code EUNSUPPORTEDPROTOCOL',
+      'npm error Unsupported URL Type "workspace:": workspace:*',
+    ].join('\n')
+    expect(summariseReason(reason).text).toMatch(/Unsupported URL Type/)
+  })
+
+  it('falls back to our own summary line when nothing looks like a failure', () => {
+    const reason = ['build sample 1/3 failed (exit code 1):', 'Route (app)  Size', '/  1.2 kB'].join('\n')
+    expect(summariseReason(reason).text).toBe('build sample 1/3 failed (exit code 1)')
+  })
+
+  it('a single-line reason is shown whole, with no pointer', () => {
+    const { text, truncated } = summariseReason('dynamic segment — no concrete URL to measure')
+    expect(text).toBe('dynamic segment — no concrete URL to measure')
+    expect(truncated).toBe(false)
   })
 })

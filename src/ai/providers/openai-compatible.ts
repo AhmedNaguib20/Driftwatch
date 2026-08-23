@@ -29,6 +29,18 @@ export function openAiCompatibleProvider(options: OpenAiCompatibleOptions): Prov
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), request.timeoutMs)
 
+      // DRIFTWATCH_DEBUG_WIRE=1 prints what actually crossed the wire — the request's cap and the
+      // response's finish_reason/usage. Off by default and never a behaviour change; it exists
+      // because "the fix is live" was assumed twice and was wrong both times. The API key is
+      // never among the logged fields.
+      const debugWire = process.env.DRIFTWATCH_DEBUG_WIRE === '1'
+      if (debugWire) {
+        console.error(
+          `[wire] → ${options.name}/${options.model} max_tokens=${request.maxOutputTokens} ` +
+            `temperature=${request.temperature} system=${request.system.length}B user=${request.user.length}B`,
+        )
+      }
+
       let response: Response
       try {
         response = await doFetch(`${options.baseUrl}/chat/completions`, {
@@ -69,6 +81,16 @@ export function openAiCompatibleProvider(options: OpenAiCompatibleOptions): Prov
 
       const payload = (await response.json().catch(() => null)) as CompletionsPayload | null
       const text = payload?.choices?.[0]?.message?.content
+      if (debugWire) {
+        console.error(
+          `[wire] ← finish_reason=${JSON.stringify(payload?.choices?.[0]?.finish_reason)} ` +
+            `completion_tokens=${payload?.usage?.completion_tokens} ` +
+            `prompt_tokens=${payload?.usage?.prompt_tokens} ` +
+            `content_bytes=${typeof text === 'string' ? text.length : 'none'} ` +
+            `model=${JSON.stringify(payload?.model)}`,
+        )
+        console.error(`[wire] ← content_tail=${JSON.stringify((text ?? '').slice(-160))}`)
+      }
       if (typeof text !== 'string' || text.length === 0) {
         throw new ProviderError('malformed', `${options.name} returned a response with no message content`)
       }

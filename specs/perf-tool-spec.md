@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 48 — 2026-08-20 — **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 49 — 2026-08-20 — M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1046,6 +1046,21 @@ reproducible, model-drift-caused failure on the largest case, with the analysis 
 behind it. Fix direction: raise the cap, and make truncation a *named* failure ("response
 truncated at N tokens") rather than generic "invalid JSON" — the retry currently re-sends a prompt
 that cannot fit, so it burns a second call to fail identically.
+
+*M9 (`45d8677`, 338 tests) — the diagnosis was wrong, and measuring corrected it.* Not model
+drift in the "got worse at formatting" sense: triage ranks **one suspect per changed file at ~47
+tokens**, so output scales with diff size — run-b (1 file) 104 tok, run-d (2) 146, run-c (3) 190,
+**run-a (31 files) 1559 against a 1000 cap.** A diff-size cliff that only the largest case crosses,
+which is exactly why it alone failed and why it reproduced. `TRIAGE_MAX_OUTPUT = 3200` (2× the
+measured largest, ~66 files), basis recorded in a comment like `BUILD_SAMPLES`.
+**Truncation is now a transport fact, not an inference**: the provider reads `finish_reason:
+"length"` and surfaces `truncated` — a cut-off response is usually *also* unparseable, which is
+precisely how this hid behind "invalid JSON" for two milestones. Retry policy: on truncation, retry
+once with the cap **doubled** (same prompt); on malformed, keep the cap and send the corrective
+prompt; never an identical request. One doubling only — a search would be guessing at the user's
+expense. **The deep stage had the same ceiling, thinner than it looked**: a 150-line fix modelled
+at 2360 against a 2500 cap (~94%); raised to 6000. Checking it pre-emptively was the point —
+verbosity only grows.
 
 *Reporting discipline note:* the previous session's 72-minute run and build failure **did not
 reproduce** (same command, 280s, symmetric samples) — reported as fact with the cause withheld,

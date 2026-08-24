@@ -14,7 +14,7 @@ export {
 export type { PerfConfig, ResolvedConfig } from './config-schema.js'
 export { renderConfig, writeConfigIfAbsent } from './config-write.js'
 export type { WriteResult } from './config-write.js'
-export { NO_CONFIG_NOTICE, loadConfig } from './config-load.js'
+export { NO_CONFIG_NOTICE, isKnownMetric, loadConfig } from './config-load.js'
 export type {
   Command,
   Evidence,

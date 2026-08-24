@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildResult, compareMetrics, isCiHost, protocolMismatches, quantumFor, summariseReason } from '../src/core/index.js'
+import {
+  DEFAULT_KEY_METRICS,
+  buildResult,
+  compareMetrics,
+  isCiHost,
+  isKnownMetric,
+  protocolMismatches,
+  quantumFor,
+  summariseReason,
+} from '../src/core/index.js'
 import type {
   BaselinePlan,
   BaseSideResult,
@@ -286,6 +295,15 @@ describe('run verdict', () => {
       [measured('build_time', 11000, 'ms', 'b'), measured('client_bundle_size', 100100, 'bytes', 's')],
     )
     expect(r.verdict).toBe('regression')
+  })
+
+  it('every default key metric is an id the tool can actually produce', () => {
+    // The guard for the class, not the instance: `bundle_size` sat in this default for three
+    // milestones after the split retired it, while the registry that validates perf.yml already
+    // knew it was gone. Cross-check them, and a future rename cannot demote a metric in silence.
+    for (const id of DEFAULT_KEY_METRICS) {
+      expect(isKnownMetric(id), `${id} is not a metric the tool produces`).toBe(true)
+    }
   })
 
   it('the headline byte metric is key by DEFAULT — no perf.yml required', () => {

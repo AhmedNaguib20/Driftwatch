@@ -1,4 +1,4 @@
-export { attachAnalysis, attachVerification, buildResult } from './build-result.js'
+export { DEFAULT_KEY_METRICS, attachAnalysis, attachVerification, buildResult } from './build-result.js'
 export { buildRecordResult } from './record-result.js'
 export type { BuildRecordInput } from './record-result.js'
 export type { BuildResultInput } from './build-result.js'

@@ -102,7 +102,12 @@ const KNOWN_METRIC_TOKENS = [
   'transfer_size',
 ] as const
 
-function isKnownMetric(entry: string): boolean {
+/**
+ * The registry of metric tokens the tool can actually produce. Exported because it is the answer
+ * to "is this id real?" — and a default that names an id nothing produces is exactly how the
+ * headline metric stopped being key for three milestones (M10 audit).
+ */
+export function isKnownMetric(entry: string): boolean {
   const token = entry.split(':')[0]!
   return (KNOWN_METRIC_TOKENS as readonly string[]).includes(token)
 }

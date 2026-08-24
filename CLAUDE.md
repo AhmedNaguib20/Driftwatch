@@ -6,6 +6,11 @@ regressions and suggest fixes.
 Full reasoning lives in `specs/perf-tool-spec.md`. **Read it before making design decisions.**
 This file is the short version — the rules that must hold in every session.
 
+**File ownership (adopted 2026-08-24):** Claude Code owns this file and edits it in the repo;
+Claude (planning) owns `specs/perf-tool-spec.md`. Planning-side edits to CLAUDE.md twice clobbered
+Claude Code's own corrections when the file was copied over wholesale. Planning may propose CLAUDE.md
+wording; Claude Code applies it.
+
 ---
 
 ## Hard rules
@@ -64,9 +69,9 @@ specs/            # design docs — the source of truth
 - Result JSON is the contract between core and every consumer. Version it from day one.
 - Every detection conclusion carries its evidence (which file, what it said). The AI stage will
   cite this trail; preserve it through every transformation.
-- Every measurement records: value, unit, how it was collected, and the samples behind it
-  (`samples` + `sampleValues`) — the raw spread, never a scalar "noise" flag. Noise is judged
-  where the rules live (the floor and the per-class quanta), not asserted per measurement.
+- Every measurement records: value, unit, how it was collected, and the raw spread (`samples` +
+  `sampleValues`) — never a scalar noise flag. Noise is judged where the rules live (floor,
+  per-class quantum), not summarised at collection time.
 - Errors never abort a run. A failed metric is marked `skipped` with a reason; the rest continue.
 - Config file is `perf.yml` at repo root, fully optional — sensible defaults without it.
 
@@ -244,9 +249,83 @@ commit topology/date, not append order.
    footnotes — numbers stand, attribution doesn't; group policy skips in the terminal; suppress
    the `--json` pointer where there is no error; name the measured app in the header.
 
-**Later:** drift alerting (recommended — activates the namesake loop: scheduled run →
-drift verdicts → issue/comment) vs launch planning. Pre-launch items list stands (TRIAGE_MAX_OUTPUT
-first among them).
+**M9 — The triage output ceiling — CLOSED (`45d8677`, eval 4/4).** Output caps sized from
+measurement, not guessed: triage output scales with a diff's FILE COUNT (~47 tokens per changed
+file), so a 31-file diff needed 1559 against a 1000 cap — the reason run-a failed at the M6 and M8
+closes. TRIAGE_MAX_OUTPUT 3200 (2x measured largest), DEEP_MAX_OUTPUT 6000. Truncation is named as
+its own failure (`finish_reason: length` -> `truncated`), and the corrective retry raises the cap
+rather than re-sending an identical request. Estimator validated live: 1741 actual vs 1559 modelled.
+  - [x] **The stale-build trap — the finding that outlived the milestone.** An eval "proving" the
+        M9 fix didn't work was executed by a five-day-old `dist/`: `bin` points at build output,
+        nothing rebuilt it, and `--version` was hardcoded `0.2.0` while the package said 0.6.0 —
+        the one thing that could have revealed it lied. Root cause was working across two entry
+        points (`npx tsx src/…` for development, `npx driftwatch` for eval) without noticing.
+  - [x] **Guards closed (`6880903`, schema 2.1):** a stale build now REFUSES to run (naming the
+        file, the lag, and `npm run build`; `DRIFTWATCH_ALLOW_STALE=1` downgrades it to a warning),
+        `prepare`/`prepublishOnly` hooks keep the npx path from going stale, `--version` reads the
+        real package version, failed AI calls keep their tokens + prompt version, and
+        `DRIFTWATCH_DEBUG_WIRE` is documented. **Principle (spec v50): every output must identify
+        the build that produced it** — terminal, eval, comment footer, and a required `build` block
+        in the result JSON. Two holes found while proving it: the suite spawned `dist/` without
+        building it (globalSetup now builds first), and a test helper swallowed stderr.
+  - [x] **Process rule:** when handing over a command, say which entry point it uses (`src` via
+        tsx vs `dist` via `npx driftwatch`) and whether it needs a build first.
+
+**M10 — Drift alerting — CLOSED (`121a966`, 391 tests; spec §9b/§9c/§9d).** The namesake loop:
+scheduled run -> drift verdicts -> issue. **Design axis: the alerting threshold is not the
+reporting threshold** — an alert spends someone's attention, a dashboard row costs nothing, so
+alerting exists only for what the PR flow structurally cannot see.
+  - [x] step 1 — the decision (`09068d8`): byte classes only, one protocol segment, >=5 points,
+        >=10% cumulative (2x the PR threshold), shape rule `net share >= 0.5`, and a window trimmed
+        to what follows the last PR-visible step — which is what makes the headline sentence
+        structurally true. Thresholds justified by MEANING: real byte segments drift <=0.01%, so
+        nothing here is noise-constrained. The shape rule changed under evidence (a step-count rule
+        died on real data; magnitude-based replaced it).
+  - [x] step 2 — the firing surface (`121a966`): one GitHub issue per condition, maintained through
+        four transitions. **"Superseded — not resolved"** is deliberately weaker than resolution:
+        no measurement shows the drift came back down and none shows it persists, so the claim is
+        retired on provenance, not evidence. State records what was SAID (only delivered events
+        reach `alerts.json`), and the issue is found by a stored opaque handle, never a search.
+  - [x] **The no-fire proof, run twice — with and without a token.** Silence has to be a decision,
+        not a missing credential. Nothing created, nothing commented, perf-data head unchanged.
+        A live *firing* proof was declined: forcing it would mean fabricating perf-data points, and
+        fabricating evidence to complete a proof is the one thing this project must never do.
+  - [x] **The decision audit (spec §9c) — now a periodic practice.** Found two decided-but-absent
+        rules, both the M8 class (*a change voids a guarantee without touching it*): the byte-class
+        floor exemption was never written, and `DEFAULT_KEY_METRICS` still named `bundle_size` after
+        the M8 split — so on a default config a client-bundle regression could not produce a
+        regression verdict, and **analysis never saw one for three milestones.** Both fixed; the
+        second closed as a class (the default key set is cross-checked against the metric registry).
+        Also here: per-class causal protocol relevance (`relevance.ts`) — breaks fell 5 -> 1 on the
+        real branch, because Chrome was splitting lines Chrome had no part in producing.
+
+**M11 — AI as a clean optional tier — IN PROGRESS (spec §9e).** Productising the promise:
+**driftwatch measures for free and forever with no key; AI explanation is an opt-in tier on the
+user's own key.** BYOK has been the design since day one; it was not yet clean.
+  - [x] step 1 — the contract and the audit (`0bcbfb3`, 403 tests). Feature matrix as code
+        (`src/core/tier.ts`), read by every surface and pinned to the README by a test. Ten paths
+        audited with every key variable scrubbed. Five findings fixed: clean runs named the tier on
+        every green PR (root cause a contract conflation — "nothing to explain" reported as
+        `skipped`, now `not_applicable`, silent for humans and still in the JSON); `--no-ai` nagged
+        in the comment but not the terminal; the keyless note framed the free tier as a fork-PR
+        anomaly (now tier-first, with `fromFork` plumbed so a fork gets the true mechanism instead
+        of advice it cannot act on); `auto_fix` with no key was an unexplained no-op; `eval` threw a
+        stack trace instead of refusing with a remedy. `tests/keyless.test.ts` holds the guarantee
+        at the rule-2 standard — the strong form is not "it works without a key" but **"it does not
+        mention the tier at all"**, with exactly one mention on a regression.
+  - [ ] A. key handling — env + per-provider fallbacks + `key_command`; refuse a literal key in
+        `perf.yml`
+  - [ ] B. `driftwatch doctor` — key present and from where, provider reachable, model exists, one
+        minimal call, typical cost
+  - [ ] C. cost estimate from M9's token model + optional `max_cost_per_run` that refuses rather
+        than surprises
+  - [ ] D. named provider errors with stanzas: 401, 402 (hit ourselves), 429, unknown model
+  - [ ] E. disclosure — README "what leaves your machine" generated from the golden contexts, plus
+        the secret-withholding list
+
+**Later:** launch planning (npm publish, name/license/visibility, onboarding). Pre-launch items:
+Pages leg (visibility); verdict-line length cap watch-item; LCP/TBT CI quanta values revisit as
+passive data accumulates.
 
 Do not start a milestone before the previous one's definition of done is met.
 

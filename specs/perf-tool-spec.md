@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 52 — 2026-08-24 — M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 53 — 2026-08-24 — decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -129,7 +129,7 @@ points. It then generates one file:
 ```yaml
 # perf.yml (auto-generated — edit only if you want to)
 detect: nextjs
-measure: [build_time, bundle_size, test_timings, api_latency]
+measure: [build_time, client_bundle_size, test_timings, api_latency]
 threshold: 5%
 block_merge: false   # warn only; teams opt in to blocking
 provider: deepseek   # deepseek | anthropic | openai — pluggable (§7.1)
@@ -315,11 +315,13 @@ only prompts and provider can.)
 **Route-latency scope note (M4 step 1):** request-level latency on prerendered (SSG) routes
 measures the file server, not the app — 1–2ms responses where ±1ms is 50–100% relative. Route
 selection therefore prioritizes dynamic/SSR routes; prerendered routes are excluded from
-`route_latency` by default (their regressions surface in `bundle_size`, and client-side cost lands
-with Lighthouse). Warm-up-then-median holds for servers exactly as for builds: every fresh boot runs
-6→5ms before settling at 4 (JIT/module warm-up) — §5.1's pattern, discarded identically. K=5 with
-1 warm-up, sequential fetches only (parallel requests contend). Route metrics stay non-key until
-the full Layer 2a picture exists.
+`route_latency` by default (their regressions surface in `client_bundle_size`, and client-side cost
+lands with Lighthouse). Warm-up-then-median holds for servers exactly as for builds: every fresh boot
+runs 6→5ms before settling at 4 (JIT/module warm-up) — §5.1's pattern, discarded identically. K=5
+with 1 warm-up, sequential fetches only (parallel requests contend). **Route metrics stay non-key**
+— originally "until the full Layer 2a picture exists", which it now does. Re-decided on current
+grounds at the M10 audit (§9c): browser and route timings on shared runners carry machine variance
+that belongs on the dashboard, not in a verdict a team may set to block merges.
 
 ### 5.1 Protocol symmetry — the general law
 
@@ -1170,6 +1172,50 @@ provenance, not metric units.
 and cumulative ≥10%, one step can never be half the total). It becomes load-bearing when a team
 raises `threshold` in `perf.yml`. Documented with its arithmetic rather than pretended to work.
 
+### 9c. The decision audit (M10, 2026-08-24) — a permanent practice
+
+Triggered by finding one decided-but-unimplemented rule. **The audit found a second, worse slip
+from the same family**, and both are the M8 class: *a change voids a guarantee without touching
+it.*
+
+- **Never written:** the byte-class floor exemption (v46). Fixed — one `isFloorExempt(id)` serving
+  `compareMetrics`, `drift.ts`, `movement.ts`; the founding case is now pinned
+  (client_bundle_size +140KB on 9.6MB → `regressed`, was `no_change`).
+- **Written correctly, then silently invalidated by a rename:** `DEFAULT_KEY_METRICS` still named
+  `bundle_size`, retired by the M8 split. On a *default* config — the documented normal case — a
+  client-bundle regression could not produce a regression verdict, **and since analysis runs only
+  on that verdict, the AI never saw a bundle regression at all.** It survived three milestones
+  because every run-verdict test used `build_time` as its key metric. Closed as a class, not an
+  instance: `DEFAULT_KEY_METRICS` is now cross-checked against `isKnownMetric` — the registry that
+  validates `perf.yml` had known the truth all along. A future rename fails a test instead of
+  demoting a metric in silence.
+
+**Rule adopted: the audit is periodic, not one-off.** Every decision recorded between an approval
+and the next task lives in that gap; the survey is how the gap gets closed. Everything else
+surveyed was verified present in code.
+
+**Three items surfaced by the audit, now decided:**
+1. *Expired, never re-decided:* "route metrics stay non-key until the full Layer 2a picture exists"
+   — it exists, and they are still non-key. **Keep them non-key.** The original reason expired but
+   a better one replaced it: CI browser/timing noise in verdicts is exactly what
+   environment-conditional quanta and the movement doctrine spent two milestones keeping out.
+   Recorded as decided-on-current-grounds, not as an unresolved leftover.
+2. *Doc ≠ code:* conventions promised "a confidence/noise flag" per measurement; the code records
+   samples + `sampleValues`, which is **richer**. Fix the doc, not the code — inventing a flag to
+   satisfy prose would be a scalar summary of data we already carry in full.
+3. *Stale prose:* two spec passages still name `bundle_size` post-split. Correct the prose.
+
+**Per-class causal relevance — implemented and measured.** `relevance.ts` declares each class with
+its collector and the fields that cannot be causal inputs, defaulting to relevant. Checked against
+actual collectors first: `transfer_size:*` comes from `lighthouse.ts` → stays browser-relevant
+despite being bytes; **`route_latency:*` turned out to use plain fetch against the booted server —
+no browser on the path — so it joins the build side.** On the real 39-entry branch, breaks fell
+**5 → 1** (only the driftwatch 0.5.0→0.6.0 bump survives); four were Chrome patch bumps splitting
+lines Chrome had no part in producing. Browser metrics keep exactly their prior strictness. *Also
+caught:* regenerating goldens deleted every protocol break from them, leaving the fixtures pinning
+nothing about §5.1 — both now carry an `lcp:/` series so a Chrome bump is pinned splitting the line
+Chrome actually measured.
+
 ## 10. Git History Replay — M7, CLOSED (2026-08-20)
 
 Checkout, build, and measure the last N commits to reconstruct a performance timeline
@@ -1215,7 +1261,8 @@ license the wall-clock classes don't have across time gaps: local sequential rep
 monotonically under sustained load/thermals (observed: build 9.94→12.47s across a 10-minute run,
 +22.3% "movements" on innocent commits), and CI record points carry the M5 **runner lottery**
 (build +65.3% on comment-only pushes). **Rule: the movement report judges deterministic byte
-classes only (`bundle_size`, `transfer_size:*`) in every environment.** Wall-clock classes stay in
+classes only (`client_bundle_size`, `build_output_size`, `transfer_size:*` — `bundle_size` was the
+pre-split id these replaced) in every environment.** Wall-clock classes stay in
 the data and on the dashboard but are labeled "not judged — cross-time-gap timing (§5.1 fifth
 instance / runner lottery)". The asymmetry with drift is deliberate and stated: **drift** is a
 segment-level *tendency* (weaker claim, keeps timing with its honest language); **movement** is

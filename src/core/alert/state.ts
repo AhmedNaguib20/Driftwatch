@@ -33,6 +33,15 @@ export interface AlertRecord {
   readonly windowStartSha: string
   readonly cumulativePercent: number
   readonly points: number
+  /** The protocol the claim was measured under — so a supersede can name what changed. */
+  readonly protocolLabel?: string | null
+  /**
+   * Where this alert was published, as an opaque handle the publishing surface owns and core
+   * never interprets — e.g. `{ kind: 'github-issue', ref: '42' }`. It exists so the next run can
+   * find what it already said without searching for it, and so hard rule 1 holds: core stores the
+   * string, the adapter gives it meaning.
+   */
+  readonly surface?: { readonly kind: string; readonly ref: string }
 }
 
 export interface AlertState {
@@ -57,10 +66,28 @@ export function parseAlertState(raw: string): AlertState | null {
 }
 
 export type AlertEvent =
-  | { readonly kind: 'fire'; readonly reason: 'new' | 'worsened'; readonly metric: string; readonly payload: AlertPayload; readonly record: AlertRecord; readonly supersedes: AlertRecord | null }
+  | {
+      readonly kind: 'fire'
+      readonly reason: 'new' | 'worsened'
+      readonly metric: string
+      readonly payload: AlertPayload
+      readonly record: AlertRecord
+      readonly supersedes: AlertRecord | null
+      /** What was last said about this condition — present only when reason is 'worsened'. */
+      readonly previousPercent?: number
+    }
   | { readonly kind: 'holding'; readonly metric: string; readonly record: AlertRecord; readonly cumulativePercent: number; readonly detail: string }
   | { readonly kind: 'resolved'; readonly metric: string; readonly record: AlertRecord; readonly cumulativePercent: number; readonly sentence: string }
-  | { readonly kind: 'superseded'; readonly metric: string; readonly record: AlertRecord; readonly detail: string }
+  | {
+      readonly kind: 'superseded'
+      readonly metric: string
+      readonly record: AlertRecord
+      /** Why the claim can no longer be continued — never a string to be matched on. */
+      readonly cause: 'protocol-break' | 'metric-absent'
+      /** The identity the data is measured under NOW — the thing that is no longer the same. */
+      readonly nowProtocolLabel?: string
+      readonly detail: string
+    }
   | { readonly kind: 'quiet'; readonly metric: string; readonly reason: DeclineReason; readonly detail: string }
 
 export interface StateOptions {
@@ -88,6 +115,9 @@ export function applyState(
       windowStartSha: w.first.sha,
       cumulativePercent: w.cumulativePercent,
       points: w.points.length,
+      protocolLabel: condition.protocolLabel,
+      // A widened alert is the SAME published thing, said again — it keeps its surface handle.
+      ...(prior?.surface && prior.windowStartSha === w.first.sha ? { surface: prior.surface } : {}),
     }
 
     if (!sameCondition) {
@@ -111,6 +141,7 @@ export function applyState(
         payload: alertPayload(condition, { span: options.span, previouslyAlertedPercent: prior.cumulativePercent }),
         record,
         supersedes: null,
+        previousPercent: prior.cumulativePercent,
       }
     }
 
@@ -158,6 +189,8 @@ export function applyState(
     kind: 'superseded',
     metric,
     record: prior,
+    cause: 'protocol-break',
+    ...(condition.protocolLabel ? { nowProtocolLabel: condition.protocolLabel } : {}),
     detail: 'the point it was measured from is no longer in the comparable segment (a protocol break) — the drift was never measured back down, so it is closed as superseded, not resolved',
   }
 }

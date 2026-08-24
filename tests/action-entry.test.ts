@@ -99,10 +99,23 @@ describe('event parsing', () => {
     if (event.kind === 'not-a-pr') expect(event.reason).toMatch(/default branch/)
   })
 
-  it('a schedule event stays a clean no-op', async () => {
-    const event = await parseActionEvent({ GITHUB_EVENT_NAME: 'schedule' })
+  it('a schedule event is the drift-alert run, and needs no payload to parse', async () => {
+    // Alerting's whole input is the recorded history; reading an event payload would only invent
+    // a way to fail. GITHUB_EVENT_PATH is deliberately absent here.
+    for (const name of ['schedule', 'workflow_dispatch']) {
+      const event = await parseActionEvent({ GITHUB_EVENT_NAME: name, GITHUB_REPOSITORY: 'acme/app' })
+      expect(event.kind, name).toBe('scheduled-alerts')
+      if (event.kind === 'scheduled-alerts') {
+        expect(event.owner).toBe('acme')
+        expect(event.repo).toBe('app')
+      }
+    }
+  })
+
+  it('an event driftwatch has no mode for is still a clean no-op', async () => {
+    const event = await parseActionEvent({ GITHUB_EVENT_NAME: 'issue_comment' })
     expect(event.kind).toBe('not-a-pr')
-    if (event.kind === 'not-a-pr') expect(event.reason).toMatch(/"schedule".*nothing to do/)
+    if (event.kind === 'not-a-pr') expect(event.reason).toMatch(/"issue_comment".*nothing to do/)
   })
 
   it('malformed payload degrades to a reasoned no-op', async () => {

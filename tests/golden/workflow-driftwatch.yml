@@ -9,6 +9,12 @@ on:
                          # The branch also carries a self-contained index.html dashboard.
                          # One-time (optional): Settings → Pages → Deploy from a branch →
                          # perf-data / root — driftwatch never changes repo settings itself.
+  schedule:
+    - cron: '17 6 * * 1' # drift alerting: reads the recorded history, measures nothing.
+                         # Weekly, because drift is an accumulation over many commits — and
+                         # because an alert fires once per condition, a faster cadence would
+                         # mostly re-read a state it has already agreed to stay quiet about.
+  workflow_dispatch:     # the same check, on demand
 
 # A superseded push should not waste a measurement (~2-4 minutes each).
 concurrency:
@@ -25,9 +31,12 @@ permissions:
 # Without it, GitHub returns 403 on PR creation; the run still succeeds and the comment says
 # a verified fix exists but the PR could not be opened.
   checks: write          # the non-blocking check run
+  issues: write          # drift alerts open ONE issue per condition and maintain it in place
 
 jobs:
   driftwatch:
+    # Measurement modes only. The scheduled drift check measures nothing and shares none of this.
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
     runs-on: ubuntu-latest
     # A hung setup step (observed: apt inside setup-chrome stalling for an hour) must never eat
     # the 6-hour default. A full run is ~10 minutes; anything past this is wedged, not slow.
@@ -74,3 +83,25 @@ jobs:
           # Settings → Secrets and variables → Actions → "DRIFTWATCH_API_KEY".
           # Without it, regressions are still measured and reported — just not explained.
           DRIFTWATCH_API_KEY: ${{ secrets.DRIFTWATCH_API_KEY }}
+
+  # Drift alerting (spec §9b). No Chrome, no build of your app, no measurement: it reads the
+  # perf-data branch and asks whether anything has drifted past the alert line within one
+  # protocol segment. Silence is the expected outcome, and the log says so in one line.
+  alerts:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Only the perf-data branch is read, and driftwatch fetches that itself — the working tree
+      # here is never measured, so a shallow clone is enough.
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci && npm run build
+
+      - uses: ./
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

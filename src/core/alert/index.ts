@@ -16,6 +16,8 @@ export type { AlertEvent, AlertRecord, AlertState, StateOptions } from './state.
 export { assessAlerts } from './assess.js'
 export type { AlertAssessment, AssessOptions } from './assess.js'
 export { readAlertState } from './read-state.js'
+export { writeAlertState } from './store-state.js'
+export type { StateWriteOutcome } from './store-state.js'
 export {
   ALERT_CUMULATIVE_PERCENT,
   ALERT_MIN_NET_SHARE,

@@ -10,3 +10,14 @@ export { upsertComment } from './comments.js'
 export { conclusionFor, publishCheck } from './checks.js'
 export { publishResult } from './publish.js'
 export type { PublishContext, PublishOutcome } from './publish.js'
+export { SURFACE_KIND, alertIssueMarker, deliverAlertEvent } from './alert-issues.js'
+export type { AlertIssueTarget, DeliveredEvent } from './alert-issues.js'
+export {
+  alertIssueTitle,
+  renderAlertIssue,
+  renderResolvedComment,
+  renderSupersededComment,
+  renderWidenedComment,
+} from './render-alert-issue.js'
+export { publishAlerts } from './publish-alerts.js'
+export type { AlertPublishContext, AlertPublishOutcome } from './publish-alerts.js'

@@ -1,7 +1,8 @@
 import type { MetricId } from '../detect/types.js'
 import { quantumFor } from '../report/compare-metrics.js'
 import { isAttributable } from '../trend/movement.js'
-import type { MetricTimeline, TimelinePoint } from '../trend/timeline.js'
+import { isFieldRelevant } from '../trend/relevance.js'
+import type { MetricTimeline, ProtocolIdentity, TimelinePoint } from '../trend/timeline.js'
 import {
   ALERT_CUMULATIVE_PERCENT,
   ALERT_MAX_STEP_SHARE,
@@ -39,6 +40,10 @@ export interface AlertCondition {
    * down? That is measured from the original claim's starting point, not from a later re-cut.
    */
   readonly segment: readonly TimelinePoint[]
+  /** The identity every point in the window was measured under — one protocol, by construction. */
+  readonly protocol: ProtocolIdentity | null
+  /** That identity as one line, filtered to the fields relevant to this class (spec §9b). */
+  readonly protocolLabel: string | null
   readonly qualifies: boolean
   readonly decline: { readonly reason: DeclineReason; readonly detail: string } | null
   /** The PR threshold the window was trimmed against — the number the payload sentence quotes. */
@@ -58,6 +63,8 @@ export function shouldAlert(timeline: MetricTimeline, options: AlertOptions = {}
     unit: timeline.unit,
     window,
     segment: segment?.points ?? [],
+    protocol: segment?.protocol ?? null,
+    protocolLabel: protocolLabel(timeline.id, segment?.protocol ?? null),
     qualifies: false,
     decline: { reason, detail },
     prThresholdPercent,
@@ -124,6 +131,8 @@ export function shouldAlert(timeline: MetricTimeline, options: AlertOptions = {}
     unit: timeline.unit,
     window,
     segment: segment?.points ?? [],
+    protocol: segment?.protocol ?? null,
+    protocolLabel: protocolLabel(timeline.id, segment?.protocol ?? null),
     qualifies: true,
     decline: null,
     prThresholdPercent,
@@ -144,4 +153,14 @@ function licenceDetail(unit: 'ms' | 'bytes'): string {
 
 function signed(percent: number): string {
   return percent > 0 ? `+${percent}` : `${percent}`
+}
+
+/** One-line protocol identity, showing only the fields that could have produced this metric. */
+function protocolLabel(metricId: string, p: ProtocolIdentity | null): string | null {
+  if (!p) return null
+  const parts = [`node ${p.nodeVersion}`, `${p.platform}/${p.arch}`]
+  if (isFieldRelevant('browser', metricId)) parts.push(p.browser)
+  if (p.hostLabels.length > 0) parts.push([...p.hostLabels].join(' '))
+  parts.push(`driftwatch ${p.driftwatchVersion}`)
+  return parts.join(' · ')
 }

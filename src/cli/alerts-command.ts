@@ -45,7 +45,15 @@ export async function alertsCommand(flags: { json: boolean; fetch: boolean; cwd:
   })
 
   if (flags.json) {
-    console.log(JSON.stringify({ ref: read.ref, entries: read.index.entries.length, ...assessment }, null, 2))
+    // priorState travels with the decision: whoever publishes needs to know what was already
+    // said, and the `state` field is only what SHOULD be stored if every event is delivered.
+    console.log(
+      JSON.stringify(
+        { ref: read.ref, entries: read.index.entries.length, priorState: stored.state, ...assessment },
+        null,
+        2,
+      ),
+    )
     return
   }
 

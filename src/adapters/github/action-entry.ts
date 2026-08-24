@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import { appendFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { ResultJson } from '../../core/index.js'
+import type { AlertAssessment, AlertState, ResultJson } from '../../core/index.js'
 import { parseActionEvent } from './event.js'
 import { preflightBase } from './preflight.js'
 import { createGithubClient } from './api-client.js'
@@ -29,6 +29,11 @@ export async function main(): Promise<void> {
 
   if (event.kind === 'record-push') {
     await recordMain(workspace, event.sha, event.branch)
+    return
+  }
+
+  if (event.kind === 'scheduled-alerts') {
+    await runDriftAlerts(workspace, event.owner, event.repo)
     return
   }
   // Actions passes inputs as INPUT_<NAME>; detection walks UP from cwd, never down, so a nested
@@ -142,6 +147,53 @@ export async function main(): Promise<void> {
  * Record mode: measure the landed commit absolutely, append it to the perf-data branch. Publish
  * failures warn and exit 0 — a missing trend point must never break a merge-to-main pipeline.
  */
+/**
+ * Drift alerting (M10): the scheduled run measures NOTHING. It reads the recorded history, asks
+ * whether anything has drifted far enough to be worth someone's attention, and — only if so —
+ * speaks. Silence is the expected outcome and is reported as one line, because a tool that goes
+ * quiet without saying why cannot be told from a tool that is broken.
+ */
+async function runDriftAlerts(workspace: string, owner: string, repo: string): Promise<void> {
+  const projectDir = process.env['INPUT_PROJECT-DIR']?.trim() || '.'
+  const decision = await runCliAlerts(path.resolve(workspace, projectDir))
+  if (!decision) {
+    process.exitCode = 1
+    return
+  }
+  if ('unavailable' in decision) {
+    console.log(`driftwatch alerts: ${decision.unavailable}`)
+    return
+  }
+
+  const { publishAlerts } = await import('./publish-alerts.js')
+  const outcome = await publishAlerts(
+    { events: decision.events, notLicensed: decision.notLicensed, state: decision.state },
+    decision.priorState,
+    { owner, repo, ...(process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : {}) },
+  )
+  console.log(outcome.log)
+  for (const warning of outcome.warnings) console.error(`driftwatch: warning: ${warning}`)
+  for (const delivered of outcome.delivered) {
+    if (delivered.url) console.log(`driftwatch alerts: ${delivered.event.metric} ${delivered.action} — ${delivered.url}`)
+  }
+
+  // State records what was SAID: nothing delivered, nothing written, and the next run tries again.
+  if (outcome.delivered.length > 0) {
+    const { writeAlertState } = await import('../../core/index.js')
+    const written = await writeAlertState(workspace, outcome.state, true)
+    console.log(`driftwatch alerts: ${written.detail}`)
+    if (!written.ok) process.exitCode = 0 // never fail the user's CI over bookkeeping
+  }
+
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    const lines = ['### driftwatch — drift alerts', '', outcome.log]
+    for (const d of outcome.delivered) {
+      lines.push(`- ${d.event.metric}: **${d.action}**${d.url ? ` — ${d.url}` : ''}`)
+    }
+    await appendFile(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n', 'utf8')
+  }
+}
+
 async function recordMain(workspace: string, sha: string, branch: string): Promise<void> {
   const projectDir = process.env['INPUT_PROJECT-DIR']?.trim() || '.'
   const projectCwd = path.resolve(workspace, projectDir)
@@ -164,6 +216,42 @@ async function recordMain(workspace: string, sha: string, branch: string): Promi
   if (process.env.GITHUB_STEP_SUMMARY) {
     await appendFile(process.env.GITHUB_STEP_SUMMARY, renderComment(result) + '\n', 'utf8')
   }
+}
+
+interface AlertDecision {
+  readonly events: AlertAssessment['events']
+  readonly notLicensed: AlertAssessment['notLicensed']
+  readonly state: AlertState
+  readonly priorState: AlertState
+}
+
+/** `driftwatch alerts --json` — the adapter consumes the contract, exactly like any consumer. */
+async function runCliAlerts(cwd: string): Promise<AlertDecision | { unavailable: string } | null> {
+  const cliPath = path.resolve(fileURLToPath(import.meta.url), '../../../cli/index.js')
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [cliPath, 'alerts', '--json', '--cwd', cwd], {
+      stdio: ['ignore', 'pipe', 'inherit'],
+    })
+    let stdout = ''
+    child.stdout.on('data', (chunk: Buffer) => (stdout += chunk.toString('utf8')))
+    child.on('error', (error) => {
+      console.error(`driftwatch: the alerts run failed to start: ${error.message}`)
+      resolve(null)
+    })
+    child.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`driftwatch: the alerts run exited with code ${code}`)
+        resolve(null)
+        return
+      }
+      try {
+        resolve(JSON.parse(stdout) as AlertDecision | { unavailable: string })
+      } catch {
+        console.error('driftwatch: the alerts run produced unparseable JSON')
+        resolve(null)
+      }
+    })
+  })
 }
 
 async function runCliRecord(cwd: string): Promise<ResultJson | null> {

@@ -56,6 +56,7 @@ export function assessAlerts(index: IndexFile, state: AlertState, options: Asses
       kind: 'superseded',
       metric: record.metric,
       record,
+      cause: 'metric-absent',
       detail: 'the metric is no longer present in the recorded history — closed as superseded, not resolved',
     })
   }

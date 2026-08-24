@@ -28,6 +28,12 @@ export type ActionEvent =
       readonly sha: string
       readonly branch: string
     }
+  | {
+      /** A scheduled (or manually dispatched) drift-alert run: reads history, measures nothing. */
+      readonly kind: 'scheduled-alerts'
+      readonly owner: string
+      readonly repo: string
+    }
   | { readonly kind: 'not-a-pr'; readonly reason: string }
 
 interface EventPayload {
@@ -46,10 +52,16 @@ export async function parseActionEvent(
   readFileImpl: (path: string) => Promise<string> = (p) => readFile(p, 'utf8'),
 ): Promise<ActionEvent> {
   const eventName = env.GITHUB_EVENT_NAME ?? '(unset)'
-  if (eventName !== 'pull_request' && eventName !== 'pull_request_target' && eventName !== 'push') {
+  const scheduled = eventName === 'schedule' || eventName === 'workflow_dispatch'
+  if (
+    eventName !== 'pull_request' &&
+    eventName !== 'pull_request_target' &&
+    eventName !== 'push' &&
+    !scheduled
+  ) {
     return {
       kind: 'not-a-pr',
-      reason: `driftwatch runs on pull_request and push events; this is "${eventName}" — nothing to do`,
+      reason: `driftwatch runs on pull_request, push and schedule events; this is "${eventName}" — nothing to do`,
     }
   }
 
@@ -58,6 +70,10 @@ export async function parseActionEvent(
   if (!owner || !repo) {
     return { kind: 'not-a-pr', reason: 'GITHUB_REPOSITORY is not set or malformed' }
   }
+
+  // Drift alerting needs no event payload at all: its whole input is the recorded history on the
+  // perf-data branch. Parsing one would only invent a way to fail.
+  if (scheduled) return { kind: 'scheduled-alerts', owner, repo }
 
   const eventPath = env.GITHUB_EVENT_PATH
   if (!eventPath) {

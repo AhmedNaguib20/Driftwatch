@@ -6,11 +6,16 @@ import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import {
+  ALERT_STATE_FILE,
   PERF_DATA_BRANCH,
   appendToPerfData,
+  emptyAlertState,
   emptyIndex,
   appendEntry,
+  parseAlertState,
   parseIndex,
+  readAlertState,
+  writeAlertState,
 } from '../src/core/index.js'
 import type { ResultJson } from '../src/core/index.js'
 
@@ -206,4 +211,60 @@ describe('index file', () => {
     expect(parseIndex('{"someone":"else"}')).toBeNull()
     expect(parseIndex('not json')).toBeNull()
   })
+})
+
+describe('alert state on the perf-data branch', () => {
+  it('writes, pushes and reads back — beside the data it describes', async () => {
+    const { work, bare } = await repoWithOrigin()
+    await appendToPerfData(work, await recordResult('a'.repeat(40)), 'a'.repeat(40), 'main', true)
+
+    const state = {
+      ...emptyAlertState(),
+      open: [
+        {
+          metric: 'client_bundle_size',
+          firedAt: '2026-08-24T09:00:00.000Z',
+          atSha: 'b'.repeat(40),
+          windowStartSha: 'c'.repeat(40),
+          cumulativePercent: 10.91,
+          points: 14,
+          protocolLabel: 'node v24.18.0 · linux/x64 · driftwatch 0.6.0',
+          surface: { kind: 'github-issue', ref: '42' },
+        },
+      ],
+    }
+
+    const written = await writeAlertState(work, state, true)
+    expect(written.ok, written.detail).toBe(true)
+    expect(written.detail).toMatch(/1 open/)
+
+    // On the branch, in the bare origin — not just locally.
+    const onOrigin = await git(bare, 'show', `${PERF_DATA_BRANCH}:${ALERT_STATE_FILE}`)
+    expect(parseAlertState(onOrigin)?.open[0]?.surface).toEqual({ kind: 'github-issue', ref: '42' })
+
+    // And the reader finds it, surface handle intact — that handle is how the next run knows
+    // which issue it already opened.
+    const read = await readAlertState(work, `refs/heads/${PERF_DATA_BRANCH}`)
+    expect('state' in read && read.state.open[0]?.metric).toBe('client_bundle_size')
+    expect('state' in read && read.state.open[0]?.surface?.ref).toBe('42')
+  }, 60_000)
+
+  it('never CREATES perf-data — alerting only ever reads a history that already exists', async () => {
+    const { work } = await repoWithOrigin()
+
+    const written = await writeAlertState(work, emptyAlertState(), false)
+    expect(written.ok).toBe(false)
+    expect(written.detail).toMatch(/perf-data/)
+
+    const branches = await git(work, 'branch', '--list', PERF_DATA_BRANCH)
+    expect(branches).toBe('')
+  }, 60_000)
+
+  it('an absent state file reads as empty, not as an error', async () => {
+    const { work } = await repoWithOrigin()
+    await appendToPerfData(work, await recordResult('a'.repeat(40)), 'a'.repeat(40), 'main', true)
+
+    const read = await readAlertState(work, `refs/heads/${PERF_DATA_BRANCH}`)
+    expect('state' in read && read.state.open).toEqual([])
+  }, 60_000)
 })

@@ -39,6 +39,12 @@ export interface AlertPayload {
   readonly prThresholdPercent: number
   readonly from: { readonly sha: string; readonly value: number }
   readonly to: { readonly sha: string; readonly value: number }
+  readonly cumulativeAbsolute: number
+  readonly unit: 'ms' | 'bytes'
+  /** Share of all movement that went one way, 0-1 — the monotone-ish measure. */
+  readonly netShare: number
+  /** The one protocol the whole window was measured under, for surfaces that show their work. */
+  readonly protocolLabel: string | null
 }
 
 export function alertPayload(
@@ -78,6 +84,10 @@ export function alertPayload(
     prThresholdPercent: condition.prThresholdPercent,
     from: { sha: w.first.sha, value: w.first.value },
     to: { sha: w.latest.sha, value: w.latest.value },
+    cumulativeAbsolute: w.cumulativeAbsolute,
+    unit: condition.unit,
+    netShare: Math.round(w.netShare * 100) / 100,
+    protocolLabel: condition.protocolLabel,
   }
 }
 

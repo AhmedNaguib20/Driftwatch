@@ -64,7 +64,9 @@ specs/            # design docs — the source of truth
 - Result JSON is the contract between core and every consumer. Version it from day one.
 - Every detection conclusion carries its evidence (which file, what it said). The AI stage will
   cite this trail; preserve it through every transformation.
-- Every measurement records: value, unit, how it was collected, and a confidence/noise flag.
+- Every measurement records: value, unit, how it was collected, and the samples behind it
+  (`samples` + `sampleValues`) — the raw spread, never a scalar "noise" flag. Noise is judged
+  where the rules live (the floor and the per-class quanta), not asserted per measurement.
 - Errors never abort a run. A failed metric is marked `skipped` with a reason; the rest continue.
 - Config file is `perf.yml` at repo root, fully optional — sensible defaults without it.
 

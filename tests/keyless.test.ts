@@ -56,7 +56,12 @@ async function tinyRepo(): Promise<string> {
     `const fs=require('fs');fs.mkdirSync('.next/static',{recursive:true});fs.writeFileSync('.next/static/app.js','x'.repeat(5000))`,
   )
   await write('package-lock.json', JSON.stringify({ name: 'p', lockfileVersion: 3, requires: true, packages: { '': { name: 'p' } } }))
-  await write('.gitignore', 'node_modules/\n.next/\n.perf/\nperf.yml\n')
+  // Byte classes only. A 50ms build measured twice under parallel test load can swing past the
+  // threshold and produce a REAL regression — which would then legitimately print the single
+  // mention and fail a silence assertion for the right reason. Bytes are deterministic (the same
+  // doctrine that licenses movement attribution), so the verdict here is controlled by the test.
+  await write('perf.yml', 'detect: nextjs\nmeasure: [client_bundle_size]\n')
+  await write('.gitignore', 'node_modules/\n.next/\n.perf/\n')
   await exec('git', ['-C', dir, 'add', '-A'])
   await exec('git', ['-C', dir, 'commit', '-q', '-m', 'base'])
   await write('node_modules/pkg/index.js', 'dep')

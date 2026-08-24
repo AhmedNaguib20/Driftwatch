@@ -179,6 +179,7 @@ function regressionResult(
     profile, config, plan, base,
     current: side(sides?.current ?? [measured('build_time', 305, 'ms'), measured('client_bundle_size', 5041, 'bytes')], currentProto),
     now: () => new Date('2026-08-19T12:00:00Z'),
+    build: { version: '0.0.0-test', entry: 'dist' as const, builtAt: '2026-08-24T00:00:00.000Z' },
   })
   return attachAnalysis(result, analysis)
 }

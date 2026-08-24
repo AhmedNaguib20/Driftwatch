@@ -59,4 +59,4 @@ Measurement numbers, raw samples, protocols, the evidence trail, a diffstat, and
 </details>
 
 ---
-<sub>Baseline `main@c0ffee0` (cached) · driftwatch v0.2.0 · analysed by deepseek (deepseek-chat) · prompts v1 · 6.6k→510 tokens</sub>
+<sub>Baseline `main@c0ffee0` (cached) · driftwatch v0.0.0-test (dist built 2026-08-24 00:00Z) · analysed by deepseek (deepseek-chat) · prompts v1 · 6.6k→510 tokens</sub>

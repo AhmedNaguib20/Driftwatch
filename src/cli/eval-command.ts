@@ -10,6 +10,11 @@ import pc from 'picocolors'
 export async function evalCommand(options: { cases: string }): Promise<void> {
   const { runEvalCases } = await import('../ai/eval/runner.js')
 
+  // Every output identifies its build (spec v50) — the eval most of all: it is the surface where
+  // a stale binary looked like a model problem for two milestones.
+  const { buildStamp } = await import('../core/index.js')
+  console.log(pc.dim(buildStamp()))
+
   const results = await runEvalCases(path.resolve(options.cases), (m) =>
     console.error(pc.dim(`→ ${m}`)),
   )

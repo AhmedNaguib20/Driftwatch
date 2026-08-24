@@ -1,4 +1,4 @@
-import { shortReason, softeningSummary, summariseReason } from '../../core/index.js'
+import { buildStamp, shortReason, softeningSummary, summariseReason } from '../../core/index.js'
 import type { MetricComparison, ResultJson } from '../../core/index.js'
 import { formatPercent, formatValue } from './format.js'
 import { renderAnalysisFooterParts, renderAnalysisSection } from './render-analysis.js'
@@ -293,7 +293,9 @@ function footer(result: ResultJson): string {
       `Baseline \`${result.config.base}@${result.base.sha.slice(0, 7)}\`${result.base.fromCache ? ' (cached)' : ''}`,
     )
   }
-  parts.push(`driftwatch v${result.driftwatchVersion}`)
+  // The build, not just the version (spec v50): src-vs-dist and the build time are what tell a
+  // reader whether the comment came from the code they think it did.
+  parts.push(buildStamp(result.build))
   parts.push(...renderAnalysisFooterParts(result.analysis))
   if (result.verification?.devOverride) {
     parts.push('⚠ DEV OVERRIDE: verification measured a substituted diff, not the analysis fix')

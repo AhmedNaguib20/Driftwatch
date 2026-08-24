@@ -84,3 +84,28 @@ reported as exactly that.
 Node 20+, git. Next.js projects are supported today; more frameworks as milestones land.
 Lighthouse metrics additionally need Chrome — in CI the generated workflow pins one
 (see the workflow comments for why the pin exists and how to bump it deliberately).
+
+## Environment variables
+
+| Variable | Effect |
+|---|---|
+| `DRIFTWATCH_API_KEY` | Your provider key. Analysis runs only when it is set; nothing is sent without it. |
+| `DRIFTWATCH_NO_AI=1` | Fully offline run — the AI module graph is never loaded. Same as `--no-ai`. |
+| `DRIFTWATCH_HOST_LABELS` | Machine-class labels (CI runners set these). Present ⇒ CI browser-metric quanta; they also join the protocol identity, so a comparison never crosses machine classes silently. |
+| `DRIFTWATCH_ALLOW_STALE=1` | Run a compiled build that is older than its source. Driftwatch refuses by default — a stale `dist/` once ran for five days while both the tool and its authors believed a fix was live. |
+| `DRIFTWATCH_DEBUG_WIRE=1` | Print what actually crossed the wire to the AI provider: the request's `max_tokens`, and the response's `finish_reason`, `usage`, and content length. The API key is never among the logged fields. This is the flag that settled a failure misreported as "invalid JSON" for two milestones — when a model answer looks wrong, check the wire before changing a prompt. |
+| `DRIFTWATCH_DEV=1` + `DRIFTWATCH_DEV_FIX_DIFF=<path>` | Development only: substitute a diff for the AI's suggested fix before verification, so the "a plausible fix that must NOT open a PR" case stays reproducible. Every surface stamps `devOverride`, so no output of such a run can pass as organic. |
+
+### Which build am I running?
+
+Every report identifies the build that produced it — terminal header, eval header, PR-comment
+footer, and the `build` block of the result JSON:
+
+```
+driftwatch v0.6.0 (dist built 2026-08-24 07:29Z)   # the compiled binary
+driftwatch v0.6.0 (from source)                    # tsx / vitest, running TypeScript directly
+```
+
+`npx driftwatch` rebuilds automatically (the `prepare` hook), so the common path cannot go stale.
+Any path that skips the install — running `dist/` directly, or a checkout whose source has moved
+since the last build — is refused with the exact command to fix it.

@@ -84,6 +84,21 @@ export type AnalysisReport =
       readonly stages: { readonly triage: StageStats; readonly deep?: StageStats }
       readonly context: { readonly triage: ContextManifest; readonly deep?: ContextManifest }
     }
-  | { readonly outcome: 'skipped'; readonly reason: string }
+  | {
+      readonly outcome: 'skipped'
+      readonly reason: string
+      /**
+       * What the failed attempt cost, when it reached the provider at all (spec v50). A failed
+       * call still spent tokens and still used a prompt version — dropping them hides the spend
+       * and the provenance, and provenance is exactly what a misdiagnosed failure needs.
+       */
+      readonly spend?: {
+        readonly stage: 'triage' | 'deep'
+        readonly provider: string
+        readonly model: string
+        readonly promptVersion: number
+        readonly tokens: { readonly input: number; readonly output: number }
+      }
+    }
   | { readonly outcome: 'no_key' }
   | { readonly outcome: 'disabled' }

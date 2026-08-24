@@ -232,6 +232,7 @@ describe('result JSON contract (schema v1)', () => {
         base,
         current: currentSide,
         now: () => new Date('2026-08-19T12:00:00.000Z'),
+        build: { version: '0.0.0-test', entry: 'dist' as const, builtAt: '2026-08-24T00:00:00.000Z' },
       }),
       GOLDEN_ANALYSIS,
     )

@@ -1,4 +1,6 @@
 import { DRIFTWATCH_VERSION } from '../baseline/cache.js'
+import { buildIdentity } from '../build-identity.js'
+import type { BuildIdentity } from '../build-identity.js'
 import type { ResolvedConfig } from '../detect/config-schema.js'
 import type { ProjectProfile } from '../detect/types.js'
 import type { SideMeasurement } from '../measure/types.js'
@@ -23,16 +25,20 @@ export interface BuildRecordInput {
   readonly sha: string | null
   readonly branch: string | null
   readonly now?: () => Date
+  /** Injected so golden files stay byte-stable; defaults to the running build (spec v50). */
+  readonly build?: BuildIdentity
 }
 
 export function buildRecordResult(input: BuildRecordInput): ResultJson {
   const { profile, config, current } = input
   const now = input.now ?? (() => new Date())
+  const build = input.build ?? buildIdentity()
 
   return {
     schemaVersion: RESULT_SCHEMA_VERSION,
     schemaMinorVersion: RESULT_SCHEMA_MINOR,
     driftwatchVersion: DRIFTWATCH_VERSION,
+    build,
     mode: 'record',
     createdAt: now().toISOString(),
     project: {

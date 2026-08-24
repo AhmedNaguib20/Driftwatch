@@ -1,14 +1,37 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
+import pc from 'picocolors'
+import {
+  DRIFTWATCH_VERSION,
+  STALE_BUILD_ENV,
+  buildStamp,
+  checkStaleness,
+  staleBuildRefusal,
+} from '../core/index.js'
 import { initCommand } from './init-command.js'
 import { runCommand } from './run-command.js'
+
+/**
+ * Startup guard (spec v50): a compiled build older than its source is REFUSED, not warned about.
+ * A warning is what we would have scrolled past; five days of both of us reasoning about code
+ * that was not running is what it actually cost. The build hook in package.json covers install
+ * and publish; this covers the case the hook cannot see — a source edit mid-session.
+ */
+const staleness = checkStaleness()
+if (staleness.stale && process.env[STALE_BUILD_ENV] !== '1') {
+  console.error(pc.red(staleBuildRefusal(staleness.detail!)))
+  process.exit(1)
+}
+if (staleness.stale) {
+  console.error(pc.yellow(`warning: running a stale build (${STALE_BUILD_ENV}=1) — ${staleness.detail}`))
+}
 
 const program = new Command()
 
 program
   .name('driftwatch')
   .description('Measure code performance, compare against a baseline, explain regressions.')
-  .version('0.2.0')
+  .version(`${DRIFTWATCH_VERSION} — ${buildStamp()}`)
 
 program
   .command('run', { isDefault: true })

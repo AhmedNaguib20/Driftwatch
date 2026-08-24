@@ -1,6 +1,8 @@
 import type { BaselinePlan, BaselineUnavailable } from '../baseline/plan.js'
 import type { BaseSideResult } from '../baseline/baseline.js'
 import { DRIFTWATCH_VERSION } from '../baseline/cache.js'
+import { buildIdentity } from '../build-identity.js'
+import type { BuildIdentity } from '../build-identity.js'
 import type { ResolvedConfig } from '../detect/config-schema.js'
 import type { ProjectProfile } from '../detect/types.js'
 import type { SideMeasurement } from '../measure/types.js'
@@ -23,11 +25,14 @@ export interface BuildResultInput {
   /** Defaults to 'fresh' — see MeasurementPath. */
   readonly measurementPath?: MeasurementPath
   readonly now?: () => Date
+  /** Injected so golden files stay byte-stable; defaults to the running build (spec v50). */
+  readonly build?: BuildIdentity
 }
 
 export function buildResult(input: BuildResultInput): ResultJson {
   const { profile, config, plan, base, current } = input
   const now = input.now ?? (() => new Date())
+  const build = input.build ?? buildIdentity()
 
   const comparison = buildComparison(input)
 
@@ -47,6 +52,7 @@ export function buildResult(input: BuildResultInput): ResultJson {
     schemaVersion: RESULT_SCHEMA_VERSION,
     schemaMinorVersion: RESULT_SCHEMA_MINOR,
     driftwatchVersion: DRIFTWATCH_VERSION,
+    build,
     mode: 'compare',
     createdAt: now().toISOString(),
     project: {

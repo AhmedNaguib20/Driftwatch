@@ -33,4 +33,4 @@ Full per-metric accounting (methodology, raw samples per side): [run summary](ht
 </details>
 
 ---
-<sub>driftwatch v0.2.0</sub>
+<sub>driftwatch v0.0.0-test (dist built 2026-08-24 00:00Z)</sub>

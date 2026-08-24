@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 49 — 2026-08-20 — M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 50 — 2026-08-20 — **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1061,6 +1061,25 @@ prompt; never an identical request. One doubling only — a search would be gues
 expense. **The deep stage had the same ceiling, thinner than it looked**: a 150-line fix modelled
 at 2360 against a 2500 cap (~94%); raised to 6000. Checking it pre-emptively was the point —
 verbosity only grows.
+
+*M9 CLOSED — eval 4/4 live.* run-a passes: triage out **1741** tokens against the modelled 1559
+(12% over — the estimator is sound, and the 3200 cap keeps ~1.8× headroom), suspects named,
+confidence 0.9, ~$0.013 for a 31-file diff. Deep outputs 312–554, far inside 6000.
+
+**The stale-build trap — the real finding, and a new principle.** The first "M9 didn't work" eval
+was executed by a **five-day-old `dist/`**: `bin` points at build output, nothing rebuilds it, and
+nothing warns when `dist/` predates `src/`. Worse, the session had been running two different
+entry points — `npx tsx src/…` for development, `npx driftwatch` (dist) for eval — so *the fix was
+never in the binary under test*. The tell was the error text: the old generic message where the new
+named one should have been. `--version` was hardcoded `0.2.0` while the package said 0.6.0, so the
+one thing that could have revealed it lied.
+
+**Principle: every output must identify the build that produced it.** Driftwatch records the
+measurement protocol meticulously — node, browser, platform, tool version — and then let its own
+eval run anonymously for five days. Protocol identity applies to the tool itself: version, build
+timestamp, and entry point belong in every report. (Related but exonerated: `prompts v? · 0→0 tok`
+is the *failure path's* shape, not a staleness signal — a skipped analysis records no stages. It is
+still a real gap: a failed call consumed tokens and used a prompt version, and both are discarded.)
 
 *Reporting discipline note:* the previous session's 72-minute run and build failure **did not
 reproduce** (same command, 280s, symmetric samples) — reported as fact with the cause withheld,

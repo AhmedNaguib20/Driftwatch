@@ -68,6 +68,8 @@ export async function jsonCall<T>(
       `${provider.name} response truncated at ${second.tokens.output} tokens (cap ${cap})` +
         (first.truncated ? ` — already retried once with the cap raised from ${request.maxOutputTokens}` : '') +
         `. The model ran out of room, not out of ability: raise the stage's output cap.`,
+      tokens,
+      second.model,
     )
   }
 
@@ -75,6 +77,8 @@ export async function jsonCall<T>(
     'malformed',
     `${provider.name} returned invalid JSON twice — last problem: ${secondAttempt.ok ? 'unknown' : secondAttempt.problem}; ` +
       `last response started: ${JSON.stringify(second.text.slice(0, 200))}`,
+    tokens,
+    second.model,
   )
 }
 

@@ -1,5 +1,5 @@
 import pc from 'picocolors'
-import { shortReason, softeningSummary, summariseReason } from '../core/index.js'
+import { buildStamp, shortReason, softeningSummary, summariseReason } from '../core/index.js'
 import type { MetricComparison, ResultJson } from '../core/index.js'
 import { formatPercent, formatValue, padVisible, visibleLength } from './format.js'
 
@@ -13,6 +13,8 @@ import { formatPercent, formatValue, padVisible, visibleLength } from './format.
 export function renderResult(result: ResultJson): string {
   const lines: string[] = []
 
+  // Every output identifies its build (spec v50) — the header line a stale binary could not fake.
+  lines.push(pc.dim(buildStamp(result.build)))
   const app = measuredApp(result)
   if (app) lines.push(pc.dim(`measuring ${app}`))
   lines.push(verdictLine(result))

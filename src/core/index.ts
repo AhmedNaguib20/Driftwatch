@@ -18,3 +18,12 @@ export { recordRun } from './record.js'
 export type { RecordOptions } from './record.js'
 export { runDriftwatch } from './run.js'
 export type { RunOptions as DriftwatchRunOptions } from './run.js'
+export {
+  DRIFTWATCH_VERSION,
+  STALE_BUILD_ENV,
+  buildIdentity,
+  buildStamp,
+  checkStaleness,
+  staleBuildRefusal,
+} from './build-identity.js'
+export type { BuildIdentity, Staleness } from './build-identity.js'

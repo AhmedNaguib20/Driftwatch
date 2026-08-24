@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { rm, writeFile, mkdir } from 'node:fs/promises'
+import { rm, utimes, writeFile, mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -26,6 +26,14 @@ async function lint(file: string): Promise<{ code: number; output: string }> {
   }
 }
 
+/**
+ * Lint fixtures live at real src/core paths — the rule keys on the path, so they cannot live in
+ * a temp dir. They are NOT source changes, and must not read as one: the staleness guard compares
+ * src mtimes against dist, and a fixture claiming to be newer than the build would make every
+ * concurrently-spawned CLI test refuse to run. Stamped older than any real build, deliberately.
+ */
+const FIXTURE_MTIME = new Date('2000-01-01T00:00:00Z')
+
 const scratch: string[] = []
 
 async function writeCoreFile(name: string, contents: string): Promise<string> {
@@ -33,6 +41,7 @@ async function writeCoreFile(name: string, contents: string): Promise<string> {
   await mkdir(dir, { recursive: true })
   const file = path.join(dir, name)
   await writeFile(file, contents, 'utf8')
+  await utimes(file, FIXTURE_MTIME, FIXTURE_MTIME)
   scratch.push(dir)
   return file
 }
@@ -91,6 +100,7 @@ describe('src/core must not import from src/adapters', () => {
       `export const load = () => import('../github/index.js')\n`,
       'utf8',
     )
+    await utimes(file, FIXTURE_MTIME, FIXTURE_MTIME)
     const { output } = await lint(file)
     expect(output).not.toContain('no-core-to-adapters')
   })

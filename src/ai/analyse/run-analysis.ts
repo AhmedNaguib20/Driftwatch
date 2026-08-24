@@ -78,7 +78,11 @@ export async function runAnalysis(
       ),
     )
   } catch (error) {
-    return { outcome: 'skipped', reason: `triage failed: ${describeError(error)}` }
+    return {
+      outcome: 'skipped',
+      reason: `triage failed: ${describeError(error)}`,
+      ...spendOf('triage', provider, error),
+    }
   }
 
   const triageStats = stats(provider, triage)
@@ -115,7 +119,11 @@ export async function runAnalysis(
       ),
     )
   } catch (error) {
-    return { outcome: 'skipped', reason: `deep analysis failed: ${describeError(error)}` }
+    return {
+      outcome: 'skipped',
+      reason: `deep analysis failed: ${describeError(error)}`,
+      ...spendOf('deep', provider, error),
+    }
   }
 
   const value = deep.result.value
@@ -207,6 +215,28 @@ function stats(
     durationMs: call.durationMs,
     promptVersion: PROMPT_VERSION,
     retried: call.result.retried,
+  }
+}
+
+/**
+ * A failed call still cost money and still used a prompt version (spec v50). ProviderError
+ * carries the usage when the request reached the API; failures before that (auth, network) have
+ * nothing to report, and reporting zero would be a number we did not measure.
+ */
+function spendOf(
+  stage: 'triage' | 'deep',
+  provider: Provider,
+  error: unknown,
+): { spend?: Extract<Analysis, { outcome: 'skipped' }>['spend'] } {
+  if (!(error instanceof ProviderError) || !error.tokens) return {}
+  return {
+    spend: {
+      stage,
+      provider: provider.name,
+      model: error.model ?? provider.model,
+      promptVersion: PROMPT_VERSION,
+      tokens: error.tokens,
+    },
   }
 }
 

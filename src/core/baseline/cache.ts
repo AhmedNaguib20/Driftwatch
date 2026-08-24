@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { DRIFTWATCH_VERSION } from '../build-identity.js'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { MeasurementProtocol, SideMeasurement } from '../measure/types.js'
@@ -17,11 +17,9 @@ import type { MeasurementProtocol, SideMeasurement } from '../measure/types.js'
 
 export const CACHE_SCHEMA_VERSION = 1
 
-export const DRIFTWATCH_VERSION: string = (
-  JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf8')) as {
-    version: string
-  }
-).version
+// One source for the version (spec v50): the protocol hash and every report header read the
+// SAME value, so a cache key and a report can never disagree about which build made them.
+export { DRIFTWATCH_VERSION }
 
 /**
  * The protocol fields that make two measurements comparable across time.

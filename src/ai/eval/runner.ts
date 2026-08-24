@@ -78,22 +78,34 @@ export async function runEvalCases(
 
 /** Named per stage: a cap is per stage, so the evidence for it has to be too (M9). */
 function stageOutputOf(analysis: { outcome: string }): { stage: string; output: number }[] {
-  const a = analysis as { stages?: Record<string, { tokens?: { output?: number } } | undefined> }
-  return Object.entries(a.stages ?? {})
+  const a = analysis as {
+    stages?: Record<string, { tokens?: { output?: number } } | undefined>
+    spend?: { stage: string; tokens: { output: number } }
+  }
+  const fromStages = Object.entries(a.stages ?? {})
     .filter(([, v]) => v?.tokens)
     .map(([stage, v]) => ({ stage, output: v!.tokens!.output ?? 0 }))
+  // A FAILED stage spent tokens too (spec v50) — it is named, not silently dropped.
+  return a.spend ? [...fromStages, { stage: `${a.spend.stage} (failed)`, output: a.spend.tokens.output }] : fromStages
 }
 
 function sumTokens(analysis: { outcome: string }): { input: number; output: number } {
   const stages = stagesOf(analysis)
-  return stages.reduce(
+  const spend = (analysis as { spend?: { tokens: { input: number; output: number } } }).spend
+  const base = stages.reduce(
     (sum, s) => ({ input: sum.input + s.tokens.input, output: sum.output + s.tokens.output }),
     { input: 0, output: 0 },
   )
+  return spend
+    ? { input: base.input + spend.tokens.input, output: base.output + spend.tokens.output }
+    : base
 }
 
 function costOf(analysis: { outcome: string }, _tokens: { input: number }): number | null {
-  const stages = stagesOf(analysis)
+  const spend = (analysis as {
+    spend?: { provider: string; model: string; tokens: { input: number; output: number } }
+  }).spend
+  const stages = [...stagesOf(analysis), ...(spend ? [spend] : [])]
   if (stages.length === 0) return null
   let total = 0
   for (const s of stages) {
@@ -105,7 +117,9 @@ function costOf(analysis: { outcome: string }, _tokens: { input: number }): numb
 }
 
 function versionOf(analysis: { outcome: string }): number | null {
-  return stagesOf(analysis)[0]?.promptVersion ?? null
+  // A failed run used a prompt version too — provenance survives the failure (spec v50).
+  const spend = (analysis as { spend?: { promptVersion: number } }).spend
+  return stagesOf(analysis)[0]?.promptVersion ?? spend?.promptVersion ?? null
 }
 
 function stagesOf(analysis: {

@@ -1,7 +1,12 @@
 {
   "schemaVersion": 2,
-  "schemaMinorVersion": 0,
+  "schemaMinorVersion": 1,
   "driftwatchVersion": "<driftwatch-version>",
+  "build": {
+    "version": "0.0.0-test",
+    "entry": "dist",
+    "builtAt": "2026-08-24T00:00:00.000Z"
+  },
   "mode": "compare",
   "createdAt": "2026-08-19T12:00:00.000Z",
   "project": {

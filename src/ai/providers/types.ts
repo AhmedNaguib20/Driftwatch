@@ -53,6 +53,13 @@ export class ProviderError extends Error {
   constructor(
     readonly kind: ProviderErrorKind,
     message: string,
+    /**
+     * What the failed call cost. A call that failed still spent money and still used a prompt
+     * version; discarding both hides the spend AND the provenance (spec v50). Absent only when
+     * the failure happened before any tokens were billed (auth, network, timeout).
+     */
+    readonly tokens?: TokenUsage,
+    readonly model?: string,
   ) {
     super(message)
     this.name = 'ProviderError'

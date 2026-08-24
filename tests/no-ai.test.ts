@@ -78,9 +78,9 @@ async function runCli(
   env: Record<string, string | undefined>,
   register: string,
   log: string,
-): Promise<{ stdout: string; code: number }> {
+): Promise<{ stdout: string; stderr: string; code: number }> {
   try {
-    const { stdout } = await exec(
+    const { stdout, stderr } = await exec(
       'node',
       ['--import', register, path.join(repoRoot, 'dist', 'cli', 'index.js'), ...args],
       {
@@ -88,10 +88,11 @@ async function runCli(
         maxBuffer: 64 * 1024 * 1024,
       },
     )
-    return { stdout, code: 0 }
+    return { stdout, stderr, code: 0 }
   } catch (error) {
-    const e = error as { code?: number; stdout?: string }
-    return { stdout: e.stdout ?? '', code: e.code ?? 1 }
+    // stderr is the whole point when the exit code is wrong — never swallow it (spec v44).
+    const e = error as { code?: number; stdout?: string; stderr?: string }
+    return { stdout: e.stdout ?? '', stderr: e.stderr ?? '', code: e.code ?? 1 }
   }
 }
 
@@ -118,14 +119,14 @@ describe('--no-ai is provably offline', () => {
       'utf8',
     )
 
-    const { stdout, code } = await runCli(
+    const { stdout, stderr, code } = await runCli(
       ['run', '--no-ai', '--json', '--cwd', dir],
       { DRIFTWATCH_API_KEY: 'sk-set-but-must-not-matter' },
       register,
       log,
     )
 
-    expect(code).toBe(0)
+    expect(code, stderr).toBe(0)
     const result = JSON.parse(stdout)
     expect(result.verdict).toBe('regression')
     expect(result.analysis).toEqual({ outcome: 'disabled' })
@@ -138,14 +139,14 @@ describe('--no-ai is provably offline', () => {
     const dir = await tinyRepo()
     const { register, log } = await spyDir()
 
-    const { stdout, code } = await runCli(
+    const { stdout, stderr, code } = await runCli(
       ['run', '--json', '--cwd', dir],
       { DRIFTWATCH_NO_AI: '1', DRIFTWATCH_API_KEY: 'sk-irrelevant' },
       register,
       log,
     )
 
-    expect(code).toBe(0)
+    expect(code, stderr).toBe(0)
     expect(JSON.parse(stdout).analysis).toEqual({ outcome: 'disabled' })
     expect(await readFile(log, 'utf8').catch(() => '')).toBe('')
   }, 120_000)
@@ -159,14 +160,14 @@ describe('--no-ai is provably offline', () => {
       'utf8',
     )
 
-    const { stdout, code } = await runCli(
+    const { stdout, stderr, code } = await runCli(
       ['run', '--json', '--cwd', dir],
       { DRIFTWATCH_API_KEY: undefined },
       register,
       log,
     )
 
-    expect(code).toBe(0)
+    expect(code, stderr).toBe(0)
     const result = JSON.parse(stdout)
     expect(result.verdict).toBe('regression')
     expect(result.analysis).toEqual({ outcome: 'no_key' })

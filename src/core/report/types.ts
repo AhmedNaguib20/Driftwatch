@@ -1,3 +1,4 @@
+import type { BuildIdentity } from '../build-identity.js'
 import type { AnalysisReport } from './analysis.js'
 import type { SofteningCondition } from './context.js'
 import type { VerificationReport } from './verification.js'
@@ -27,7 +28,7 @@ export const RESULT_SCHEMA_VERSION = 2
  * Minor: additive changes only — new fields, new optional blocks. A 1.0 consumer reading a 1.1
  * result must keep working; anything that would break one bumps the major instead.
  */
-export const RESULT_SCHEMA_MINOR = 0
+export const RESULT_SCHEMA_MINOR = 1
 
 export interface ResultJson {
   readonly schemaVersion: typeof RESULT_SCHEMA_VERSION
@@ -40,6 +41,12 @@ export interface ResultJson {
    */
   readonly mode: 'compare' | 'record'
   readonly createdAt: string
+  /**
+   * Which build produced this result — version, entry point (src vs dist), build timestamp.
+   * Required, not optional (spec v50): a result that cannot name its own build is how five days
+   * were spent reasoning about code that was not running.
+   */
+  readonly build: BuildIdentity
   readonly project: ProjectReport
   readonly config: ConfigReport
   readonly base: BaseSideReport | SideUnavailable

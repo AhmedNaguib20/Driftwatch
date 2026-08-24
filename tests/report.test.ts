@@ -226,6 +226,7 @@ describe('run verdict', () => {
       base: baseResult(side(baseMetrics, protocol(overrides.baseProto))),
       current: side(currentMetrics, protocol({ workspace: 'copy', ...overrides.currentProto })),
       now,
+      build: { version: '0.0.0-test', entry: 'dist' as const, builtAt: '2026-08-24T00:00:00.000Z' },
     })
   }
 
@@ -280,6 +281,7 @@ describe('run verdict', () => {
       base: null,
       current: side(cleanPair()[1], protocol({ workspace: 'copy' })),
       now,
+      build: { version: '0.0.0-test', entry: 'dist' as const, builtAt: '2026-08-24T00:00:00.000Z' },
     })
     expect(r.verdict).toBe('inconclusive')
     expect(r.base).toEqual({ available: false, reason: expect.stringMatching(/does not resolve/) })
@@ -408,6 +410,7 @@ describe('Layer 2a verdict wiring', () => {
       base: baseResult(side([measured('route_latency:/live', 4, 'ms', 'route /live'), measured('build_time', 10000, 'ms', 'b'), measured('client_bundle_size', 100000, 'bytes', 's')])),
       current: side([measured('route_latency:/live', 90, 'ms', 'route /live'), measured('build_time', 10100, 'ms', 'b'), measured('client_bundle_size', 100100, 'bytes', 's')], protocol({ workspace: 'copy' })),
       now: () => new Date('2026-08-19T12:00:00Z'),
+      build: { version: '0.0.0-test', entry: 'dist' as const, builtAt: '2026-08-24T00:00:00.000Z' },
     })
     expect(r.comparison.metrics.find((m) => m.id === 'route_latency:/live')!.verdict).toBe('regressed')
     expect(r.verdict).toBe('regression') // +2150% crosses the threshold, class is key
@@ -433,6 +436,7 @@ describe('policy exclusions never gate the verdict', () => {
         base: baseResult(side([...clean, extra])),
         current: side([...clean.map((m) => ({ ...m })), extra], protocol({ workspace: 'copy' })),
         now: () => new Date('2026-08-19T12:00:00Z'),
+        build: { version: '0.0.0-test', entry: 'dist' as const, builtAt: '2026-08-24T00:00:00.000Z' },
       })
 
     const withPolicy = build(ssgSkip)
@@ -460,6 +464,7 @@ describe('verdict licensing — attribution needs a base worth comparing to (spe
       base: baseResult(side(b)),
       current: side(c, protocol({ workspace: 'copy' })),
       now,
+      build: { version: '0.0.0-test', entry: 'dist' as const, builtAt: '2026-08-24T00:00:00.000Z' },
     })
   }
 
@@ -498,6 +503,7 @@ describe('verdict licensing — attribution needs a base worth comparing to (spe
       base: baseResult(side(b)),
       current: side(b, protocol({ workspace: 'copy' })),
       now,
+      build: { version: '0.0.0-test', entry: 'dist' as const, builtAt: '2026-08-24T00:00:00.000Z' },
     })
     expect(r.verdict).toBe('inconclusive-context')
   })
@@ -511,6 +517,7 @@ describe('verdict licensing — attribution needs a base worth comparing to (spe
       base: baseResult(side([skipped('build_time', 'b', 'build failed'), ...b.slice(1)])),
       current: side([skipped('build_time', 'b', 'build failed'), ...b.slice(1)], protocol({ workspace: 'copy' })),
       now,
+      build: { version: '0.0.0-test', entry: 'dist' as const, builtAt: '2026-08-24T00:00:00.000Z' },
     })
     expect(r.verdict).toBe('inconclusive')
     expect(r.softening).toBeUndefined()

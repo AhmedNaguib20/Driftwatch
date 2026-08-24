@@ -1,6 +1,6 @@
 import pc from 'picocolors'
 import { SelectionRefused } from '../core/index.js'
-import { aiKeyPresent, attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, runDriftwatch, verifyFix } from '../core/index.js'
+import { resolveAiKey, attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, runDriftwatch, verifyFix } from '../core/index.js'
 import type { AnalysisReport, ResultJson, StageStats } from '../core/index.js'
 import { renderAnalysis } from './render-analysis.js'
 import { renderVerification, verificationEligible } from './render-verification.js'
@@ -98,11 +98,20 @@ async function resolveAnalysis(
   // Nothing to explain is not a skip: no attempt was made, nothing failed, and there is nothing
   // for a human surface to report (spec §9e — the tier is mentioned once, on a regression).
   if (result.verdict !== 'regression') return { outcome: 'not_applicable' }
-  if (!aiKeyPresent()) return { outcome: 'no_key' }
+  // key_command is read from perf.yml here rather than carried in the result JSON: it is a
+  // command, often naming a vault path, and results are committed to the perf-data branch. One
+  // extra file read costs nothing and keeps it off that branch (hard rule 6's spirit).
+  const config = await loadConfig(result.project.root)
+  const resolved = await resolveAiKey({ provider: result.config.provider, key_command: config.key_command })
+  // A configured source that could not produce a key is a broken setup the user asked for — that
+  // is a reported failure, not the free tier. Only "nothing configured" is no_key.
+  if (resolved.problem) return { outcome: 'skipped', reason: resolved.problem }
+  if (!resolved.key) return { outcome: 'no_key' }
 
-  // The ONLY entry into the ai/ module graph.
+  // The ONLY entry into the ai/ module graph. The key travels as an argument: resolution belongs
+  // to core so that --no-ai and the keyless path never load this module (hard rule 6).
   const ai = await import('../ai/index.js')
-  return ai.analyseRegression(result, progress)
+  return ai.analyseRegression(result, progress, resolved.key)
 }
 
 /**

@@ -42,8 +42,19 @@ confidence, cites its evidence, and suggests a fix. Bring your own key:
 export DRIFTWATCH_API_KEY=<your DeepSeek or OpenAI key>
 ```
 
-The key lives in that environment variable only — never in `perf.yml`, never on disk, never in
-the result JSON. Provider and model are set in `perf.yml` (`provider: deepseek`,
+Driftwatch looks for the key in three places, in this order:
+
+1. **`DRIFTWATCH_API_KEY`** in the environment — your shell, or your CI secrets.
+2. **`key_command` in `perf.yml`** — a command whose stdout is the key, so a password manager can
+   supply it and it never touches a file: `key_command: op read op://vault/ai/key`. The output is
+   used and never stored, never logged, never written to the result JSON.
+3. **A per-provider variable you already have set** — `DEEPSEEK_API_KEY`, `OPENAI_API_KEY`,
+   `ANTHROPIC_API_KEY`, matching the `provider` in `perf.yml`. These are fallbacks: they say
+   nothing about driftwatch, so anything that does wins over them.
+
+**Never put the key itself in `perf.yml`.** That file is committed, so a key in it is already
+shared with everyone who can read the repository — driftwatch refuses to run if it finds one there
+and tells you to rotate it. Provider and model are set in `perf.yml` (`provider: deepseek`,
 `model: deepseek-chat`). Token counts and an estimated cost are printed with every analysis.
 
 ## What leaves your machine

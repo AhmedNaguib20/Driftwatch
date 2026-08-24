@@ -77,7 +77,7 @@ const profile: ProjectProfile = {
 }
 
 const config: ResolvedConfig = {
-  detect: 'nextjs', app: null, package_manager: null,
+  detect: 'nextjs', app: null, package_manager: null, key_command: null,
   measure: ['build_time', 'client_bundle_size', 'build_output_size'],
   serve: true,
   browser: true,

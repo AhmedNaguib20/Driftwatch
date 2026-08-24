@@ -24,6 +24,12 @@ export interface PerfConfig {
   readonly app: string | null
   /** Package manager override — the escape hatch when detection has no evidence to go on. */
   readonly package_manager: string | null
+  /**
+   * A command whose stdout is the AI-tier key (`op read op://vault/ai/key`). Lets a password
+   * manager supply it without the key ever touching a file. The output is used and never stored.
+   * A literal key here is refused, not accepted — perf.yml is committed (spec §9e).
+   */
+  readonly key_command: string | null
   /** Metric ids or class tokens ('route_latency', 'lcp', …) that count as KEY metrics. */
   readonly measure: readonly string[]
   /** Boot the built app and measure routes (Layer 2a). CLI --no-serve overrides per run. */
@@ -46,6 +52,7 @@ export const DEFAULT_CONFIG: PerfConfig = {
   detect: 'unknown',
   app: null,
   package_manager: null,
+  key_command: null,
   measure: [],
   serve: true,
   browser: true,

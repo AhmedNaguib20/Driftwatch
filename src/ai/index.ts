@@ -1,7 +1,7 @@
 import type { AnalysisReport, ResultJson } from '../core/index.js'
 import { gatherDiffData } from './analyse/gather.js'
 import { runAnalysis } from './analyse/run-analysis.js'
-import { createProvider, resolveApiKey } from './providers/index.js'
+import { createProvider } from './providers/index.js'
 
 /**
  * The ai/ module's front door — loaded DYNAMICALLY by the CLI, and only when analysis will
@@ -11,16 +11,18 @@ import { createProvider, resolveApiKey } from './providers/index.js'
 export async function analyseRegression(
   result: ResultJson,
   progress: (message: string) => void = () => {},
+  /** Resolved by core (env / key_command / provider fallback) — this module never reads it. */
+  apiKey?: string,
 ): Promise<AnalysisReport> {
-  const apiKey = resolveApiKey()
-  if (!apiKey) return { outcome: 'no_key' }
+  const key = apiKey?.trim()
+  if (!key) return { outcome: 'no_key' }
 
   let provider
   try {
     provider = createProvider({
       provider: result.config.provider,
       model: result.config.model,
-      apiKey,
+      apiKey: key,
     })
   } catch (error) {
     return { outcome: 'skipped', reason: (error as Error).message }

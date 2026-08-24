@@ -64,7 +64,7 @@ function side(metrics: MetricResult[], proto = protocol()): SideMeasurement {
 
 function config(overrides: Partial<ResolvedConfig> = {}): ResolvedConfig {
   return {
-    detect: 'nextjs', app: null, package_manager: null,
+    detect: 'nextjs', app: null, package_manager: null, key_command: null,
     measure: ['build_time', 'client_bundle_size'],
     serve: true,
     browser: true,

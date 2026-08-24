@@ -16,9 +16,18 @@ export * from './alert/index.js'
 export * from './replay/index.js'
 export * from './verify/index.js'
 export {
+  PROVIDER_KEY_ENV,
+  describeKeySource,
+  literalKeyInConfig,
+  literalKeyRefusal,
+  looksLikeApiKey,
+  maskKey,
+  resolveAiKey,
+} from './key.js'
+export type { KeyConfig, KeySource, ResolvedKey } from './key.js'
+export {
   AI_KEY_ENV,
   CAPABILITIES,
-  aiKeyPresent,
   capabilitiesOf,
   requiresAiTier,
   tierMention,

@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 55 — 2026-08-24 — M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 56 — 2026-08-24 — M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1272,6 +1272,31 @@ design since day one, but it has never been *productised* — it works, and it i
 Every keyless surface must be *fully* functional — not degraded, not nagging. A user who never adds
 a key should experience a complete tool that mentions the optional tier once, in the one place it
 is relevant (a regression it could have explained).
+
+*Step 1 (`0bcbfb3`, 403 tests) — DONE.* Ten paths audited with every key variable deleted; nine
+were already clean. **Five findings, all fixed:**
+- **Every clean compare run named the tier** — "AI analysis skipped: analysis runs only on a
+  regression verdict (spec §7)" on every green PR forever, with an internal spec reference leaking
+  into user-facing text. Root cause was a **contract conflation**: "there was nothing to explain"
+  was reported as `skipped`, the same outcome as "we called the provider and it failed". Split into
+  `not_applicable` (silent on human surfaces, still in the JSON for machines) and `skipped` (a real
+  attempt that cost tokens — still reported, because hiding spend is rule 3 in reverse).
+- `--no-ai` nagged in the comment while staying silent in the terminal. Both silent.
+- The keyless note framed the free tier as a **fork anomaly** ("normal for fork PRs") — a user who
+  simply never bought the tier reads that as misconfiguration. Now tier-first, **and** `fromFork` is
+  plumbed so a fork PR gets the accurate mechanism (repository secrets aren't exposed to fork runs)
+  instead of advice to set a key it cannot see. *Deleting the fork text would have traded one wrong
+  framing for another.*
+- `auto_fix` with no key was a correct but unexplained no-op — now explained **inside the same
+  mention**, since one key unlocks both; one breath, one mention.
+- `driftwatch eval` threw a raw stack trace; refusing is right, the shape was not.
+
+`src/core/tier.ts` is the single source of truth: each capability declares its tier, **each AI-tier
+one declares why a key is unavoidable ("needs a key" is a claim, not a category)**, and the one
+sentence any surface may say lives there. A test regenerates the README table from `CAPABILITIES`.
+`tests/keyless.test.ts` asserts the **strong** form — not "it works without a key" but "it does not
+mention the tier at all" — plus exactly one mention on a regression, and silence again once it's
+gone.
 
 **Scope:**
 1. **The contract & audit** — verify no non-AI path can fail, prompt, or warn because of a missing

@@ -9,6 +9,8 @@ import {
 import type { PerfConfig, ResolvedConfig } from './config-schema.js'
 import type { Framework } from './types.js'
 import { readText } from './fs-probe.js'
+import { literalKeyInConfig, literalKeyRefusal } from '../key.js'
+import { SelectionRefused } from './refusal.js'
 
 /**
  * Loads `perf.yml`, falling back to detected defaults for anything missing or malformed.
@@ -44,10 +46,19 @@ export async function loadConfig(
   }
 
   const record = parsed as Record<string, unknown>
+
+  // Before anything else: a committed key is already leaked, so this refuses rather than warns
+  // (spec §9e). It runs on every command that loads config, which is the point — "refuse to run".
+  const literal = literalKeyInConfig(record)
+  if (literal) {
+    throw new SelectionRefused(literalKeyRefusal(literal.field, literal.why, CONFIG_FILENAME))
+  }
+
   const config: PerfConfig = {
     detect: pickFramework(record.detect, fallback.detect, warnings),
     app: pickOptionalString(record.app, fallback.app, 'app', warnings),
     package_manager: pickOptionalString(record.package_manager, fallback.package_manager, 'package_manager', warnings),
+    key_command: pickOptionalString(record.key_command, fallback.key_command, 'key_command', warnings),
     measure: pickMetrics(record.measure, fallback.measure, warnings),
     serve: pickBoolean(record.serve, fallback.serve, 'serve', warnings),
     browser: pickBoolean(record.browser, fallback.browser, 'browser', warnings),

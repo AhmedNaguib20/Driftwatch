@@ -65,7 +65,11 @@ describe('README — What leaves your machine', () => {
     expect(readme).toContain('DRIFTWATCH_API_KEY')
     expect(readme).toContain('--no-ai')
     expect(readme).toContain('DRIFTWATCH_NO_AI')
-    expect(readme).toMatch(/never in `perf\.yml`/)
+    // The claim got stronger in M11 step A: not merely "we don't read it from perf.yml" but
+    // "a key there stops the run" — the README must say the thing the code actually does.
+    expect(readme).toMatch(/Never put the key itself in `perf\.yml`/)
+    expect(readme).toMatch(/refuses to run if it finds one there/)
+    expect(readme).toContain('key_command')
   })
 })
 

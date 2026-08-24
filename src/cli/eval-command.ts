@@ -11,8 +11,14 @@ export async function evalCommand(options: { cases: string }): Promise<void> {
   // eval is the one command that genuinely cannot run without the AI tier — it grades live
   // provider behaviour. That makes it a REFUSAL with a remedy, not a stack trace: every failure
   // carries its own fix (spec §9a), and the tier's own commands are held to that too.
-  const { AI_KEY_ENV, aiKeyPresent, capabilitiesOf } = await import('../core/index.js')
-  if (!aiKeyPresent()) {
+  const { AI_KEY_ENV, DEFAULT_CONFIG, capabilitiesOf, resolveAiKey } = await import('../core/index.js')
+  const resolved = await resolveAiKey({ provider: DEFAULT_CONFIG.provider, key_command: null })
+  if (resolved.problem) {
+    console.error(pc.yellow(`driftwatch eval: ${resolved.problem}`))
+    process.exitCode = 1
+    return
+  }
+  if (!resolved.key) {
     const why = capabilitiesOf('ai').find((c) => c.id === 'eval')?.why ?? ''
     console.error(pc.yellow(`driftwatch eval needs the AI tier: ${why}.`))
     console.error('')
@@ -32,8 +38,10 @@ export async function evalCommand(options: { cases: string }): Promise<void> {
   const { buildStamp } = await import('../core/index.js')
   console.log(pc.dim(buildStamp()))
 
-  const results = await runEvalCases(path.resolve(options.cases), (m) =>
-    console.error(pc.dim(`→ ${m}`)),
+  const results = await runEvalCases(
+    path.resolve(options.cases),
+    (m) => console.error(pc.dim(`→ ${m}`)),
+    resolved.key,
   )
 
   let failed = 0

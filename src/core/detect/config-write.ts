@@ -52,9 +52,19 @@ block_merge: ${config.block_merge}
 # Default git ref to compare against. Override per run with --base.
 base: ${config.base}
 
-# AI analysis (unused until M2). Bring your own key; nothing is sent without one.
+# AI analysis — the optional tier. Measurement never needs a key; explaining a regression does.
+# Nothing is sent anywhere without one.
 provider: ${config.provider}
 model: ${config.model}
+
+# Where the key comes from, in order:
+#   1. DRIFTWATCH_API_KEY in the environment (your shell, or CI secrets)
+#   2. key_command below — its stdout is used and never stored
+#   3. ${'$'}{PROVIDER}_API_KEY you already have set (DEEPSEEK_API_KEY, OPENAI_API_KEY, …)
+#
+# NEVER put the key itself in this file — it is committed, and driftwatch refuses to run if it
+# finds one here. A command is fine:
+# key_command: op read op://vault/ai/key
 `
 }
 

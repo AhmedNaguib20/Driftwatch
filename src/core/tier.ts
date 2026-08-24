@@ -58,12 +58,13 @@ export function capabilitiesOf(tier: Tier): readonly Capability[] {
   return CAPABILITIES.filter((c) => c.tier === tier)
 }
 
-/** The one environment variable that turns the tier on. Key handling proper is M11 step 2. */
+/**
+ * The tool-specific environment variable that turns the tier on. It is not the only source —
+ * `key.ts` owns resolution (env, `key_command`, per-provider fallbacks) and is the only place
+ * that answers "is a key available?". A second, narrower answer living here is how surfaces end
+ * up disagreeing about whether the tier is on.
+ */
 export const AI_KEY_ENV = 'DRIFTWATCH_API_KEY'
-
-export function aiKeyPresent(env: NodeJS.ProcessEnv = process.env): boolean {
-  return Boolean(env[AI_KEY_ENV]?.trim())
-}
 
 /**
  * The single mention — the ONE thing every surface may say about the tier, and only on a

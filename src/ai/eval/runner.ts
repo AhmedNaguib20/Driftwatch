@@ -4,7 +4,7 @@ import { performance } from 'node:perf_hooks'
 import type { ResultJson } from '../../core/index.js'
 import { runAnalysis } from '../analyse/run-analysis.js'
 import type { DiffFile, LockfileSummary } from '../analyse/index.js'
-import { createProvider, resolveApiKey } from '../providers/index.js'
+import { createProvider } from '../providers/index.js'
 import { estimateCostUsd } from '../providers/pricing.js'
 import { judge } from './judge.js'
 import type { EvalCaseResult, EvalExpectation } from './types.js'
@@ -21,9 +21,10 @@ import type { EvalCaseResult, EvalExpectation } from './types.js'
 export async function runEvalCases(
   casesDir: string,
   progress: (message: string) => void = () => {},
+  /** Resolved by the CLI through core; the refusal for "no key" lives there, with its remedy. */
+  apiKey = '',
 ): Promise<EvalCaseResult[]> {
-  const apiKey = resolveApiKey()
-  if (!apiKey) throw new Error('eval needs DRIFTWATCH_API_KEY — it judges live provider behavior')
+  if (!apiKey.trim()) throw new Error('runEvalCases needs a resolved API key')
 
   const names = (await readdir(casesDir, { withFileTypes: true }))
     .filter((e) => e.isDirectory())

@@ -1,5 +1,5 @@
 import type { MetricId } from '../detect/types.js'
-import { quantumFor } from '../report/compare-metrics.js'
+import { isFloorExempt, quantumFor } from '../report/compare-metrics.js'
 import { NOISE_FLOOR_PERCENT } from '../detect/config-schema.js'
 import type { MetricTimeline, ProtocolBreak, TimelinePoint } from './timeline.js'
 
@@ -61,7 +61,7 @@ export function assessDrift(timeline: MetricTimeline): DriftReport {
     (segment?.protocol.hostLabels.length ?? 0) > 0,
   )
 
-  const underFloor = Math.abs(percent) < NOISE_FLOOR_PERCENT
+  const underFloor = !isFloorExempt(timeline.id as MetricId) && Math.abs(percent) < NOISE_FLOOR_PERCENT
   const underQuantum = quantum > 0 && Math.abs(absolute) < quantum
   if (underFloor || underQuantum) {
     return { ...base, cumulative: null, verdict: 'stable' }

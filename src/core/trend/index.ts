@@ -1,5 +1,7 @@
 export { appendToPerfData, PERF_DATA_BRANCH } from './store.js'
 export { buildTimelines, identityDiff } from './timeline.js'
+export { collectorOf, irrelevanceReason, isFieldRelevant } from './relevance.js'
+export type { IdentityField } from './relevance.js'
 export type { MetricTimeline, ProtocolBreak, ProtocolIdentity, TimelinePoint, TimelineSegment } from './timeline.js'
 export { MIN_TREND_POINTS, assessDrift } from './drift.js'
 export type { DriftReport, DriftVerdict } from './drift.js'

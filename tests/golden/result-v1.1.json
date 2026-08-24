@@ -226,7 +226,7 @@
         "delta": null,
         "verdict": "no_change",
         "exceedsThreshold": false,
-        "reason": "delta is under the 2% noise floor"
+        "reason": "delta is under this metric class's 1024 byte resolution"
       },
       {
         "id": "build_output_size",
@@ -237,7 +237,7 @@
         "delta": null,
         "verdict": "no_change",
         "exceedsThreshold": false,
-        "reason": "delta is under the 2% noise floor"
+        "reason": "delta is under this metric class's 1024 byte resolution"
       }
     ]
   },

@@ -158,7 +158,11 @@ function buildComparison(input: BuildResultInput): Comparison {
  * its absence never blocks an "ok".
  */
 function runVerdict(comparison: Comparison, config: ResolvedConfig): RunVerdict {
-  const keyIds = config.measure.length > 0 ? config.measure : ['build_time', 'bundle_size']
+  // The default key set must name ids the tool actually PRODUCES. It named `bundle_size` from M1
+  // until the M8 split retired that id, which quietly demoted the headline metric: a client-bundle
+  // regression could not reach a 'regression' verdict on a default config, and analysis (which
+  // runs only on that verdict) never saw it. Found by the M10 decision audit.
+  const keyIds = config.measure.length > 0 ? config.measure : ['build_time', 'client_bundle_size']
   // measure entries may be full ids or class tokens ('route_latency', 'lcp', …) covering every
   // per-route metric of that class.
   const keySet = new Set<string>(keyIds)

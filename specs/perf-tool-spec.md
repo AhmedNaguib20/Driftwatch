@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 51 — 2026-08-24 — guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 52 — 2026-08-24 — M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1116,6 +1116,59 @@ retraction is recorded rather than quietly dropped.
 merges to `staging` and main lags until release. Even a successful comparison would have been
 meaningless. **Warn when the resolved base is far behind the branch's likely integration target**
 (and see open decision 2 — warning is not enough).
+
+## 9b. Drift alerting — M10 (opened 2026-08-24)
+
+**Design axis: the alerting threshold is not the reporting threshold.** An alert spends someone's
+attention; a dashboard row costs nothing. Alerting exists *only* for what the PR flow cannot
+structurally see — accumulation where every step stayed under the bar.
+
+**Thresholds (step 1, `09068d8`) — justified by meaning, not by noise.** Measured first: every
+byte-class segment in the real 39-entry branch drifts ≤0.01% cumulative, largest step 0.02%.
+Nothing here is noise-constrained, so any line above ~0.1% yields zero false positives — which
+means the numbers *cannot* be defended as "safely above noise" and must be defended by what they
+mean:
+
+| Constant | Value | Reason |
+|---|---|---|
+| cumulative | **10%** | 2× the PR threshold. At exactly 1× an alert could describe something one review might have caught; at 2×, combined with the step rule, it always represents accumulation no single PR could have blocked. |
+| min points | **5** | Derived: with every step under 5%, reaching 10% needs ≥3 contributing steps (4 points), plus one wobble's margin. Reachable — 3 of 6 real segments clear it. |
+| re-alert | **+10 points** | The second alert must be as big a claim as the first, or it is nagging. |
+| resolve | **5%** (half) | Hysteresis. Clearing at 9.9% and re-firing at 10.1% teaches the reader to mute it. |
+| shape | **net share ≥ 0.5** | `\|cumulative\| / sum(\|steps\|)`. |
+
+*The shape rule changed under evidence:* a count-based rule ("≥60% of steps move with the drift")
+died on real data — byte noise reached 8/13 same-direction, and a metric that ratchets up in four
+jumps and dribbles down in five is real drift a count rejects. Magnitude-based, 0.5 sits above
+every real-noise run (0.000–0.429) and below every shape genuinely going somewhere.
+
+**Window trim** — the window starts after the last PR-visible step. If a commit crossed the
+threshold alone, the PR flow had its chance; the alert's subject is only what accumulated since.
+Without it, one loud commit either poisons the window forever or makes the headline a lie.
+**Resolution is measured from where the alert was raised**, not the current window — a large
+recovery step re-cutting the window and closing the alert as "superseded" is technically
+defensible and useless to read.
+
+**The payload carries three obligations:** it names what the PR flow missed (structurally true,
+not hopeful); it never names a culprit commit (tendency, not attribution); and it counts only
+measured points ("over 14 measured points spanning 16 commits", never folding unmeasured commits
+into the number).
+
+**Protocol relevance is per-class and causal (DECIDED, M10 step 1 finding 2).** Protocol identity
+was global per-entry, so a Chrome bump split every metric's timeline — including
+`client_bundle_size`, which Chrome cannot influence (4 of 5 breaks on the real branch). A field is
+relevant to a metric class **if it can be a causal input to producing that number**, and the map is
+declared per class with its reasoning, **defaulting to relevant**. This is not the M5 relaxation we
+refused: that one asked whether Chrome *build* differences affect Lighthouse *rendering* (an
+empirical assumption with no spread data behind it); this asks whether Chrome is an input to
+`next build` (it is not). **Note the provenance split within the byte classes:**
+`client_bundle_size` / `build_output_size` come from the build → browser irrelevant;
+`transfer_size:*` comes from Lighthouse → browser **is** relevant. Relevance follows measurement
+provenance, not metric units.
+
+**Single-step rule kept though unreachable at defaults** (with max step <5% from the window trim
+and cumulative ≥10%, one step can never be half the total). It becomes load-bearing when a team
+raises `threshold` in `perf.yml`. Documented with its arithmetic rather than pretended to work.
 
 ## 10. Git History Replay — M7, CLOSED (2026-08-20)
 

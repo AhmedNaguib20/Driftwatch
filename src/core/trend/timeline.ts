@@ -1,5 +1,7 @@
 import type { IndexEntry, IndexFile } from './index-file.js'
 import { orderEntries } from './order.js'
+import { isFieldRelevant } from './relevance.js'
+import type { IdentityField } from './relevance.js'
 
 /**
  * Per-metric timelines over the perf-data index, segmented on protocol identity — §5.1 for
@@ -42,18 +44,25 @@ export interface MetricTimeline {
   readonly breaks: readonly ProtocolBreak[]
 }
 
-const IDENTITY_FIELDS = [
-  ['node', (p: ProtocolIdentity) => p.nodeVersion],
-  ['platform', (p: ProtocolIdentity) => `${p.platform}/${p.arch}`],
-  ['browser', (p: ProtocolIdentity) => p.browser],
-  ['hostLabels', (p: ProtocolIdentity) => (p.hostLabels.length > 0 ? [...p.hostLabels].join(',') : '(none)')],
-  ['driftwatch', (p: ProtocolIdentity) => p.driftwatchVersion],
-] as const
+const IDENTITY_FIELDS: readonly (readonly [IdentityField, (p: ProtocolIdentity) => string])[] = [
+  ['node', (p) => p.nodeVersion],
+  ['platform', (p) => `${p.platform}/${p.arch}`],
+  ['browser', (p) => p.browser],
+  ['hostLabels', (p) => (p.hostLabels.length > 0 ? [...p.hostLabels].join(',') : '(none)')],
+  ['driftwatch', (p) => p.driftwatchVersion],
+]
 
-export function identityDiff(a: ProtocolIdentity, b: ProtocolIdentity): string[] {
+/**
+ * Fields that changed between two protocols — filtered to those that could have CAUSED a change
+ * in `metricId` (relevance.ts). Without a metric, every field counts: a caller comparing whole
+ * protocols is asking a different question than a caller segmenting one metric's timeline.
+ */
+export function identityDiff(a: ProtocolIdentity, b: ProtocolIdentity, metricId?: string): string[] {
   const changes: string[] = []
   for (const [name, pick] of IDENTITY_FIELDS) {
-    if (pick(a) !== pick(b)) changes.push(`${name}: ${pick(a)} → ${pick(b)}`)
+    if (pick(a) === pick(b)) continue
+    if (metricId !== undefined && !isFieldRelevant(name, metricId)) continue
+    changes.push(`${name}: ${pick(a)} → ${pick(b)}`)
   }
   return changes
 }
@@ -91,7 +100,7 @@ export function buildTimelines(index: IndexFile): MetricTimeline[] {
         ...(entry.replayed ? { replayed: true as const } : {}),
         ...(entry.committedAt ? { committedAt: entry.committedAt } : {}),
       }
-      if (current && identityDiff(current.protocol, entry.protocol).length === 0) {
+      if (current && identityDiff(current.protocol, entry.protocol, id).length === 0) {
         current.points.push(point)
         continue
       }
@@ -100,7 +109,7 @@ export function buildTimelines(index: IndexFile): MetricTimeline[] {
         breaks.push({
           beforeSha: current.points.at(-1)!.sha,
           afterSha: entry.sha,
-          changes: identityDiff(current.protocol, entry.protocol),
+          changes: identityDiff(current.protocol, entry.protocol, id),
         })
       }
       current = { protocol: entry.protocol, points: [point] }

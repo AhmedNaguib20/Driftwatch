@@ -8,7 +8,10 @@ import {
   buildTimelines,
   emptyIndex,
   findMovements,
+  collectorOf,
   identityDiff,
+  irrelevanceReason,
+  isFieldRelevant,
   movementReport,
 } from '../src/core/index.js'
 import type { IndexEntry, IndexFile, ProtocolIdentity } from '../src/core/index.js'
@@ -49,25 +52,72 @@ function index(entries: IndexEntry[]): IndexFile {
   return { ...emptyIndex(), entries }
 }
 
+describe('protocol relevance is per-class and causal (spec §9b)', () => {
+  const bump = (id: string, field: Partial<ProtocolIdentity>) =>
+    buildTimelines(
+      index([
+        entry({ [id]: 1000 }, protocol()),
+        entry({ [id]: 1000 }, protocol(field)),
+      ]),
+    )[0]!
+
+  it('a Chrome bump does not split what Chrome cannot produce', () => {
+    for (const id of ['build_time', 'install_time', 'client_bundle_size', 'build_output_size', 'route_latency:/live']) {
+      const timeline = bump(id, { browser: 'chrome/152.0.0.1' })
+      expect(timeline.breaks, `${id} should not break on a browser bump`).toHaveLength(0)
+      expect(timeline.segments[0]!.points).toHaveLength(2)
+    }
+  })
+
+  it('a Chrome bump still splits everything Chrome measured — including a byte count', () => {
+    // Relevance follows PROVENANCE, not units: transfer_size is bytes, and Lighthouse driving
+    // Chrome is what produced it.
+    for (const id of ['lcp:/', 'fcp:/blog', 'tbt:/live', 'transfer_size:/']) {
+      const timeline = bump(id, { browser: 'chrome/152.0.0.1' })
+      expect(timeline.breaks, `${id} must break on a browser bump`).toHaveLength(1)
+      expect(timeline.breaks[0]!.changes[0]).toMatch(/^browser: /)
+    }
+  })
+
+  it('every other field stays relevant to every class — silence means relevant', () => {
+    for (const field of [{ nodeVersion: 'v26.0.0' }, { arch: 'arm64' }, { hostLabels: ['os:macOS'] }, { driftwatchVersion: '9.9.9' }]) {
+      expect(bump('client_bundle_size', field).breaks, JSON.stringify(field)).toHaveLength(1)
+    }
+  })
+
+  it('an undeclared metric id keeps the strictest identity', () => {
+    expect(bump('something_we_have_never_measured', { browser: 'chrome/152.0.0.1' }).breaks).toHaveLength(1)
+  })
+
+  it('the declaration carries its reasoning and its provenance', () => {
+    expect(isFieldRelevant('browser', 'client_bundle_size')).toBe(false)
+    expect(irrelevanceReason('browser', 'client_bundle_size')).toMatch(/no browser takes part/)
+    expect(collectorOf('transfer_size:/')).toMatch(/Lighthouse driving Chrome/)
+    expect(irrelevanceReason('browser', 'transfer_size:/')).toBeNull()
+  })
+})
+
 describe('segmentation — §5.1 for time-series', () => {
-  const FIELD_CASES: [string, Partial<ProtocolIdentity>, RegExp][] = [
-    ['node version', { nodeVersion: 'v26.0.0' }, /node: v24\.18\.0 → v26\.0\.0/],
-    ['platform/arch', { arch: 'arm64' }, /platform: linux\/x64 → linux\/arm64/],
-    ['browser build', { browser: 'chrome/151.0.7922.140' }, /browser: chrome\/151\.0\.7922\.108 → chrome\/151\.0\.7922\.140/],
-    ['host labels', { hostLabels: ['os:macOS'] }, /hostLabels: os:Linux → os:macOS/],
-    ['driftwatch version', { driftwatchVersion: '0.6.0' }, /driftwatch: 0\.5\.0 → 0\.6\.0/],
+  // Each case names the metric it is asked about: identity is per-class and causal (spec §9b), so
+  // "does a browser bump break the line?" has no answer until you say the line of WHAT.
+  const FIELD_CASES: [string, Partial<ProtocolIdentity>, RegExp, string][] = [
+    ['node version', { nodeVersion: 'v26.0.0' }, /node: v24\.18\.0 → v26\.0\.0/, 'build_time'],
+    ['platform/arch', { arch: 'arm64' }, /platform: linux\/x64 → linux\/arm64/, 'build_time'],
+    ['browser build', { browser: 'chrome/151.0.7922.140' }, /browser: chrome\/151\.0\.7922\.108 → chrome\/151\.0\.7922\.140/, 'lcp:/'],
+    ['host labels', { hostLabels: ['os:macOS'] }, /hostLabels: os:Linux → os:macOS/, 'build_time'],
+    ['driftwatch version', { driftwatchVersion: '0.6.0' }, /driftwatch: 0\.5\.0 → 0\.6\.0/, 'build_time'],
   ]
 
-  for (const [name, change, pattern] of FIELD_CASES) {
-    it(`breaks the timeline on a ${name} change, naming the fields`, () => {
+  for (const [name, change, pattern, metric] of FIELD_CASES) {
+    it(`breaks the ${metric} timeline on a ${name} change, naming the fields`, () => {
       const timelines = buildTimelines(
         index([
-          entry({ build_time: 9000 }),
-          entry({ build_time: 9100 }),
-          entry({ build_time: 9050 }, protocol(change)),
+          entry({ [metric]: 9000 }),
+          entry({ [metric]: 9100 }),
+          entry({ [metric]: 9050 }, protocol(change)),
         ]),
       )
-      const t = timelines.find((x) => x.id === 'build_time')!
+      const t = timelines.find((x) => x.id === metric)!
       expect(t.segments).toHaveLength(2)
       expect(t.segments[0]!.points).toHaveLength(2)
       expect(t.segments[1]!.points).toHaveLength(1)
@@ -290,7 +340,25 @@ describe('movement report (M7) — where history actually changed', () => {
     expect(findMovements(over)[0]?.movements).toHaveLength(1)
   })
 
-  it('a byte delta under the 2% floor is not a movement (the innocent-commit case)', () => {
+  it('the founding case moves: +140KB on 9.6MB, under 2% and over the quantum', () => {
+    // The floor exemption reaches every surface that judges bytes, or it is two rules.
+    const moved = index([entry({ client_bundle_size: 9_600_000 }), entry({ client_bundle_size: 9_740_000 })])
+    expect(findMovements(moved)[0]?.movements).toHaveLength(1)
+
+    const drifting = assessDrift(
+      buildTimelines(
+        index([
+          entry({ client_bundle_size: 9_600_000 }),
+          entry({ client_bundle_size: 9_670_000 }),
+          entry({ client_bundle_size: 9_740_000 }),
+        ]),
+      )[0]!,
+    )
+    expect(drifting.verdict).toBe('drifting-up')
+    expect(drifting.cumulative?.absolute).toBe(140_000)
+  })
+
+  it('a five-byte wobble is not a movement — the 1KB quantum, not the floor (the innocent-commit case)', () => {
     // The live proof's innocent commits wobbled bundle_size by 5 bytes on 2.3MB.
     const a = entry({ client_bundle_size: 2_319_175 })
     const b = entry({ client_bundle_size: 2_319_170 })
@@ -323,13 +391,15 @@ describe('movement report (M7) — where history actually changed', () => {
 describe('golden timeline', () => {
   it('the full structure over a mixed index matches its golden file', async () => {
     counter = 100
+    // `lcp:/` is here to keep a real protocol break in the golden: the same Chrome bump that must
+    // NOT split build/byte/route lines must still split every line Chrome measured (spec §9b).
     const mixed = index([
       entry({}),
-      entry({ build_time: 30000, client_bundle_size: 2313028, 'route_latency:/live': 15 }),
-      entry({ build_time: 30240, client_bundle_size: 2313030, 'route_latency:/live': 14 }),
-      entry({ build_time: 30480, 'route_latency:/live': 16 }, protocol({ browser: 'chrome/151.0.7922.140' })),
-      entry({ build_time: 30900, client_bundle_size: 2410000, 'route_latency:/live': 15 }, protocol({ browser: 'chrome/151.0.7922.140' })),
-      entry({ build_time: 31200, client_bundle_size: 2410500, 'route_latency:/live': 15 }, protocol({ browser: 'chrome/151.0.7922.140' })),
+      entry({ build_time: 30000, client_bundle_size: 2313028, 'route_latency:/live': 15, 'lcp:/': 1200 }),
+      entry({ build_time: 30240, client_bundle_size: 2313030, 'route_latency:/live': 14, 'lcp:/': 1210 }),
+      entry({ build_time: 30480, 'route_latency:/live': 16, 'lcp:/': 1190 }, protocol({ browser: 'chrome/151.0.7922.140' })),
+      entry({ build_time: 30900, client_bundle_size: 2410000, 'route_latency:/live': 15, 'lcp:/': 1205 }, protocol({ browser: 'chrome/151.0.7922.140' })),
+      entry({ build_time: 31200, client_bundle_size: 2410500, 'route_latency:/live': 15, 'lcp:/': 1215 }, protocol({ browser: 'chrome/151.0.7922.140' })),
     ])
     const rendered =
       JSON.stringify(

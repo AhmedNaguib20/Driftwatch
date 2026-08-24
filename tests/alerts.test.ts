@@ -130,7 +130,9 @@ describe('the alert decision — what a PR could not have seen', () => {
 
   it('never alerts across a protocol break — the run restarts at the break', () => {
     const before = ramp('client_bundle_size', 2_200_000, 13, 0.8)
-    const after = ramp('client_bundle_size', 2_450_000, 2, 0.8, protocol({ browser: 'chrome/152.0.0.1' }))
+    // A node bump, not a browser bump: Chrome is not an input to a bundle's byte count, so it no
+    // longer breaks this line at all (spec §9b).
+    const after = ramp('client_bundle_size', 2_450_000, 2, 0.8, protocol({ nodeVersion: 'v26.0.0' }))
     const condition = conditionFor([...before, ...after])
 
     expect(condition.qualifies).toBe(false)

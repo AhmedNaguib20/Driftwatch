@@ -55,14 +55,29 @@ export function quantumFor(id: MetricId, unit: 'ms' | 'bytes' | null, ciHost: bo
   if (unit === 'bytes') {
     // Every byte class is the same deterministic instrument; 1KB is the resolution below which a
     // difference is bookkeeping (manifest hashes, timestamps) rather than shipped content.
-    return id.startsWith('transfer_size:') || id === 'client_bundle_size' || id === 'build_output_size'
-      ? 1024
-      : 0
+    return isFloorExempt(id) ? 1024 : 0
   }
   if (id.startsWith('route_latency:')) return 5
   if (id.startsWith('lcp:') || id.startsWith('fcp:')) return ciHost ? 200 : 25
   if (id.startsWith('tbt:')) return ciHost ? 100 : 50
   return 100
+}
+
+/**
+ * The deterministic byte classes, exempt from the 2% RELATIVE floor and gated by their 1KB
+ * quantum alone (spec §5, decided M8 step 4).
+ *
+ * Why: the floor is a NOISE rule, and these carry no noise — ±2 bytes observed, and the whole
+ * recorded history of this repo drifts under 0.01%. Keeping it made the tool blind to its own
+ * founding case: on a 9.6 MB client bundle, 2% is ~197 KB, so the 140 KB lodash regression that
+ * M2 and M6 were built around scores 1.42% and reported "no change". A rule that hides the
+ * founding example on any large app is mis-scoped, not conservative.
+ *
+ * This predicate is the single definition — comparison, drift and movement all read it, because
+ * a floor rule that holds in one surface and not another is two rules.
+ */
+export function isFloorExempt(id: MetricId): boolean {
+  return id === 'client_bundle_size' || id === 'build_output_size' || id.startsWith('transfer_size:')
 }
 
 /** CI = DRIFTWATCH_HOST_LABELS present; local = absent (spec §5). */
@@ -173,7 +188,7 @@ function compareOne(
   const absolute = currentValue - baseValue
   const percent = (absolute / baseValue) * 100
 
-  if (Math.abs(percent) < options.noiseFloorPercent) {
+  if (!isFloorExempt(id) && Math.abs(percent) < options.noiseFloorPercent) {
     return {
       ...shell,
       delta: null,

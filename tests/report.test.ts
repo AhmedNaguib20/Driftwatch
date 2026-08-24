@@ -131,6 +131,37 @@ describe('metric verdicts', () => {
     expect(m!.reason).toMatch(/noise floor/)
   })
 
+  it('the founding case: +140KB on a 9.6MB client bundle REPORTS — byte classes have no floor', () => {
+    // 1.46% — under the 2% floor, which is exactly why the floor is wrong here. This is the
+    // lodash regression M2 and M6 were built around; on any large app it reported "no change"
+    // until the exemption landed (spec §5, decided M8 step 4, implemented M10).
+    const [m] = compareMetrics(
+      [measured('client_bundle_size', 9_600_000, 'bytes', 'client bundle size')],
+      [measured('client_bundle_size', 9_740_000, 'bytes', 'client bundle size')],
+      OPTS,
+    )
+    expect(m!.verdict).toBe('regressed')
+    expect(m!.delta).toEqual({ absolute: 140_000, percent: 1.46 })
+
+    // The quantum still governs: bookkeeping-sized differences stay silent.
+    const [tiny] = compareMetrics(
+      [measured('client_bundle_size', 9_600_000, 'bytes', 'client bundle size')],
+      [measured('client_bundle_size', 9_600_512, 'bytes', 'client bundle size')],
+      OPTS,
+    )
+    expect(tiny!.verdict).toBe('no_change')
+    expect(tiny!.reason).toMatch(/1024 byte resolution/)
+
+    // And a timing class still has its floor — the exemption is about bytes, not about size.
+    const [timed] = compareMetrics(
+      [measured('build_time', 9_600_000, 'ms', 'build time')],
+      [measured('build_time', 9_740_000, 'ms', 'build time')],
+      OPTS,
+    )
+    expect(timed!.verdict).toBe('no_change')
+    expect(timed!.reason).toMatch(/noise floor/)
+  })
+
   it('regressed beyond the floor, threshold flag only at/after the threshold', () => {
     const [under] = compareMetrics(
       [measured('build_time', 10000, 'ms', 'b')],
@@ -254,6 +285,17 @@ describe('run verdict', () => {
       [measured('build_time', 10000, 'ms', 'b'), measured('client_bundle_size', 100000, 'bytes', 's')],
       [measured('build_time', 11000, 'ms', 'b'), measured('client_bundle_size', 100100, 'bytes', 's')],
     )
+    expect(r.verdict).toBe('regression')
+  })
+
+  it('the headline byte metric is key by DEFAULT — no perf.yml required', () => {
+    // The default key set named `bundle_size` for three milestones after the id stopped existing,
+    // so a client-bundle regression could not set the verdict and analysis never ran on it.
+    const r = result(
+      [measured('build_time', 10000, 'ms', 'b'), measured('client_bundle_size', 2_000_000, 'bytes', 's')],
+      [measured('build_time', 10100, 'ms', 'b'), measured('client_bundle_size', 2_400_000, 'bytes', 's')],
+    )
+    expect(r.comparison.metrics.find((m) => m.id === 'client_bundle_size')!.verdict).toBe('regressed')
     expect(r.verdict).toBe('regression')
   })
 

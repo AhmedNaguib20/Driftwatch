@@ -2,7 +2,7 @@ import type { MetricId } from '../detect/types.js'
 import { NOISE_FLOOR_PERCENT } from '../detect/config-schema.js'
 import type { IndexFile } from './index-file.js'
 import { orderEntries } from './order.js'
-import { quantumFor } from '../report/compare-metrics.js'
+import { isFloorExempt, quantumFor } from '../report/compare-metrics.js'
 import { buildTimelines } from './timeline.js'
 
 /**
@@ -78,7 +78,7 @@ export function findMovements(index: IndexFile): MetricMovements[] {
         const deltaAbsolute = b.value - a.value
         const deltaPercent = (deltaAbsolute / a.value) * 100
         const significant =
-          Math.abs(deltaPercent) >= NOISE_FLOOR_PERCENT &&
+          (isFloorExempt(timeline.id as MetricId) || Math.abs(deltaPercent) >= NOISE_FLOOR_PERCENT) &&
           (quantum === 0 || Math.abs(deltaAbsolute) >= quantum)
         if (!significant) continue
 

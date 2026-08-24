@@ -91,14 +91,24 @@ describe('dashboard generation', () => {
     expect(html).not.toMatch(/@font-face/)
   })
 
-  it('renders §5.1: separate polylines per segment, a break marker naming the fields', () => {
+  it('renders §5.1 per class: the browser bump splits what Chrome measured, and nothing else', () => {
     const html = render(mixedIndex())
-    const buildCard = html.slice(html.indexOf('<h2>build_time</h2>'))
-    const svg = buildCard.slice(0, buildCard.indexOf('</svg>'))
-    // Two segments (browser change) → two polylines for build_time.
-    expect([...svg.matchAll(/<polyline/g)]).toHaveLength(2)
-    expect(svg).toContain('protocol break')
-    expect(svg).toContain('browser: chrome/151.0.7922.108 → chrome/151.0.7922.140')
+    const card = (id: string) => {
+      const from = html.slice(html.indexOf(`<h2>${id}</h2>`))
+      return from.slice(0, from.indexOf('</svg>'))
+    }
+
+    // Chrome measured LCP, so the bump is a real break: two polylines, never joined across it.
+    const lcp = card('lcp:/')
+    expect([...lcp.matchAll(/<polyline/g)]).toHaveLength(2)
+    expect(lcp).toContain('protocol break')
+    expect(lcp).toContain('browser: chrome/151.0.7922.108 → chrome/151.0.7922.140')
+
+    // Chrome is not an input to `next build`, so the same entries leave the build line whole
+    // (spec §9b — relevance is causal, and follows provenance rather than units).
+    const build = card('build_time')
+    expect([...build.matchAll(/<polyline/g)]).toHaveLength(1)
+    expect(build).not.toContain('protocol break')
   })
 
   it('sparse gaps split the line — never interpolated', () => {

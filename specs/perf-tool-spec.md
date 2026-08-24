@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 50 — 2026-08-20 — **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 51 — 2026-08-24 — guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1080,6 +1080,26 @@ eval run anonymously for five days. Protocol identity applies to the tool itself
 timestamp, and entry point belong in every report. (Related but exonerated: `prompts v? · 0→0 tok`
 is the *failure path's* shape, not a staleness signal — a skipped analysis records no stages. It is
 still a real gap: a failed call consumed tokens and used a prompt version, and both are discarded.)
+
+*Guards closed (`6880903`, 346 tests).* `build-identity.ts` owns version, entry point, build
+timestamp, and the staleness check — **refusal, not warning** (a warning is what five days of
+stale eval already ignored), with `DRIFTWATCH_ALLOW_STALE=1` as the hatch. Hook + guard compose:
+the `prepare` hook keeps the common path fresh; the guard catches every path that skips install
+(running `dist/` directly, a published install whose source moved, a mid-session edit). Build
+identity now rides on **every** surface — terminal, eval header, comment footer, and a **required**
+`build` block in the result JSON (schema 2.1): *a result that cannot name its own build no longer
+type-checks.* Failed calls keep their receipts (tokens, model, promptVersion on `skipped`).
+`DRIFTWATCH_DEBUG_WIRE` documented with the reason it exists: **check the wire before changing a
+prompt.**
+
+*Two holes the guard exposed:* the test suite spawned `dist/` **without building it** — the same
+five-day bug in test form, green assertions about code that isn't under edit (vitest now builds via
+globalSetup); and a test swallowed stderr, so the guard's own refusal surfaced as a bare
+`expected 1 to be 0`. **A test that hides the error text costs more than the test saves.**
+
+*Process rule adopted:* every command names its entry point and whether it needs a build —
+`npx driftwatch` (dist, self-building), `node dist/…` (needs build, refuses if stale),
+`npx tsx src/…` (source, header says "from source"), `npx vitest run` (both, builds first).
 
 *Reporting discipline note:* the previous session's 72-minute run and build failure **did not
 reproduce** (same command, 280s, symmetric samples) — reported as fact with the cause withheld,

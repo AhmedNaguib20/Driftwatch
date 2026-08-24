@@ -96,6 +96,17 @@ program
   })
 
 program
+  .command('alerts')
+  .description('What the recorded history would interrupt someone about — decided locally, writes nothing')
+  .option('--json', 'print the alert decision as JSON', false)
+  .option('--no-fetch', 'use the local perf-data ref without fetching origin')
+  .option('--cwd <dir>', 'project directory', process.cwd())
+  .action(async (flags: { json: boolean; fetch: boolean; cwd: string }) => {
+    const { alertsCommand } = await import('./alerts-command.js')
+    await alertsCommand(flags)
+  })
+
+program
   .command('dashboard')
   .description('Write the static trend dashboard to .perf/dashboard.html from the perf-data branch')
   .option('--open', 'open it in the default browser', false)

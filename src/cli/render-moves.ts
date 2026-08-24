@@ -1,5 +1,5 @@
 import pc from 'picocolors'
-import { NOT_JUDGED_REASON } from '../core/index.js'
+import { NOT_JUDGED_REASON, metricLabel } from '../core/index.js'
 import type { Movement, MovementReport } from '../core/index.js'
 
 /**
@@ -39,26 +39,5 @@ function renderMovement(m: Movement): string {
 
 const short = (sha: string) => sha.slice(0, 7)
 
-/** Terminal display names — ids stay ids in the JSON and on the dashboard cards. */
-export function displayName(id: string): string {
-  if (id === 'build_time') return 'build time'
-  if (id === 'client_bundle_size') return 'client bundle size'
-  if (id === 'build_output_size') return 'build output size'
-  if (id === 'install_time') return 'install time'
-  const [kind, ...route] = id.split(':')
-  const suffix = route.join(':')
-  switch (kind) {
-    case 'route_latency':
-      return `route ${suffix}`
-    case 'lcp':
-      return `LCP ${suffix}`
-    case 'fcp':
-      return `FCP ${suffix}`
-    case 'tbt':
-      return `TBT ${suffix}`
-    case 'transfer_size':
-      return `transfer size ${suffix}`
-    default:
-      return id
-  }
-}
+/** Terminal display names come from core (payload.ts): one metric, one name, every surface. */
+export const displayName = metricLabel

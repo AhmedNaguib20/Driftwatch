@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 53 — 2026-08-24 — decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 55 — 2026-08-24 — M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -129,7 +129,7 @@ points. It then generates one file:
 ```yaml
 # perf.yml (auto-generated — edit only if you want to)
 detect: nextjs
-measure: [build_time, client_bundle_size, test_timings, api_latency]
+measure: [build_time, bundle_size, test_timings, api_latency]
 threshold: 5%
 block_merge: false   # warn only; teams opt in to blocking
 provider: deepseek   # deepseek | anthropic | openai — pluggable (§7.1)
@@ -315,13 +315,11 @@ only prompts and provider can.)
 **Route-latency scope note (M4 step 1):** request-level latency on prerendered (SSG) routes
 measures the file server, not the app — 1–2ms responses where ±1ms is 50–100% relative. Route
 selection therefore prioritizes dynamic/SSR routes; prerendered routes are excluded from
-`route_latency` by default (their regressions surface in `client_bundle_size`, and client-side cost
-lands with Lighthouse). Warm-up-then-median holds for servers exactly as for builds: every fresh boot
-runs 6→5ms before settling at 4 (JIT/module warm-up) — §5.1's pattern, discarded identically. K=5
-with 1 warm-up, sequential fetches only (parallel requests contend). **Route metrics stay non-key**
-— originally "until the full Layer 2a picture exists", which it now does. Re-decided on current
-grounds at the M10 audit (§9c): browser and route timings on shared runners carry machine variance
-that belongs on the dashboard, not in a verdict a team may set to block merges.
+`route_latency` by default (their regressions surface in `bundle_size`, and client-side cost lands
+with Lighthouse). Warm-up-then-median holds for servers exactly as for builds: every fresh boot runs
+6→5ms before settling at 4 (JIT/module warm-up) — §5.1's pattern, discarded identically. K=5 with
+1 warm-up, sequential fetches only (parallel requests contend). Route metrics stay non-key until
+the full Layer 2a picture exists.
 
 ### 5.1 Protocol symmetry — the general law
 
@@ -1216,6 +1214,84 @@ caught:* regenerating goldens deleted every protocol break from them, leaving th
 nothing about §5.1 — both now carry an `lcp:/` series so a Chrome bump is pinned splitting the line
 Chrome actually measured.
 
+### 9d. Drift alerting step 2 — the firing surface (`121a966`, 391 tests) — M10 CLOSED
+
+**Surface: a GitHub issue, not a comment** — drift is about the default branch, so there is no PR
+to attach to. One issue per open condition, upserted; the four states map onto its lifecycle
+(fire → open, worsened → comment, resolved → close, superseded → close).
+
+**"Superseded — not resolved" is the transition that matters**, and it is written to be weaker than
+resolution on purpose: when the alert's starting point falls outside a comparable protocol segment,
+*there is no measurement showing the drift came back down, and none showing it persists.* The claim
+is retired **on provenance rather than on evidence**, names what changed under it (node v24 → v26),
+and says it will be reported again as a new alert once 5 points accumulate under the current
+protocol. A test asserts every occurrence of "resolved" in that body is preceded by "not".
+
+**Finding the issue again uses a stored handle, not a search.** Search is indexing-lagged and
+listing paginates past the marker on a busy repo — both produce duplicate issues, the one failure a
+self-updating surface must not have. The handle is opaque to core (`{kind, ref}`), so hard rule 1
+holds: core stores a string, the adapter gives it meaning. A 404 means a human deleted it → open a
+fresh one, don't raise.
+
+**State records what was said, not what was decided.** Only *delivered* events reach `alerts.json`;
+a failed publish records nothing, so the next run says it again. The alternative — a condition
+suppressed forever that nobody was ever told about — is the worse failure. Alerting never *creates*
+`perf-data` (it reads a history that must already exist); test-asserted.
+
+**The no-fire proof, run twice — with and without a token.** *A quiet run without credentials
+proves nothing: silence has to be a decision, not a missing credential.* Same line both times, and
+the decision itself was inspected for speaking events (0) before a live token was handed to it; a
+unit test drives the same path with a token present and an exploding fetch → zero API calls.
+
+```
+driftwatch alerts: quiet — nothing created, nothing commented
+(5 metric(s) assessed, none past the 10% line; 0 open condition(s); 13 never alerted (licence))
+```
+
+**Not proven live, and deliberately so:** an issue actually opening on the real repo — our own
+history drifts ~0.01%, and the only way to force it would be to fabricate points on the real
+perf-data branch. **Fabricating evidence to complete a proof is the one thing this project must
+never do**; the firing path is proven on real git data in a scratch repo instead, and the real
+first fire will be a real one.
+
+## 9e. M11 — AI as a clean optional tier (opened 2026-08-24, pre-launch)
+
+**The product promise, stated plainly: Driftwatch measures for free and forever without any API
+key. AI explanation is an optional tier the user turns on with their own key.** BYOK has been the
+design since day one, but it has never been *productised* — it works, and it is not yet clean.
+
+**The feature matrix must be explicit, documented, and enforced:**
+
+| Needs no key | Needs the user's key |
+|---|---|
+| measurement, comparison, verdicts, thresholds | analysis (cause / confidence / evidence / fix) |
+| PR comment, CI check, step summary | verified auto-fix PRs (there is no fix to verify without analysis) |
+| record, replay, movement report | `driftwatch eval` |
+| trends, dashboard, drift alerting | |
+
+Every keyless surface must be *fully* functional — not degraded, not nagging. A user who never adds
+a key should experience a complete tool that mentions the optional tier once, in the one place it
+is relevant (a regression it could have explained).
+
+**Scope:**
+1. **The contract & audit** — verify no non-AI path can fail, prompt, or warn because of a missing
+   key; the one mention appears only on a regression. `auto_fix` with no key must be a clean,
+   explained no-op, not an error.
+2. **Key handling** — env only (`DRIFTWATCH_API_KEY`), plus per-provider fallbacks users already
+   have set (`DEEPSEEK_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`). A `key_command` in
+   `perf.yml` so a password manager can supply it (`op read …`) — the command's output is used and
+   never stored. **Refuse to run if a literal key appears in `perf.yml`** and say why; someone will
+   try it.
+3. **Verification** — `driftwatch doctor`: is a key present and from where, is the provider
+   reachable, does the model exist, one minimal call, and what a typical analysis costs. Without
+   this, users debug blind.
+4. **Cost transparency & control** — pre-flight estimate from M9's measured token model, per-run
+   cost already shown, and an optional `max_cost_per_run` that refuses rather than surprises.
+5. **Named errors with fixes** — 401 invalid key, **402 no credit (we hit this ourselves)**,
+   429 rate limit, unknown model. Each with its stanza, per the failure-legibility rule.
+6. **Disclosure** — README section on exactly what is sent (generated from the golden contexts),
+   the secret-withholding list, and the per-run `contextManifest`.
+
 ## 10. Git History Replay — M7, CLOSED (2026-08-20)
 
 Checkout, build, and measure the last N commits to reconstruct a performance timeline
@@ -1261,8 +1337,7 @@ license the wall-clock classes don't have across time gaps: local sequential rep
 monotonically under sustained load/thermals (observed: build 9.94→12.47s across a 10-minute run,
 +22.3% "movements" on innocent commits), and CI record points carry the M5 **runner lottery**
 (build +65.3% on comment-only pushes). **Rule: the movement report judges deterministic byte
-classes only (`client_bundle_size`, `build_output_size`, `transfer_size:*` — `bundle_size` was the
-pre-split id these replaced) in every environment.** Wall-clock classes stay in
+classes only (`bundle_size`, `transfer_size:*`) in every environment.** Wall-clock classes stay in
 the data and on the dashboard but are labeled "not judged — cross-time-gap timing (§5.1 fifth
 instance / runner lottery)". The asymmetry with drift is deliberate and stated: **drift** is a
 segment-level *tendency* (weaker claim, keeps timing with its honest language); **movement** is

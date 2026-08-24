@@ -117,6 +117,7 @@ export async function main(): Promise<void> {
       prNumber: event.prNumber,
       headSha: event.headSha,
       blockMerge: result.config.block_merge,
+      fromFork: event.fromFork,
       token,
       runUrl,
       fixPr,

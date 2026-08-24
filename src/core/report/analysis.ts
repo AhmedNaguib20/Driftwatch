@@ -62,7 +62,11 @@ export function machineDiff(fix: AnalysisFix): string | null {
  *
  *  - analysed: the two-stage flow completed.
  *  - inconclusive: triage concluded this diff does not explain the regression (a useful answer).
- *  - skipped: a provider or transport failure, with the reason.
+ *  - not_applicable: there was no regression to explain. Not a failure, not a degraded run, and
+ *    NOT something any human surface mentions — a keyless user must not read about a tier they
+ *    did not ask for on every clean run (spec §9e).
+ *  - skipped: a provider or transport failure, with the reason. This one IS reported: we tried,
+ *    it cost something, and hiding it would be rule 3 in reverse.
  *  - no_key: a regression was found but DRIFTWATCH_API_KEY is not set. Not an error.
  *  - disabled: --no-ai / DRIFTWATCH_NO_AI — the ai module graph was never loaded.
  */
@@ -100,5 +104,6 @@ export type AnalysisReport =
         readonly tokens: { readonly input: number; readonly output: number }
       }
     }
+  | { readonly outcome: 'not_applicable' }
   | { readonly outcome: 'no_key' }
   | { readonly outcome: 'disabled' }

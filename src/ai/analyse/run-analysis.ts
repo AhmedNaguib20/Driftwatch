@@ -56,7 +56,7 @@ export async function runAnalysis(
   progress: (message: string) => void = () => {},
 ): Promise<Analysis> {
   if (result.verdict !== 'regression') {
-    return { outcome: 'skipped', reason: 'analysis runs only on a regression verdict (spec §7)' }
+    return { outcome: 'not_applicable' }
   }
 
   const input: ContextInput = { result, ...diffData }

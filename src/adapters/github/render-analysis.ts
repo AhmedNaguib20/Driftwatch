@@ -1,22 +1,33 @@
+import { AI_KEY_ENV, tierMention } from '../../core/index.js'
 import type { AnalysisReport, ResultJson } from '../../core/index.js'
 import { confidenceLabel, formatTokens, formatValue } from './format.js'
 
 /** The AI section of the PR comment. Honesty rules match the CLI renderer: number + calibrated
  * word, downgrade notes shown, inconclusive framed as information. */
 
-export function renderAnalysisSection(result: ResultJson): string[] {
+export function renderAnalysisSection(result: ResultJson, fromFork = false): string[] {
   const analysis = result.analysis
   if (!analysis) return []
 
   switch (analysis.outcome) {
+    // Silent, exactly as the terminal is: a clean run and a deliberately disabled run both say
+    // nothing about the tier. The outcome stays in the result JSON either way (spec §9e).
     case 'disabled':
-      return ['', '_AI analysis disabled for this run._']
-    case 'no_key':
+    case 'not_applicable':
+      return []
+    case 'no_key': {
+      const mention = tierMention({ fixTier: result.config.auto_fix === 'propose' })
+      // One mention, and it must be true for the reader it reaches: a fork PR cannot see
+      // repository secrets, so its author is not missing a setting — the run simply had no key.
+      const how = fromFork
+        ? `This PR comes from a fork, and repository secrets are not exposed to fork runs — so analysis does not run here even when the key is set.`
+        : `To enable it, set \`${AI_KEY_ENV}\` in the workflow's secrets.`
       return [
         '',
-        '_A regression was found but no `DRIFTWATCH_API_KEY` is available (normal for fork PRs), ' +
-          'so there is no analysis of the cause. The measurement above stands on its own._',
+        `_Driftwatch measured this without a key. Explaining a regression is the optional AI tier, ` +
+          `which runs on your own key: ${mention.what} ${how} The measurement above stands on its own._`,
       ]
+    }
     case 'skipped':
       return ['', `_AI analysis skipped: ${analysis.reason.split('\n')[0]}_`]
     case 'inconclusive':

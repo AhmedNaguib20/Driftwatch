@@ -20,7 +20,7 @@
 
 </details>
 
-_A regression was found but no `DRIFTWATCH_API_KEY` is available (normal for fork PRs), so there is no analysis of the cause. The measurement above stands on its own._
+_Driftwatch measured this without a key. Explaining a regression is the optional AI tier, which runs on your own key: Analysis reads the diff and names the likely cause, with a suggested fix. To enable it, set `DRIFTWATCH_API_KEY` in the workflow's secrets. The measurement above stands on its own._
 
 <details>
 <summary>How this was measured</summary>

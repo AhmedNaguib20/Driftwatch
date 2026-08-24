@@ -15,6 +15,15 @@ export * from './trend/index.js'
 export * from './alert/index.js'
 export * from './replay/index.js'
 export * from './verify/index.js'
+export {
+  AI_KEY_ENV,
+  CAPABILITIES,
+  aiKeyPresent,
+  capabilitiesOf,
+  requiresAiTier,
+  tierMention,
+} from './tier.js'
+export type { Capability, Tier, TierMention } from './tier.js'
 export { recordRun } from './record.js'
 export type { RecordOptions } from './record.js'
 export { runDriftwatch } from './run.js'

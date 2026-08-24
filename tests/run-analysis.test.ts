@@ -189,12 +189,14 @@ describe('runAnalysis — two-stage flow', () => {
     expect(analysis.reason).toMatch(/invalid JSON twice/)
   })
 
-  it('never runs on a non-regression verdict', async () => {
+  it('never runs on a non-regression verdict — and that is not a skip', async () => {
     const result = { ...(await regressionResult()), verdict: 'ok' as const }
     const provider = scriptedProvider([])
     const analysis = await runAnalysis(result, DIFF_DATA, provider)
 
-    expect(analysis.outcome).toBe('skipped')
+    // 'not_applicable', not 'skipped': nothing was attempted and nothing failed, so no human
+    // surface reports it. 'skipped' is reserved for an attempt that cost something (spec §9e).
+    expect(analysis.outcome).toBe('not_applicable')
     expect(provider.requests).toHaveLength(0)
   })
 

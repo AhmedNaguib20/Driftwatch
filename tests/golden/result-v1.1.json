@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "schemaMinorVersion": 1,
+  "schemaMinorVersion": 2,
   "driftwatchVersion": "<driftwatch-version>",
   "build": {
     "version": "0.0.0-test",

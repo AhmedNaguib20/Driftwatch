@@ -8,6 +8,23 @@ import pc from 'picocolors'
  * not for user pipelines, so a red eval should stop a merge.
  */
 export async function evalCommand(options: { cases: string }): Promise<void> {
+  // eval is the one command that genuinely cannot run without the AI tier — it grades live
+  // provider behaviour. That makes it a REFUSAL with a remedy, not a stack trace: every failure
+  // carries its own fix (spec §9a), and the tier's own commands are held to that too.
+  const { AI_KEY_ENV, aiKeyPresent, capabilitiesOf } = await import('../core/index.js')
+  if (!aiKeyPresent()) {
+    const why = capabilitiesOf('ai').find((c) => c.id === 'eval')?.why ?? ''
+    console.error(pc.yellow(`driftwatch eval needs the AI tier: ${why}.`))
+    console.error('')
+    console.error(pc.dim('Set your key and re-run:'))
+    console.error('')
+    console.error(`    export ${AI_KEY_ENV}=<your DeepSeek or OpenAI key>`)
+    console.error('')
+    console.error(pc.dim('Measurement needs no key — `driftwatch run`, `record`, `trend` and `alerts` all work without one.'))
+    process.exitCode = 1
+    return
+  }
+
   const { runEvalCases } = await import('../ai/eval/runner.js')
 
   // Every output identifies its build (spec v50) — the eval most of all: it is the surface where

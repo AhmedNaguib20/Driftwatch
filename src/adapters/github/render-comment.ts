@@ -18,6 +18,12 @@ export interface CommentOptions {
   /** A verified fix PR (or the honest reason there is none despite a verified fix). */
   readonly fixPr?: { readonly number: number; readonly url: string; readonly summary: string } | null
   readonly fixPrNote?: string | null
+  /**
+   * True for a PR from a fork. Repository secrets are not exposed to those runs, so a repo that
+   * HAS a key still measures without one — and telling that user to "set the key" would be wrong
+   * advice about a key they already set (spec §9e).
+   */
+  readonly fromFork?: boolean
 }
 
 /**
@@ -46,7 +52,7 @@ export function renderComment(result: ResultJson, options: CommentOptions = {}):
   lines.push(...comparisonTable(result))
   lines.push(...softeningBlock(result))
   lines.push(...fixBlocks(result))
-  lines.push(...renderAnalysisSection(result))
+  lines.push(...renderAnalysisSection(result, options.fromFork === true))
   lines.push('')
   lines.push(renderHowMeasuredSlim(result, options.runUrl ?? null))
   const sent = renderWhatWasSent(result)

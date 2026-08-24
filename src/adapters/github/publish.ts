@@ -22,6 +22,8 @@ export interface PublishContext {
   readonly runUrl?: string | null
   readonly fixPr?: { readonly number: number; readonly url: string; readonly summary: string } | null
   readonly fixPrNote?: string | null
+  /** Fork PRs never see repository secrets — the keyless note says so instead of giving advice. */
+  readonly fromFork?: boolean
   readonly fetchImpl?: typeof fetch
   readonly sleep?: (ms: number) => Promise<void>
 }
@@ -49,7 +51,12 @@ export async function publishResult(
     const { url, healed } = await upsertComment(
       client,
       { owner: ctx.owner, repo: ctx.repo, prNumber: ctx.prNumber },
-      renderComment(result, { runUrl: ctx.runUrl ?? null, fixPr: ctx.fixPr ?? null, fixPrNote: ctx.fixPrNote ?? null }),
+      renderComment(result, {
+        runUrl: ctx.runUrl ?? null,
+        fixPr: ctx.fixPr ?? null,
+        fixPrNote: ctx.fixPrNote ?? null,
+        fromFork: ctx.fromFork ?? false,
+      }),
     )
     commentUrl = url
     if (healed > 0) warnings.push(`removed ${healed} duplicate driftwatch comment(s)`)

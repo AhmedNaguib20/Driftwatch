@@ -260,11 +260,23 @@ describe('PR comment renderer — golden contract', () => {
     expect(rendered).not.toMatch(/definitely/i)
   })
 
-  it('no-key renders the measurement intact with a one-line note (fork-PR path)', async () => {
+  it('no-key renders the measurement intact, and the tier note exactly once', async () => {
     const rendered = renderComment(await scenario('regression-no-key'))
     expect(rendered).toContain('⚠️ Performance regression detected')
-    expect(rendered).toContain('normal for fork PRs')
     expect(rendered).not.toContain('Likely cause')
+
+    // The free tier is not a misconfiguration: the note says what the tier adds and how to turn
+    // it on, once, and nowhere else in the comment is the key named (spec §9e).
+    expect(rendered).toContain('optional AI tier')
+    expect([...rendered.matchAll(/DRIFTWATCH_API_KEY/g)]).toHaveLength(1)
+  })
+
+  it('on a fork PR it explains the mechanism instead of giving advice that cannot work', async () => {
+    const rendered = renderComment(await scenario('regression-no-key'), { fromFork: true })
+
+    expect(rendered).toContain('repository secrets are not exposed to fork runs')
+    // A fork author cannot set the secret, so the comment must not tell them to.
+    expect(rendered).not.toContain("set `DRIFTWATCH_API_KEY`")
   })
 
   it('renders the summary golden', async () => {

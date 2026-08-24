@@ -1,6 +1,6 @@
 import pc from 'picocolors'
 import { SelectionRefused } from '../core/index.js'
-import { attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, runDriftwatch, verifyFix } from '../core/index.js'
+import { aiKeyPresent, attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, runDriftwatch, verifyFix } from '../core/index.js'
 import type { AnalysisReport, ResultJson, StageStats } from '../core/index.js'
 import { renderAnalysis } from './render-analysis.js'
 import { renderVerification, verificationEligible } from './render-verification.js'
@@ -18,7 +18,6 @@ import { renderResult } from './render-table.js'
  */
 
 /** Deliberately duplicated from ai/providers — reading it here must not load the ai graph. */
-const API_KEY_ENV = 'DRIFTWATCH_API_KEY'
 const NO_AI_ENV = 'DRIFTWATCH_NO_AI'
 
 export interface RunFlags {
@@ -62,7 +61,11 @@ export async function runCommand(flags: RunFlags): Promise<void> {
 
     console.log(renderResult(result))
     if (result.analysis) {
-      const rendered = renderAnalysis(result.analysis, await costEstimator(result.analysis))
+      const rendered = renderAnalysis(
+        result.analysis,
+        await costEstimator(result.analysis),
+        result.config.auto_fix === 'propose',
+      )
       if (rendered) console.log(rendered)
     }
     if (result.verification) {
@@ -92,10 +95,10 @@ async function resolveAnalysis(
   progress: (message: string) => void,
 ): Promise<AnalysisReport> {
   if (!flags.ai || process.env[NO_AI_ENV] === '1') return { outcome: 'disabled' }
-  if (result.verdict !== 'regression') {
-    return { outcome: 'skipped', reason: 'analysis runs only on a regression verdict' }
-  }
-  if (!process.env[API_KEY_ENV]?.trim()) return { outcome: 'no_key' }
+  // Nothing to explain is not a skip: no attempt was made, nothing failed, and there is nothing
+  // for a human surface to report (spec §9e — the tier is mentioned once, on a regression).
+  if (result.verdict !== 'regression') return { outcome: 'not_applicable' }
+  if (!aiKeyPresent()) return { outcome: 'no_key' }
 
   // The ONLY entry into the ai/ module graph.
   const ai = await import('../ai/index.js')

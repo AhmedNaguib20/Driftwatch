@@ -15,6 +15,23 @@ Exit code is always 0 (warn-only). Deltas under the 2% noise floor are reported 
 both sides of every comparison are measured cold, in temp copies, under an identical recorded
 protocol — never in your working directory.
 
+## What needs a key, and what doesn't
+
+**Driftwatch measures for free, forever, with no API key.** Explanation is an optional tier that
+runs on your own key. Nothing below the left column ever asks you for one, and a keyless run never
+mentions the tier — except once, on a regression it could have explained.
+
+<!-- feature-matrix: generated from src/core/tier.ts; a test fails if these drift apart -->
+
+| Needs no key | Needs your own key |
+| --- | --- |
+| measurement, comparison, verdicts, thresholds | analysis (cause, confidence, evidence, suggested fix) |
+| PR comment, CI check, step summary | verified auto-fix PRs |
+| record, replay, movement report | `driftwatch eval` |
+| trends, dashboard, drift alerting |  |
+
+<!-- /feature-matrix -->
+
 ## AI analysis
 
 When a run confirms a regression, driftwatch can explain it: triage decides whether the diff

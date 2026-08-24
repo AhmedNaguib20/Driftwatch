@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
+import { capabilitiesOf } from '../src/core/index.js'
+
 /**
  * README's "What leaves your machine" is standing documentation of the per-run contextManifest.
  * These tests keep it honest against the code and the golden context files — if the context
@@ -64,5 +66,26 @@ describe('README — What leaves your machine', () => {
     expect(readme).toContain('--no-ai')
     expect(readme).toContain('DRIFTWATCH_NO_AI')
     expect(readme).toMatch(/never in `perf\.yml`/)
+  })
+})
+
+describe('the feature matrix in the README is the one in the code', () => {
+  it('lists every capability on the side its tier declares — or fails until it does', async () => {
+    const readme = await readFile(path.join(import.meta.dirname, '..', 'README.md'), 'utf8')
+    const block = readme.split('<!-- feature-matrix')[1]?.split('<!-- /feature-matrix -->')[0] ?? ''
+
+    // The promise is sold in this table, so it is checked against CAPABILITIES rather than
+    // proof-read: a capability that changes tier changes the README or fails here (spec §9e).
+    const free = capabilitiesOf('measurement').map((c) => c.label)
+    const paid = capabilitiesOf('ai').map((c) => c.label)
+
+    for (const label of [...free, ...paid]) expect(block, label).toContain(label)
+
+    const rows = block.split('\n').filter((l) => l.trim().startsWith('|') && !l.includes('---'))
+    const left = rows.map((r) => r.split('|')[1]?.trim()).filter(Boolean)
+    const right = rows.map((r) => r.split('|')[2]?.trim()).filter(Boolean)
+
+    expect(left.filter((l) => l !== 'Needs no key')).toEqual(free)
+    expect(right.filter((l) => l !== 'Needs your own key')).toEqual(paid)
   })
 })

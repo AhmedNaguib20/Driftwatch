@@ -1,4 +1,5 @@
 import pc from 'picocolors'
+import { tierMention } from '../core/index.js'
 import type { AnalysisReport, StageStats } from '../core/index.js'
 
 /**
@@ -10,17 +11,26 @@ import type { AnalysisReport, StageStats } from '../core/index.js'
 export function renderAnalysis(
   analysis: AnalysisReport,
   estimateCost: (stage: StageStats) => number | null,
+  /** True when `auto_fix: propose` is configured: the same key unlocks the fix tier, and saying
+   *  so in the same breath keeps this ONE mention rather than two (spec §9e). */
+  fixTier = false,
 ): string {
   switch (analysis.outcome) {
+    // Silent by design (spec §9e): a run with nothing to explain, or with the tier turned off,
+    // says nothing about the tier at all. Both states remain in the JSON for machine consumers.
     case 'disabled':
+    case 'not_applicable':
       return ''
-    case 'no_key':
+    case 'no_key': {
+      const mention = tierMention({ fixTier })
       return [
         '',
-        pc.dim('AI analysis: a regression was found, but no API key is set, so driftwatch cannot'),
-        pc.dim('explain it. Analysis reads the diff and names the likely cause, with a suggested fix.'),
-        pc.dim('To enable:  export DRIFTWATCH_API_KEY=<your DeepSeek or OpenAI key>   (see README, "AI analysis")'),
+        pc.dim('A regression was found. Driftwatch measures without a key; explaining a regression'),
+        pc.dim('is the optional AI tier, which runs on your own key.'),
+        pc.dim(`  ${mention.what}`),
+        pc.dim(`  To enable:  ${mention.how}   (see README, "AI analysis")`),
       ].join('\n')
+    }
     case 'skipped':
       return `\n${pc.dim(`AI analysis skipped: ${analysis.reason}`)}`
     case 'inconclusive':

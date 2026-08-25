@@ -67,12 +67,10 @@ jobs:
           #   on one push before trusting it.
           install-dependencies: true      # CfT builds need shared libraries the bare runner lacks
 
-      # Developing driftwatch in this repo: build the local action and run it.
-      # Once driftwatch is published, these two steps become a single
-      #   - uses: driftwatch/action@v1
-      - run: npm ci && npm run build
-
-      - uses: ./
+      # Pinned deliberately, like the Chrome version above. driftwatch's own version is part
+      # of the measurement protocol, so upgrading it starts a new trend segment — that break
+      # should be a dated decision you made, not something a floating tag did to your history.
+      - uses: AhmedNaguib20/Driftwatch@v0.6.0
         with:
           project-dir: .
         env:
@@ -100,8 +98,9 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci && npm run build
-
-      - uses: ./
+      # Pinned deliberately, like the Chrome version above. driftwatch's own version is part
+      # of the measurement protocol, so upgrading it starts a new trend segment — that break
+      # should be a dated decision you made, not something a floating tag did to your history.
+      - uses: AhmedNaguib20/Driftwatch@v0.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

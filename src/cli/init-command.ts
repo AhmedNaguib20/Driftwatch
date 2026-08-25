@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import pc from 'picocolors'
-import { WORKFLOW_PATH, renderWorkflow } from '../adapters/github/workflow-template.js'
+import { SELF_PACKAGE, WORKFLOW_PATH, renderWorkflow } from '../adapters/github/workflow-template.js'
 import { configFromProfile, selectApp, writeConfigIfAbsent } from '../core/index.js'
 import type { ProjectProfile } from '../core/index.js'
 
@@ -55,7 +55,9 @@ export async function writeGithubWorkflow(
 ): Promise<void> {
   const root = profile.gitRoot ?? profile.projectRoot
   const target = path.join(root, WORKFLOW_PATH)
-  const rendered = renderWorkflow(profile.pathInRepo ?? '.')
+  // Detected, never a flag: an option here is one more thing a user can get wrong, and getting it
+  // wrong writes a workflow that cannot run. Only driftwatch's own repo builds the local action.
+  const rendered = renderWorkflow({ projectDir: profile.pathInRepo ?? '.', self: await isSelf(root) })
 
   const existing = await readFile(target, 'utf8').catch(() => null)
   if (existing !== null && !force) {
@@ -122,5 +124,16 @@ function printProfile(profile: ProjectProfile): void {
 
   for (const warning of profile.warnings) {
     console.log(`\n${pc.yellow('warning')} ${warning}`)
+  }
+}
+
+/** True only inside driftwatch's own repository, identified by its package name. */
+async function isSelf(root: string): Promise<boolean> {
+  const raw = await readFile(path.join(root, 'package.json'), 'utf8').catch(() => null)
+  if (raw === null) return false
+  try {
+    return (JSON.parse(raw) as { name?: string }).name === SELF_PACKAGE
+  } catch {
+    return false
   }
 }

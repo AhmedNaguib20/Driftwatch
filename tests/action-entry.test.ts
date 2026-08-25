@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { exitCodeFor } from '../src/adapters/github/action-entry.js'
 import { parseActionEvent } from '../src/adapters/github/event.js'
 import { preflightBase } from '../src/adapters/github/preflight.js'
-import { renderWorkflow } from '../src/adapters/github/workflow-template.js'
+import { PUBLISHED_ACTION, renderWorkflow } from '../src/adapters/github/workflow-template.js'
 import { writeGithubWorkflow } from '../src/cli/init-command.js'
 import { detectProject, hostLabelsFromEnv, protocolMismatches } from '../src/core/index.js'
 import type { MeasurementProtocol } from '../src/core/index.js'
@@ -210,6 +210,44 @@ describe('host labels — cross-runner comparisons stay refusable', () => {
 
     const diffs = protocolMismatches(proto(['os:Linux']), proto(['os:macOS']))
     expect(diffs).toEqual(['hostLabels: os:Linux (base) vs os:macOS (current)'])
+  })
+})
+
+describe('the generated workflow runs in a repo that is not ours', () => {
+  it('references the PUBLISHED action, never the local one', () => {
+    const theirs = renderWorkflow({ projectDir: '.', self: false })
+
+    // `uses: ./` looks for an action.yml the user does not have, so a workflow carrying it fails
+    // on their first push. It shipped that way from M3 to v0.6.0 because this repo — the only
+    // place it was ever generated — is the one place it happens to be correct.
+    expect(theirs).not.toContain('uses: ./')
+    expect(theirs).not.toContain('npm ci && npm run build')
+    expect(theirs).toContain(`uses: ${PUBLISHED_ACTION}`)
+  })
+
+  it('pins the action to an exact tag, for the same reason it pins Chrome', () => {
+    const theirs = renderWorkflow({ projectDir: '.', self: false })
+
+    // driftwatch's own version is part of the protocol hash, so a floating tag would let an
+    // upgrade split a user's trend into a segment they did not cause and cannot explain.
+    // Scoped to OUR action: third-party actions pinned to a major (checkout@v4) are normal.
+    const ours = theirs.split('\n').filter((l) => l.includes('AhmedNaguib20/Driftwatch@'))
+    expect(ours.length).toBeGreaterThan(0)
+    for (const line of ours) expect(line).toMatch(/@v\d+\.\d+\.\d+$/)
+  })
+
+  it('keeps the LOCAL action only for driftwatch itself', () => {
+    const ours = renderWorkflow({ projectDir: '.', self: true })
+
+    // Here the opposite is required: a pull request must measure the code it changes, not the
+    // last release.
+    expect(ours).toContain('uses: ./')
+    expect(ours).not.toContain(PUBLISHED_ACTION)
+  })
+
+  it('both jobs get the same treatment — the measure job and the alerts job', () => {
+    const theirs = renderWorkflow({ projectDir: '.', self: false })
+    expect([...theirs.matchAll(new RegExp(`uses: ${PUBLISHED_ACTION}`, 'g'))]).toHaveLength(2)
   })
 })
 

@@ -87,13 +87,20 @@ export async function resolveAiKey(
   return { key: null, source: { kind: 'none' }, problem: null }
 }
 
-/** Human phrasing for where a key came from — used by `doctor` and by failure stanzas. */
-export function describeKeySource(source: KeySource): string {
+/**
+ * Human phrasing for where a key came from — used by failure stanzas and by `doctor`.
+ *
+ * `redactCommand` drops the command text. A `key_command` is not a secret, but it is a VAULT
+ * PATH — it names where the secret lives, which is exactly the thing worth not pasting into a
+ * terminal a user is about to screenshot into a bug report. Diagnostics redact it; a stanza
+ * telling the user what they configured does not need to.
+ */
+export function describeKeySource(source: KeySource, options: { readonly redactCommand?: boolean } = {}): string {
   switch (source.kind) {
     case 'env':
       return `the ${source.name} environment variable`
     case 'key_command':
-      return `perf.yml key_command (\`${source.command}\`)`
+      return options.redactCommand ? 'the key_command in perf.yml' : `perf.yml key_command (\`${source.command}\`)`
     case 'none':
       return 'nowhere — no key is configured'
   }

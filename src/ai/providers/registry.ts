@@ -2,19 +2,14 @@ import { openAiCompatibleProvider } from './openai-compatible.js'
 import type { Provider } from './types.js'
 
 /**
- * Provider construction and key resolution.
+ * Provider construction. The key ARRIVES here — it is never resolved here.
  *
- * The key comes from DRIFTWATCH_API_KEY and nowhere else — never perf.yml (it gets committed),
- * never written to disk, never serialized into the result JSON (hard rule 6, BYOK). Absence of a
- * key is a normal state, not an error: the caller renders a one-line hint and moves on.
+ * `src/core/key.ts` owns resolution (env, `key_command`, per-provider fallbacks) and is the only
+ * place that answers "is a key available?". This file used to answer it too, reading
+ * DRIFTWATCH_API_KEY alone; after step A that answer was both duplicated and wrong (it returned
+ * null for a user whose DEEPSEEK_API_KEY was set). Deleted rather than kept in sync: a second
+ * answer to that question is how surfaces start disagreeing (spec §9c).
  */
-
-export const API_KEY_ENV = 'DRIFTWATCH_API_KEY'
-
-export function resolveApiKey(env: NodeJS.ProcessEnv = process.env): string | null {
-  const key = env[API_KEY_ENV]?.trim()
-  return key ? key : null
-}
 
 export interface ProviderConfig {
   readonly provider: string

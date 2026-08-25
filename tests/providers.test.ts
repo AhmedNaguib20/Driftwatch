@@ -5,7 +5,6 @@ import {
   createProvider,
   jsonCall,
   openAiCompatibleProvider,
-  resolveApiKey,
 } from '../src/ai/providers/index.js'
 import type { ChatRequest } from '../src/ai/providers/index.js'
 
@@ -164,12 +163,6 @@ describe('jsonCall — validate + one corrective retry', () => {
 })
 
 describe('key resolution and provider registry', () => {
-  it('reads DRIFTWATCH_API_KEY and nothing else', () => {
-    expect(resolveApiKey({ DRIFTWATCH_API_KEY: ' sk-x ' })).toBe('sk-x')
-    expect(resolveApiKey({ DEEPSEEK_API_KEY: 'sk-y' })).toBeNull()
-    expect(resolveApiKey({})).toBeNull()
-  })
-
   it('constructs known vendors and refuses unknown ones by name', () => {
     expect(createProvider({ provider: 'deepseek', model: 'm', apiKey: 'k' }).name).toBe('deepseek')
     expect(() => createProvider({ provider: 'grok', model: 'm', apiKey: 'k' })).toThrow(/deepseek, openai/)

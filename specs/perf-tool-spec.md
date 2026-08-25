@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 57 — 2026-08-24 — M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 58 — 2026-08-24 — test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1325,6 +1325,23 @@ depends on a timing metric staying under the floor is a flaky test by constructi
 Rule: tests assert against **deterministic byte classes**, or against the **policy as a pure
 function** over known inputs, never against which branch a timed run happened to take. The same
 licence doctrine that governs movement attribution governs our own assertions.
+
+*Doctrine applied (`e5433b8`, 431 tests).* `escalation.test.ts` split the two things it was
+conflating: the **policy** as a pure function, exhaustively (all 15 unit×verdict pairs, plus mixed
+and empty tables — six tests became twenty, and no machine is involved), and the **plumbing**
+without the branch (run one leaves a cache entry, run two reads it; the test accepts
+`['screened','confirmed']` and then asserts the *invariants* of whichever was taken — screened ⇒
+from cache, no escalation line; confirmed ⇒ escalation line, fresh base). The poisoned-cache test
+keeps its escalation assertion (2× + 1000ms is outside every floor on any machine) but **lost its
+tail**, which asserted what the confirming run then measured — the same disease one layer down.
+Sweep: escalation was the only remaining instance; `serve` bounds a timing metric **only in the
+direction load cannot move it** (`>= 5` for a 5ms sleep), which is the safe form. **A coarser
+fixture is not a fix** — it lowers the probability, costs test time, and leaves the flaw.
+
+*Timeouts:* a duration cap says nothing about correctness when it trips, so it belongs **well past
+the loaded worst case**, not tuned near it (600s → 1200s for a 152s-unloaded test running parallel
+with real builds). *And a filtered command that captures a FAIL without its assertion text is how a
+red commit happens* — keep full output on failure.
 
 **Scope:**
 1. **The contract & audit** — verify no non-AI path can fail, prompt, or warn because of a missing

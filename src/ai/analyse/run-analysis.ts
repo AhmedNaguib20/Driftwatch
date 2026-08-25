@@ -42,8 +42,8 @@ const DEEP_TIMEOUT_MS = 180_000
  * A 150-line fix left 140 tokens of headroom. Raised pre-emptively to 6000 (≈2.5x, ~400-line
  * fixes) because model verbosity grows and this failure mode is silent until it isn't.
  */
-const TRIAGE_MAX_OUTPUT = 3_200
-const DEEP_MAX_OUTPUT = 6_000
+export const TRIAGE_MAX_OUTPUT = 3_200
+export const DEEP_MAX_OUTPUT = 6_000
 
 /** Below this confidence a diff fix is DISPLAYED as prose; the diff itself survives for
  * verification (spec v35 — the bar governs presentation, measurement governs proof). */

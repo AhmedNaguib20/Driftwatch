@@ -1,4 +1,4 @@
-export { API_KEY_ENV, createProvider, resolveApiKey } from './registry.js'
+export { createProvider } from './registry.js'
 export type { ProviderConfig } from './registry.js'
 export { jsonCall } from './json-call.js'
 export type { JsonCallResult, Validator } from './json-call.js'

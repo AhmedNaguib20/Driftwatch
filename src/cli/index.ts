@@ -118,6 +118,16 @@ program
   })
 
 program
+  .command('doctor')
+  .description('Is the AI tier working? Reports key, provider, model and cost — writes nothing')
+  .option('--json', 'print the report as JSON', false)
+  .option('--cwd <dir>', 'project directory', process.cwd())
+  .action(async (flags: { json: boolean; cwd: string }) => {
+    const { doctorCommand } = await import('./doctor-command.js')
+    await doctorCommand(flags)
+  })
+
+program
   .command('eval', { hidden: true })
   .description('dev: run the eval cases against the live provider and judge the prompts')
   .option('--cases <dir>', 'cases directory', 'eval/cases')

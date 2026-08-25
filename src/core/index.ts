@@ -33,6 +33,8 @@ export {
   tierMention,
 } from './tier.js'
 export type { Capability, Tier, TierMention } from './tier.js'
+export { keyChecks, reportFrom } from './doctor.js'
+export type { CheckState, DoctorCheck, DoctorReport } from './doctor.js'
 export { recordRun } from './record.js'
 export type { RecordOptions } from './record.js'
 export { runDriftwatch } from './run.js'

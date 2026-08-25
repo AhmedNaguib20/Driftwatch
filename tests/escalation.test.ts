@@ -67,45 +67,73 @@ function metricRow(result: ResultJson, id: string): MetricComparison {
   return result.comparison.metrics.find((m) => m.id === id)!
 }
 
-describe('requiresConfirmation', () => {
+/**
+ * The escalation policy, as a pure function over known inputs — exhaustively.
+ *
+ * This is where the branch decision is tested, and the only place it can be tested honestly. An
+ * assertion that a *timed* run took a particular branch is flaky by construction: the delta it
+ * depends on is a wall-clock measurement, and machine load moves it (CLAUDE.md conventions).
+ */
+describe('requiresConfirmation — the policy, over every input it can see', () => {
+  const VERDICTS = ['regressed', 'improved', 'no_change', 'skipped', 'not_comparable'] as const
+  const UNITS = ['ms', 'bytes', null] as const
+
   function fakeResult(metrics: Partial<MetricComparison>[]): ResultJson {
     return { comparison: { metrics } } as unknown as ResultJson
   }
 
-  it('fires on a floor-crossing time metric, in either direction', () => {
-    expect(requiresConfirmation(fakeResult([{ unit: 'ms', verdict: 'regressed' }]))).toBe(true)
-    expect(requiresConfirmation(fakeResult([{ unit: 'ms', verdict: 'improved' }]))).toBe(true)
+  /** Only a floor-crossing TIME delta can be machine drift; everything else is settled already. */
+  const shouldFire = (unit: (typeof UNITS)[number], verdict: (typeof VERDICTS)[number]) =>
+    unit === 'ms' && (verdict === 'regressed' || verdict === 'improved')
+
+  for (const unit of UNITS) {
+    for (const verdict of VERDICTS) {
+      it(`${String(unit)} / ${verdict} → ${shouldFire(unit, verdict) ? 'confirm' : 'report as measured'}`, () => {
+        expect(requiresConfirmation(fakeResult([{ unit, verdict }]))).toBe(shouldFire(unit, verdict))
+      })
+    }
+  }
+
+  it('one crossing time row is enough, whatever else is in the table', () => {
+    const quiet: Partial<MetricComparison>[] = [
+      { unit: 'bytes', verdict: 'regressed' },
+      { unit: 'ms', verdict: 'no_change' },
+      { unit: 'ms', verdict: 'skipped' },
+      { unit: null, verdict: 'not_comparable' },
+    ]
+    expect(requiresConfirmation(fakeResult(quiet))).toBe(false)
+    expect(requiresConfirmation(fakeResult([...quiet, { unit: 'ms', verdict: 'improved' }]))).toBe(true)
   })
 
-  it('never fires on bundle size — bytes do not drift', () => {
-    expect(requiresConfirmation(fakeResult([{ unit: 'bytes', verdict: 'regressed' }]))).toBe(false)
-  })
-
-  it('never fires on no_change, skipped, or not_comparable — nothing to confirm', () => {
-    expect(
-      requiresConfirmation(
-        fakeResult([
-          { unit: 'ms', verdict: 'no_change' },
-          { unit: 'ms', verdict: 'skipped' },
-          { unit: 'ms', verdict: 'not_comparable' },
-        ]),
-      ),
-    ).toBe(false)
+  it('an empty table confirms nothing', () => {
+    expect(requiresConfirmation(fakeResult([]))).toBe(false)
   })
 })
 
 describe('the screening → confirm path, end to end', () => {
-  it('first run is fresh, second run screens from cache', async () => {
+  it('the first run measures fresh and leaves a cache entry the second run reads', async () => {
     const dir = await repo()
 
     const first = await runDriftwatch({ cwd: dir })
     expect(first.comparison.measurementPath).toBe('fresh')
     expect(first.base.available && first.base.fromCache).toBe(false)
 
-    const second = await runDriftwatch({ cwd: dir })
-    expect(second.comparison.measurementPath).toBe('screened')
-    expect(second.base.available && second.base.fromCache).toBe(true)
-    expect(second.verdict).toBe('ok')
+    const progress: string[] = []
+    const second = await runDriftwatch({ cwd: dir, progress: (m) => progress.push(m) })
+
+    // The PLUMBING is what this test owns: a cache entry existed and was consulted. WHICH branch
+    // followed depends on whether two timed builds landed within the floor — a machine question,
+    // not a code question, and asserting it here is what made this test flaky three times.
+    expect(['screened', 'confirmed']).toContain(second.comparison.measurementPath)
+
+    // Whichever branch it took, the invariants of that branch must hold.
+    if (second.comparison.measurementPath === 'screened') {
+      expect(second.base.available && second.base.fromCache).toBe(true)
+      expect(progress.join('\n')).not.toMatch(/re-measuring both sides fresh/)
+    } else {
+      expect(progress.join('\n')).toMatch(/re-measuring both sides fresh to confirm/)
+      expect(second.base.available && second.base.fromCache).toBe(false)
+    }
   })
 
   it('a poisoned cached median escalates, confirms fresh, and replaces the cache entry', async () => {
@@ -132,13 +160,15 @@ describe('the screening → confirm path, end to end', () => {
     const progress: string[] = []
     const result = await runDriftwatch({ cwd: dir, progress: (m) => progress.push(m) })
 
-    // The poisoned delta was screened, crossed the floor, and was re-measured — the reported
-    // result is the confirmed one and shows no change (the code did not change).
+    // Escalation itself IS deterministic here: the poison is 2x + 1000ms, far outside any floor,
+    // so the screening decision cannot go the other way whatever the machine is doing.
     expect(progress.join('\n')).toMatch(/re-measuring both sides fresh to confirm/)
     expect(result.comparison.measurementPath).toBe('confirmed')
     expect(result.base.available && result.base.fromCache).toBe(false)
-    expect(metricRow(result, 'build_time').verdict).toBe('no_change')
-    expect(result.verdict).toBe('ok')
+    // What the confirmed run then MEASURED is a timed question and is deliberately not asserted:
+    // the contract is that the poisoned number never reaches the report, which the replacement
+    // check below proves. The code did not change between the two sides.
+    expect(metricRow(result, 'build_time').base).not.toBe(poisoned)
 
     // The poisoned entry was replaced by the confirming measurement.
     const replaced = JSON.parse(await readFile(file, 'utf8'))

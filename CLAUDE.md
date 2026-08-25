@@ -72,6 +72,14 @@ specs/            # design docs — the source of truth
 - Every measurement records: value, unit, how it was collected, and the raw spread (`samples` +
   `sampleValues`) — never a scalar noise flag. Noise is judged where the rules live (floor,
   per-class quantum), not summarised at collection time.
+- **Tests never assert which branch a timed run took.** An assertion that depends on a timing
+  metric staying under the floor is flaky **by construction**: when it fails the tool was right
+  and the test was wrong. Assert the policy as a pure function over known inputs (exhaustively),
+  and the plumbing separately — "a cache entry was read" — without asserting what followed from
+  it. Deterministic byte classes may be asserted directly; wall-clock may only be bounded in the
+  direction load can't move it. A coarser fixture is not a fix: it lowers the probability and
+  costs test time while leaving the flaw. Named after the third instance (verify-e2e at M8, the
+  jinni 72-minute run, escalation at M11).
 - Errors never abort a run. A failed metric is marked `skipped` with a reason; the rest continue.
 - Config file is `perf.yml` at repo root, fully optional — sensible defaults without it.
 

@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 56 — 2026-08-24 — M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 57 — 2026-08-24 — M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1297,6 +1297,34 @@ sentence any surface may say lives there. A test regenerates the README table fr
 `tests/keyless.test.ts` asserts the **strong** form — not "it works without a key" but "it does not
 mention the tier at all" — plus exactly one mention on a regression, and silence again once it's
 gone.
+
+*Step A — key handling (`316947b`, `9fd0a82`, 417 tests) — DONE.* Resolution lives in
+`src/core/key.ts`, **not** `src/ai/` — the CLI must know whether the tier is available without
+loading that module graph (hard rule 6). Three sources ordered by **how explicitly each says "use
+this key for driftwatch"**: `DRIFTWATCH_API_KEY` (tool-specific, wins outright) → `key_command` in
+`perf.yml` (project-explicit; stdout is the key, so a password manager supplies it and it never
+touches a file) → `DEEPSEEK_/OPENAI_/ANTHROPIC_API_KEY` matched to the configured provider
+(fallbacks say nothing about driftwatch, so they lose to anything that does — and an OpenAI key is
+never silently used as a DeepSeek key). **A failing `key_command` is not the free tier**: "not
+signed in" is a broken setup the user asked for, so it reports as a failure carrying the command's
+own first line; only "nothing configured" stays `no_key`.
+
+**Literal key in `perf.yml` → refuse before any measurement, exit 1.** Detection is deliberately
+over-eager (key-shaped values anywhere, plus any secret-named field even when its value looks
+harmless — better to refuse `api_key: hunter2` than let one real key through for want of a prefix).
+The message masks what it found, offers both supply methods, and **tells the user to rotate**,
+because by then the key is in the repository's history. Also: the key now travels as an argument
+into `ai/` instead of being read from the environment there, and `aiKeyPresent()` was deleted — *a
+second, narrower answer to "is the tier on?" is exactly how surfaces start disagreeing.* A test
+proves neither the key nor the vault path reaches the result JSON, which is committed to
+`perf-data` where a leak has a long half-life.
+
+**Test doctrine (adopted here, generalised from three separate flakes):** *an assertion that
+depends on a timing metric staying under the floor is a flaky test by construction.* Load makes a
+50ms build cross the threshold and the tool then behaves **correctly** — the test is what's wrong.
+Rule: tests assert against **deterministic byte classes**, or against the **policy as a pure
+function** over known inputs, never against which branch a timed run happened to take. The same
+licence doctrine that governs movement attribution governs our own assertions.
 
 **Scope:**
 1. **The contract & audit** — verify no non-AI path can fail, prompt, or warn because of a missing

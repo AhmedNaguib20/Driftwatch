@@ -114,5 +114,9 @@ describe('fix verification — real end-to-end on the fixture', () => {
     // mean what it says: this is what a browser stops downloading.
     expect(m.current - m.fixed).toBeGreaterThan(50_000)
     expect(Math.abs(m.fixed - (m.base ?? 0))).toBeLessThan(2_000) // back to base within noise
-  }, 600_000)
+    // 152s unloaded; the whole suite runs it in parallel with other real builds, where it has
+    // been seen to exceed 600s. A duration cap is not a correctness assertion — when it trips it
+    // says nothing about the code — so it is set well past the loaded worst case rather than
+    // tuned close to it.
+  }, 1_200_000)
 })

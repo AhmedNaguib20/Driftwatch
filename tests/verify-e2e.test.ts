@@ -33,7 +33,11 @@ describe('fix verification — real end-to-end on the fixture', () => {
       recursive: true,
       filter: (src) => !src.includes('.next') && !src.includes('node_modules'),
     })
-    await exec('cp', ['-Rc', path.join(repoRoot, 'fixtures', 'next-app', 'node_modules'), path.join(dir, 'node_modules')])
+    // The PRODUCT guards this (`workspace.ts` uses `cp -Rc` only on darwin and falls back to
+    // fs.cp elsewhere); this test copied the fast path without the guard. `-c` is an APFS
+    // clone flag that GNU cp does not have, so this line failed outright on Linux — which is
+    // why this test had never actually run in CI.
+    await cloneNodeModules(path.join(repoRoot, 'fixtures', 'next-app', 'node_modules'), path.join(dir, 'node_modules'))
     await exec('git', ['init', '-q', '-b', 'main'], { cwd: dir })
     await exec('git', ['-C', dir, 'config', 'user.email', 't@t'])
     await exec('git', ['-C', dir, 'config', 'user.name', 't'])
@@ -120,3 +124,16 @@ describe('fix verification — real end-to-end on the fixture', () => {
     // tuned close to it.
   }, 1_200_000)
 })
+
+/** Mirrors src/core/measure/workspace.ts: clone on APFS, plain copy everywhere else. */
+async function cloneNodeModules(source: string, target: string): Promise<void> {
+  if (process.platform === 'darwin') {
+    try {
+      await exec('cp', ['-Rc', source, target])
+      return
+    } catch {
+      // Not APFS — fall through to the portable copy.
+    }
+  }
+  await cp(source, target, { recursive: true, verbatimSymlinks: true })
+}

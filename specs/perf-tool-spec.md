@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 64 — 2026-08-24 — audit clean on secrets; trial project anonymised, history kept. Prior: M12 launch opened: public + Apache-2.0 decided, name re-verified. Prior: **M11 CLOSED.** AI is a clean optional tier; disclosure generated from code. Next: launch. Prior: M11 step D: named provider conditions; a wrong name is worse than no name. Prior: M11 step C: cost projection as an audited upper bound + refusing cap. Prior: M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on the trial project (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (the trial project measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the the trial project real-world trial** (§9a):
+> Version 66 — 2026-08-24 — warm-up/sampleValues precision (README verification); README §1–§5 drafted. Prior: workspace identifiers anonymised too; README shape agreed. Prior: audit clean on secrets; trial project anonymised, history kept. Prior: M12 launch opened: public + Apache-2.0 decided, name re-verified. Prior: **M11 CLOSED.** AI is a clean optional tier; disclosure generated from code. Next: launch. Prior: M11 step D: named provider conditions; a wrong name is worse than no name. Prior: M11 step C: cost projection as an audited upper bound + refusing cap. Prior: M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on the trial project (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (the trial project measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the the trial project real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -230,7 +230,10 @@ a week. Three mitigations, in increasing strength:
 1. **Multiple runs, take the median. (IMPLEMENTED — median of 3, decided at M1 step 2.)**
    Single samples spread 2.25–4.5% on the fixture — a lone sample cannot stay inside the 2% floor.
    The first build after a fresh `node_modules` clone is systematically ~25% slower (cold OS page
-   cache); the median discards that warm-up identically on both sides. Raw samples ride in the
+   cache). **Precision (caught while drafting the README):** the discarded warm-up runs *before*
+   the timed set, so `sampleValues` holds three timed builds — and the first of those is still
+   high (`[11143, 8629, 8724]`), because it continues warming OS caches. The median, not the
+   warm-up alone, is what absorbs it. Raw samples ride in the
    result (`sampleValues`) so consumers can see the spread. `BUILD_SAMPLES = 3` is a code constant,
    not config — like the noise floor, it is a property of the instrument, not a preference.
    Cost: ~35s per side instead of ~13s.
@@ -994,8 +997,8 @@ build in the app. 189s total, base 92s / current 94s — near-perfect symmetry o
 monorepo. `install time … not comparable` fired correctly (§5.1 sixth) on a real project.
 **Cache-key bug found and fixed in the same step (`066cd08`)** — the (SHA, protocol hash) key
 excluded the build command because "the tree at that commit determines it", true for one app per
-repo and false the moment `--app` existed: `--app apps/admin-web` would have read the entry
-`apps/storefront-web` wrote. **The key now includes the measured project.** A one-app assumption
+repo and false the moment `--app` existed: `--app apps/admin` would have read the entry
+`apps/web` wrote. **The key now includes the measured project.** A one-app assumption
 hiding inside a protocol rule.
 
 **Open decisions raised by the trial (M8 step 4+):**
@@ -1498,6 +1501,24 @@ history at once and irreversibly. Three things to sweep: (a) any secret ever com
 commit, not just HEAD; (b) references to **the trial project** — a real project of Ahmed's — in fixtures, tests,
 eval candidates, scratch paths, or commit messages; (c) absolute paths carrying a username, which
 the tool already refuses to send to a provider and should not publish either.
+
+**README shape (agreed, 14 sections).** Built to answer the visitor's real first question — *"how
+is this different from running bundlesize in CI?"* — before they scroll. Order: (1) pitch + a real
+PR comment rendered as markdown — **show the artefact before explaining it**; (2) quickstart, three
+commands, no key; (3) **why most perf CI is untrustworthy and what this does instead** — the
+differentiator, framed as a problem the reader recognises (numbers swinging 20% between identical
+runs); (4) what it measures, with byte-vs-wall-clock honesty; (5) **the four refusals** — never
+touch your tree, never report an unmeasured number, never compare across mismatched protocols,
+never attribute what it can't; (6) the AI tier table, generated from `tier.ts`; (7) verified fix
+PRs; (8) trends, drift, replay; (9) what leaves your machine; (10) config; (11) CI setup;
+(12) cost; (13) how it was built, linking the spec; (14) requirements, status, licence.
+
+*Three shape rulings:* §3 comes **before** §4 — metrics without the trust argument read as a
+feature list. §5 stands alone rather than scattering the refusals — **the refusals are the tool's
+personality and they earn the space**. §13 links the spec rather than summarising it — a 1,500-line
+document that is genuinely good competes badly with its own summary, and a reader deciding whether
+to trust the numbers can read the reasoning behind every threshold. The cost of §13 is that the
+full internal design history becomes public reading, §9a included; accepted knowingly.
 
 **The README is the product's face and the biggest gap.** Nobody outside this repo can currently
 tell Driftwatch from `github-action-benchmark`. It must *show* the philosophy rather than lecture

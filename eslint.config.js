@@ -32,9 +32,9 @@ export default tseslint.config(
     },
   },
 
-  // Local ESLint rules are plain Node ESM, linted as JS.
+  // Local ESLint rules and demo scripts are plain Node ESM, linted as JS.
   {
-    files: ['tools/**/*.js'],
+    files: ['tools/**/*.js', 'scripts/**/*.mjs'],
     languageOptions: {
       globals: { process: 'readonly', console: 'readonly' },
     },

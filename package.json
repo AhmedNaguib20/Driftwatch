@@ -1,5 +1,5 @@
 {
-  "name": "driftwatch",
+  "name": "@ahmednaguib/driftwatch",
   "version": "0.6.0",
   "description": "Performance regression testing for pull requests \u2014 both sides measured under an identical protocol, with optional AI explanation on your own key.",
   "keywords": [
@@ -43,6 +43,9 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",

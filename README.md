@@ -68,15 +68,21 @@ is the optional AI tier, on your own key.
 
 ```bash
 cd your-nextjs-project
-npx driftwatch run
+npx @ahmednaguib/driftwatch run
 ```
 
 That measures your working tree, checks out the base commit into a temporary `git worktree`,
 measures that the same way, and prints a table. No key, no signup, no configuration file.
 
+Or install it, after which **the command is just `driftwatch`** — the package is scoped, the binary
+is not. (The unscoped name `driftwatch` is blocked by npm's similarity filter, which rejects it as
+too close to an unrelated package called `drift-watch`. The scope is the package's address, not a
+different tool.)
+
 ```bash
-npx driftwatch run --json      # the full result JSON — the contract every surface consumes
-npx driftwatch init --github   # writes .github/workflows/driftwatch.yml
+npm i -D @ahmednaguib/driftwatch
+driftwatch run --json      # the full result JSON — the contract every surface consumes
+driftwatch init --github   # writes .github/workflows/driftwatch.yml
 ```
 
 What it does to your repository on that first run: **nothing**. It writes to `.perf/` and nowhere

@@ -308,7 +308,10 @@ is better evidence than a 0.9-confidence fix nobody measured.
 ## 8. Trends, drift alerting, and history replay
 
 Push-time runs append a point to a `perf-data` branch in your own repository — plain JSON, no
-backend — together with a self-contained dashboard you can serve from GitHub Pages.
+backend — together with a self-contained dashboard you can serve from GitHub Pages. This
+repository's own is live at **<https://ahmednaguib20.github.io/Driftwatch/>**: one HTML file, no
+executable JavaScript, no network requests, and byte-identical to what `driftwatch dashboard`
+renders locally from the same branch state.
 
 ```bash
 driftwatch trend            # where has main been going?

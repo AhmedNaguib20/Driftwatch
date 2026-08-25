@@ -78,8 +78,11 @@ specs/            # design docs — the source of truth
   and the plumbing separately — "a cache entry was read" — without asserting what followed from
   it. Deterministic byte classes may be asserted directly; wall-clock may only be bounded in the
   direction load can't move it. A coarser fixture is not a fix: it lowers the probability and
-  costs test time while leaving the flaw. Named after the third instance (verify-e2e at M8, the
-  the trial's 72-minute run, escalation at M11).
+  costs test time while leaving the flaw. **The dependence is often indirect:** the fourth instance
+  asserted on JSON output, not on a verdict — but a timed build crossing the threshold changed the
+  verdict, which ran analysis, which added a provider stanza to that JSON. When sweeping for this,
+  look for assertions on anything a branch can *change*, not only on the branch itself. (verify-e2e
+  at M8, the trial's 72-minute run, escalation at M11, key.test.ts at launch.)
 - Errors never abort a run. A failed metric is marked `skipped` with a reason; the rest continue.
 - Config file is `perf.yml` at repo root, fully optional — sensible defaults without it.
 

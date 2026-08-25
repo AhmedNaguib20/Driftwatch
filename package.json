@@ -1,9 +1,29 @@
 {
   "name": "driftwatch",
   "version": "0.6.0",
-  "description": "Measures code performance on every push, compares against a baseline, and explains regressions.",
+  "description": "Performance regression testing for pull requests \u2014 both sides measured under an identical protocol, with optional AI explanation on your own key.",
+  "keywords": [
+    "performance",
+    "performance-testing",
+    "regression-testing",
+    "continuous-integration",
+    "github-action",
+    "benchmark",
+    "bundle-size",
+    "lighthouse",
+    "nextjs",
+    "perf-budget"
+  ],
   "type": "module",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AhmedNaguib20/Driftwatch.git"
+  },
+  "homepage": "https://github.com/AhmedNaguib20/Driftwatch#readme",
+  "bugs": {
+    "url": "https://github.com/AhmedNaguib20/Driftwatch/issues"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -13,10 +33,15 @@
   "main": "./dist/core/index.js",
   "exports": {
     ".": "./dist/core/index.js",
-    "./report": "./dist/core/report/index.js"
+    "./report": "./dist/core/report/index.js",
+    "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.map",
+    "action.yml",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

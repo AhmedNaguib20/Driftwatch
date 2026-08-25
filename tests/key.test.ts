@@ -159,9 +159,16 @@ describe('a literal key in perf.yml is refused, not warned about', () => {
 describe('the key never reaches disk', () => {
   const exec = promisify(execFile)
 
-  it('is absent from the result JSON, and so is the command that produced it', async () => {
-    // The result JSON is committed to the perf-data branch. A key there would be a leak with a
-    // long half-life, and a `key_command` there would publish a vault path.
+  it('is absent from the result JSON, and so is the vault path that produced it', async () => {
+    // The result JSON is committed to the perf-data branch, which is public on most repos. What
+    // must never reach it: the key itself, and the `key_command` TEXT — that string is a vault
+    // path, and naming where a secret lives is its own kind of leak.
+    //
+    // `--no-ai` is not incidental. Without it this test depended on a timed build staying under
+    // the threshold: when build_time noise crossed it the verdict became `regression`, analysis
+    // ran, and a provider stanza legitimately appeared — which also meant the suite made a live
+    // API call. An assertion that depends on which branch a timed run took is flaky by
+    // construction (CLAUDE.md conventions); this asserts the invariant on both branches instead.
     const dir = await mkdtemp(path.join(tmpdir(), 'driftwatch-keyjson-'))
     temps.push(dir)
     const write = async (rel: string, contents: string) => {
@@ -175,7 +182,7 @@ describe('the key never reaches disk', () => {
     await write('next.config.mjs', 'export default {}\n')
     await write('build.js', `const fs=require('fs');fs.mkdirSync('.next/static',{recursive:true});fs.writeFileSync('.next/static/app.js','x'.repeat(5000))`)
     await write('package-lock.json', JSON.stringify({ name: 'p', lockfileVersion: 3, requires: true, packages: { '': { name: 'p' } } }))
-    await write('perf.yml', 'detect: nextjs\nkey_command: printf sk-secret-from-vault-123456\n')
+    await write('perf.yml', 'detect: nextjs\nkey_command: printf sk-secret-from-vault-123456 # op://vault/ai/key\n')
     await write('.gitignore', 'node_modules/\n.next/\n.perf/\n')
     await exec('git', ['-C', dir, 'add', '-A'])
     await exec('git', ['-C', dir, 'commit', '-q', '-m', 'base'])
@@ -183,15 +190,26 @@ describe('the key never reaches disk', () => {
     const cli = path.resolve(import.meta.dirname, '..', 'dist', 'cli', 'index.js')
     const env = { ...process.env }
     delete env[AI_KEY_ENV]
-    const { stdout } = await exec('node', [cli, 'run', '--cwd', dir, '--json', '--no-serve', '--no-browser'], {
-      env,
-      maxBuffer: 64 * 1024 * 1024,
-    })
+    const runJson = async () => {
+      const { stdout } = await exec('node', [cli, 'run', '--cwd', dir, '--json', '--no-ai', '--no-serve', '--no-browser'], {
+        env,
+        maxBuffer: 64 * 1024 * 1024,
+      })
+      return stdout
+    }
 
-    expect(stdout).not.toContain('sk-secret-from-vault')
-    expect(stdout).not.toContain('key_command')
-    expect(stdout).not.toContain('op://')
-    // …and the run itself is unaffected: measurement never depended on any of this.
-    expect(JSON.parse(stdout).verdict).toBe('ok')
-  }, 120_000)
+    // Both verdict branches, forced deterministically by BYTES rather than left to the clock.
+    const clean = await runJson()
+    await write('build.js', `const fs=require('fs');fs.mkdirSync('.next/static',{recursive:true});fs.writeFileSync('.next/static/app.js','x'.repeat(500000))`)
+    const regressed = await runJson()
+
+    expect(JSON.parse(clean).verdict).toBe('ok')
+    expect(JSON.parse(regressed).verdict).toBe('regression')
+
+    for (const [name, stdout] of [['clean', clean], ['regressed', regressed]] as const) {
+      expect(stdout, name).not.toContain('sk-secret-from-vault')
+      expect(stdout, name).not.toContain('op://')
+      expect(stdout, name).not.toContain('printf sk-secret')
+    }
+  }, 180_000)
 })

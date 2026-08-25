@@ -230,8 +230,17 @@ appear worth reading.
 change is the strongest claim the tool makes, so it is licensed only for deterministic byte
 classes, in every environment. Wall-clock movements across a time gap are reported and explicitly
 labelled *not judged* — because local runs drift with thermals and CI runs land on different
-physical machines. Validated on a constructed history: 3 of 3 real regressions found, 0 of 7
-innocent commits falsely accused.
+physical machines. Validated on a 10-commit history with three planted bundle regressions among
+seven innocent commits: **3 of 3 found, 0 of 7 falsely accused** — and you can reproduce that in
+under ten seconds:
+
+```bash
+npm run demo:movement
+```
+
+It builds the history in a temporary directory, replays it, prints the movement report, and scores
+itself against what was planted. If the doctrine ever breaks, it prints `MISMATCH` rather than a
+number you would have to take on trust. ([`scripts/movement-demo.mjs`](scripts/movement-demo.mjs))
 
 ### What it cannot do
 

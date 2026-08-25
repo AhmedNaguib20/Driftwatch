@@ -1,8 +1,13 @@
+import { DRIFTWATCH_VERSION } from '../../core/index.js'
 /** This repository's own name. A workflow generated HERE must run the local action. */
 export const SELF_PACKAGE = '@ahmednaguib/driftwatch'
 
-/** The published Action, pinned. See the comment in the template for why it is not floating. */
-export const PUBLISHED_ACTION = 'AhmedNaguib20/Driftwatch@v0.6.0'
+/**
+ * The published Action, pinned to THIS build's version — never a hardcoded tag, which would lag
+ * the next release silently. A workflow therefore pins the exact driftwatch that generated it,
+ * which is the same guarantee the protocol hash makes about the measurement.
+ */
+export const PUBLISHED_ACTION = `AhmedNaguib20/Driftwatch@v${DRIFTWATCH_VERSION}`
 
 export interface WorkflowOptions {
   readonly projectDir?: string

@@ -203,8 +203,14 @@ describe('the key never reaches disk', () => {
     await write('build.js', `const fs=require('fs');fs.mkdirSync('.next/static',{recursive:true});fs.writeFileSync('.next/static/app.js','x'.repeat(500000))`)
     const regressed = await runJson()
 
-    expect(JSON.parse(clean).verdict).toBe('ok')
-    expect(JSON.parse(regressed).verdict).toBe('regression')
+    // The overall verdict is NOT asserted on either run. On the clean side it depends on two
+    // timed builds landing within the floor, which machine load moves — the same flaw this test
+    // was already rewritten once to remove, left standing one layer down. What IS asserted is the
+    // byte row, which is deterministic: 5 KB to 500 KB is a regression on any machine.
+    const bundleRow = (json: string) =>
+      JSON.parse(json).comparison.metrics.find((m: { id: string }) => m.id === 'client_bundle_size')
+    expect(bundleRow(clean).verdict).toBe('no_change')
+    expect(bundleRow(regressed).verdict).toBe('regressed')
 
     for (const [name, stdout] of [['clean', clean], ['regressed', regressed]] as const) {
       expect(stdout, name).not.toContain('sk-secret-from-vault')

@@ -56,8 +56,11 @@ jobs:
 
       - run: npm ci
 
-      - name: The suite must pass before anything is tagged
-        run: npm test
+      # `check` is lint + typecheck + test. The gate was `npm test` alone until a lint error
+      # slipped past it locally — a gate that runs fewer checks than the developer does is a
+      # gate with a hole in it.
+      - name: Lint, typecheck and tests must all pass before anything is tagged
+        run: npm run check
 
       - run: npm run build
 

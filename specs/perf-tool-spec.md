@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 75 — 2026-08-25 — release gate blocked its own first release; class widened to execution context. Prior: published Action cannot execute (dist gitignored); release workflow + v0.6.1 decided. Prior: Marketplace live; init --github onboarding bug found (third of its class). Prior: Marketplace prep; record-mode contract fixed. Prior: **SHIPPED.** @ahmednaguib/driftwatch@0.6.0 live, repo public, Pages live. Prior: repo PUBLIC, Pages live, byte-identity proof closed; npm publish pending auth. Prior: push-first ordering catch; CI clean end to end; ready to flip. Prior: publish prep done (files bug caught, Next 16 works); LICENSE confirmed. Prior: README complete (520 lines) with a self-scoring demo; LICENSE next. Prior: warm-up/sampleValues precision (README verification); README §1–§5 drafted. Prior: workspace identifiers anonymised too; README shape agreed. Prior: audit clean on secrets; trial project anonymised, history kept. Prior: M12 launch opened: public + Apache-2.0 decided, name re-verified. Prior: **M11 CLOSED.** AI is a clean optional tier; disclosure generated from code. Next: launch. Prior: M11 step D: named provider conditions; a wrong name is worse than no name. Prior: M11 step C: cost projection as an audited upper bound + refusing cap. Prior: M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on the trial project (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (the trial project measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the the trial project real-world trial** (§9a):
+> Version 78 — 2026-08-25 — claim audit: rule 3 broken inward; history not audited, future gated. Prior: the pipeline that could not fail: a verification gate that never saw an exit code. Prior: three release refusals, three real defects; eight instances of the context class. Prior: release gate blocked its own first release; class widened to execution context. Prior: published Action cannot execute (dist gitignored); release workflow + v0.6.1 decided. Prior: Marketplace live; init --github onboarding bug found (third of its class). Prior: Marketplace prep; record-mode contract fixed. Prior: **SHIPPED.** @ahmednaguib/driftwatch@0.6.0 live, repo public, Pages live. Prior: repo PUBLIC, Pages live, byte-identity proof closed; npm publish pending auth. Prior: push-first ordering catch; CI clean end to end; ready to flip. Prior: publish prep done (files bug caught, Next 16 works); LICENSE confirmed. Prior: README complete (520 lines) with a self-scoring demo; LICENSE next. Prior: warm-up/sampleValues precision (README verification); README §1–§5 drafted. Prior: workspace identifiers anonymised too; README shape agreed. Prior: audit clean on secrets; trial project anonymised, history kept. Prior: M12 launch opened: public + Apache-2.0 decided, name re-verified. Prior: **M11 CLOSED.** AI is a clean optional tier; disclosure generated from code. Next: launch. Prior: M11 step D: named provider conditions; a wrong name is worse than no name. Prior: M11 step C: cost projection as an audited upper bound + refusing cap. Prior: M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on the trial project (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (the trial project measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the the trial project real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1670,6 +1670,64 @@ execution context?"** — a single context treated as universal. Six instances n
 wider than the repo question: arch, colour capability, TTY-ness, **locale (number and date
 formatting)**, timezone, path separators, line endings, and **filesystem case-sensitivity** (macOS
 is case-insensitive, Linux CI is not).
+
+**Three release dispatches, three refusals, three real defects** — every one invisible on the
+development machine, every one caught before a tag existed:
+`32871573724` the arch/ANSI pair · `32872781195` **`cp -Rc`, a macOS-only flag** in
+`verify-e2e.test.ts` (the product guards it with `platform === 'darwin'`; the test copied the
+approach without the guard, so **that test had probably never run in CI at all** — which also
+retracts the earlier "it was a timeout" diagnosis and the timeout raise made on it) ·
+`32873544745` the fixture's `node_modules` absent on a fresh checkout. Eight instances of the class
+now, the eighth being a residual timing assertion in a test already rewritten once for that exact
+reason.
+
+**The pipeline that could not fail (2026-08-25) — the sharpest process finding of the project.**
+The red commit was blamed on carelessness; verifying that blame found something structural instead.
+The command was not `npm test && git commit` but:
+
+```
+npx vitest run 2>&1 | grep -E "Tests |FAIL" | head -2 && git add -A && git commit
+```
+
+A pipeline returns **its last command's** status, and `pipefail` is off by default — so the `&&`
+gated on `head`, which always succeeds. **vitest's exit code never reached the gate at all.** Every
+`verify && commit` of that shape run in the session had the same hole; they passed because the
+suites happened to be green.
+
+Two lessons, the second larger:
+- **"Read the exit code more carefully" would not have helped — the exit code was structurally
+  unavailable.** Verification runs as its own command, its result is read, and the commit is a
+  separate deliberate step. Never chain a commit behind a pipeline.
+- **The mis-diagnosis was of the same family as the code bugs: describing the pattern intended
+  rather than the one that ran.** Twice in one session a self-diagnosis was asserted confidently
+  and moved past (this, and "it was a timeout" for `verify-e2e`). Self-criticism needs the doctrine
+  *more* than code does, because there is no CI to disagree with it.
+
+**The audit of the claims, and the finding under the finding.** Twenty-three commits this session
+carried a test claim; all twenty-three came through the ungated chain. But *ungated* and *wrong* are
+different: 22 were read off a real run and quoted accurately — the hole was that nothing would have
+stopped a misreading. One (`34a9115`) was false, and its falseness had a different cause than the
+pipeline: the number **was not misread, it was generated from expectation**, because that is what
+the previous commits had said. A gate would have caught that one; the reason the claim was false is
+that it came from habit rather than from the run.
+
+**That is the product's own rule 3, broken in a commit message: never report a number you did not
+measure.** The rule adopted in response is rule 3 pointed inward — *if the number is not in the
+output in front of me, it does not go in the message.*
+
+**History is not audited; the future is gated.** 21 commits remain "read but ungated" and are
+plausibly all green (the only locally intermittent test post-dates most of them; the three CI-only
+defects never fail locally). Checking each costs ~4 minutes and proves something about the past
+that no longer matters — **nothing ships except through a gate that actually reads an exit code**,
+which is the mechanism answer to a discipline question.
+
+**Discipline is not the fix; mechanism is.** A "don't commit red" rule was broken a second time by
+the same move — chaining test and commit, then reading the tail of the output as confirmation. Note
+that `npm test && git commit` *cannot* commit on a failing suite, so the self-diagnosis needs
+checking before it is accepted: either the chain differed, or the FAIL line was stale output from an
+earlier run in the same capture. **The doctrine applies to self-criticism too — don't accept a
+diagnosis you haven't verified, including one against yourself.** The durable fix is to read the
+exit code rather than the output, and to make commits a separate deliberate step from verification.
 
 **Launch order: repo public first, npm second.** `npm publish` is the genuinely irreversible step
 (the name is claimed, the version immutable, unpublish limited to 72 hours and breaks anyone who

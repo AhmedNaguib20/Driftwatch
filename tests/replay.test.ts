@@ -188,7 +188,11 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
     })
     // Strip ANSI: picocolors emits colour on CI and not through a local non-TTY pipe, so a raw
     // substring assertion passes here and fails there. The test is about the words.
-    const line = renderMovements(report, read.index.entries.length).replace(/\u001b\[[0-9;]*m/g, '')
+    // Built from the char code rather than written literally: an escape character inside a regex
+    // literal is a lint error (no-control-regex), and disabling the rule to keep the literal
+    // would trade a real check for a cosmetic one.
+    const ansi = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
+    const line = renderMovements(report, read.index.entries.length).replace(ansi, '')
     expect(line).toContain('client bundle size moved at 2 commits')
     expect(line).toContain('somewhere across 1 commit, 1 unbuildable')
     // Doctrine (spec §10): wall-clock classes are named, never attributed.

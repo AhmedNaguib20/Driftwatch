@@ -88,33 +88,67 @@ so per-run is what is offered.
 
 ## What leaves your machine
 
-**Nothing, unless AI analysis actually runs.** It runs only when: a regression was confirmed,
-AND analysis is enabled (no `--no-ai` / `DRIFTWATCH_NO_AI=1`), AND `DRIFTWATCH_API_KEY` is set.
-Everything else — detection, measurement, baseline comparison — is fully local. `--no-ai` is
-enforced at the module level: the AI code is never loaded, which the test suite proves.
+<!-- disclosure: generated from src/ai/disclosure.ts — run `UPDATE_README=1 npx vitest run tests/readme.test.ts` -->
 
-When analysis does run, the request to your chosen provider contains exactly:
+**Nothing leaves your machine without an API key.** Measurement, comparison, verdicts, trends,
+the dashboard and drift alerting are entirely local and always will be — that is the free tier,
+and it does not phone anywhere.
 
-- the measured verdict, metric values, raw samples, and both measurement protocols
-- the detection evidence trail (which files told us what — e.g. "framework: nextjs [package.json]")
-- a **diffstat** of every changed file between the base commit and your working tree (+/- counts)
-- **full patches** for the most-relevant changed files, within a fixed token budget
-- a **package-level summary** of lockfile changes (added/removed/bumped with versions)
+With a key configured, exactly one thing sends data: **AI analysis of a confirmed regression.**
+It runs only when a regression was measured, analysis is enabled (no `--no-ai` /
+`DRIFTWATCH_NO_AI=1`), and DRIFTWATCH_API_KEY resolves to a key. `--no-ai` is enforced at the module
+level — the AI code is never even loaded — which the test suite proves rather than promises.
 
-Never sent, regardless of budget:
+### Where it goes
 
-- **secret-pattern files** — content withheld, diffstat line only. The patterns (matched on the
-  file's basename, case-insensitive): `.env` and `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`,
-  `*.jks`, `*.keystore`, `id_rsa*` / `id_dsa*` / `id_ecdsa*` / `id_ed25519*`, `.netrc`,
-  `.npmrc`, anything containing `credential`, `secrets`/`secret.*`
-- **binary file content** (detected from content, not extension)
-- **raw lockfile patches** (only the package summary travels)
-- absolute paths, usernames, timestamps, or your API key
+- `provider: deepseek` → DeepSeek (Hangzhou DeepSeek Artificial Intelligence Co., a Chinese company)
+- `provider: openai` → OpenAI (a US company)
+- `provider: anthropic` → Anthropic (a US company)
 
-Every run records a `contextManifest` in the result JSON (`--json`) listing each file's fate —
-`full`, `truncated`, `diffstat-only`, `withheld`, or `binary` — with reasons and token counts.
-The manifest is the authoritative per-run answer to "what was sent"; this section is its
-standing summary, and the test suite keeps the two in sync.
+Your key, your account, your provider's terms. Driftwatch adds no server of its own: there is no
+driftwatch backend, and no copy of your data is kept anywhere by this tool.
+
+### What is sent
+
+On an analysed regression, the request contains:
+
+- the verdict this run reached
+- metric values for both sides, with their deltas
+- the raw samples behind every median, so the model can judge the spread
+- both measurement protocols (node, platform, browser, host labels)
+- the detection evidence trail — which file told the tool what
+- a package-level summary of lockfile changes (added/removed/bumped, with versions)
+- a diffstat of every changed file between the base commit and your working tree
+- full patches for the most-relevant changed files, within a fixed token budget
+
+### What is withheld, always
+
+Files whose **basename** matches any of these have their content withheld. They still appear in
+the diffstat — the model may know the file changed; it may never see what is in it:
+
+- `.env` and `.env.*`
+- `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.jks`, `*.keystore`
+- `id_rsa*`, `id_dsa*`, `id_ecdsa*`, `id_ed25519*`
+- `.netrc`
+- `.npmrc` (it often carries auth tokens)
+- any basename containing `credential`
+- `secret` / `secrets` and their extensions
+
+Also never sent, under any setting or budget:
+
+- your API key, the `key_command`, and that command's output
+- binary file content (detected from content, not extension)
+- raw lockfile patches — only the package-level summary travels
+- absolute paths, and anything outside the diff between the base commit and your working tree
+
+### The receipt
+
+This section says what driftwatch does. Every run also records a `contextManifest` in the result
+JSON (`--json`) listing each file's fate — `full`, `truncated`, `diffstat-only`, `withheld` or
+`binary` — with reasons and token counts. That is what happened on **your** run, and it is the
+authoritative answer.
+
+<!-- /disclosure -->
 
 ## Trends — where has main been going?
 

@@ -42,6 +42,8 @@ lib/posts.ts adds a 300-entry archive consumed by generateStaticParams, adding ~
 +const ARCHIVE_SIZE = 30
 ```
 
+<sub>Analysis sends the diff and measurements to DeepSeek (Hangzhou DeepSeek Artificial Intelligence Co., a Chinese company); nothing else leaves the machine, and the per-run `contextManifest` in the result JSON lists exactly what was included.</sub>
+
 <details>
 <summary>How this was measured</summary>
 

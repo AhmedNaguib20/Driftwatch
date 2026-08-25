@@ -187,6 +187,50 @@ describe('context assembly', () => {
     expect(byPath['lib/posts.ts']).toBe('full')
   })
 
+  it('EVERY documented secret family is withheld, with a planted value that must not appear', async () => {
+    // One file per pattern in secrets.ts, each carrying a unique canary. The README documents
+    // this list; this asserts the filter actually enforces every entry (spec §9e step E).
+    const planted = [
+      { path: '.env.production', canary: 'CANARY-ENV-PROD' },
+      { path: 'certs/server.pem', canary: 'CANARY-PEM' },
+      { path: 'certs/server.key', canary: 'CANARY-KEY' },
+      { path: 'certs/bundle.p12', canary: 'CANARY-P12' },
+      { path: 'certs/bundle.pfx', canary: 'CANARY-PFX' },
+      { path: 'android/app.jks', canary: 'CANARY-JKS' },
+      { path: 'android/release.keystore', canary: 'CANARY-KEYSTORE' },
+      { path: 'deploy/id_rsa', canary: 'CANARY-IDRSA' },
+      { path: 'deploy/id_ed25519.pub', canary: 'CANARY-ED25519' },
+      { path: '.netrc', canary: 'CANARY-NETRC' },
+      { path: '.npmrc', canary: 'CANARY-NPMRC' },
+      { path: 'ops/credentials.json', canary: 'CANARY-CREDENTIAL' },
+      { path: 'config/secrets.yaml', canary: 'CANARY-SECRETS' },
+    ]
+    const base = await input()
+    const withPlanted = {
+      ...base,
+      diff: [
+        ...base.diff,
+        ...planted.map((p) =>
+          file({ path: p.path, insertions: 1, deletions: 0, patch: `diff --git a/${p.path} b/${p.path}\n+${p.canary}\n` }),
+        ),
+      ],
+    }
+
+    for (const { text, manifest } of [
+      assembleTriageContext(withPlanted),
+      assembleDeepContext(withPlanted, planted.map((p) => p.path)),
+    ]) {
+      const byPath = Object.fromEntries(manifest.files.map((f) => [f.path, f.disposition]))
+      for (const { path: p, canary } of planted) {
+        expect(text, `${p} leaked ${canary}`).not.toContain(canary)
+        // Named as suspects and still withheld: being asked for is not a reason to send it.
+        expect(byPath[p], p).toBe('withheld')
+        // The diffstat line survives — the model may know it changed.
+        expect(text).toContain(p)
+      }
+    }
+  })
+
   it('suspects win the budget over larger non-suspects', async () => {
     const big = 'x'.repeat(90_000) // ~22.5K tokens — nearly the whole deep budget
     const ctx: ContextInput = {

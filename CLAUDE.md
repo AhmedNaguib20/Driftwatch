@@ -307,29 +307,34 @@ alerting exists only for what the PR flow structurally cannot see.
         Also here: per-class causal protocol relevance (`relevance.ts`) — breaks fell 5 -> 1 on the
         real branch, because Chrome was splitting lines Chrome had no part in producing.
 
-**M11 — AI as a clean optional tier — IN PROGRESS (spec §9e).** Productising the promise:
+**M11 — AI as a clean optional tier — CLOSED (463 tests; spec §9e).** Productising the promise:
 **driftwatch measures for free and forever with no key; AI explanation is an opt-in tier on the
-user's own key.** BYOK has been the design since day one; it was not yet clean.
-  - [x] step 1 — the contract and the audit (`0bcbfb3`, 403 tests). Feature matrix as code
-        (`src/core/tier.ts`), read by every surface and pinned to the README by a test. Ten paths
-        audited with every key variable scrubbed. Five findings fixed: clean runs named the tier on
-        every green PR (root cause a contract conflation — "nothing to explain" reported as
-        `skipped`, now `not_applicable`, silent for humans and still in the JSON); `--no-ai` nagged
-        in the comment but not the terminal; the keyless note framed the free tier as a fork-PR
-        anomaly (now tier-first, with `fromFork` plumbed so a fork gets the true mechanism instead
-        of advice it cannot act on); `auto_fix` with no key was an unexplained no-op; `eval` threw a
-        stack trace instead of refusing with a remedy. `tests/keyless.test.ts` holds the guarantee
-        at the rule-2 standard — the strong form is not "it works without a key" but **"it does not
-        mention the tier at all"**, with exactly one mention on a regression.
-  - [ ] A. key handling — env + per-provider fallbacks + `key_command`; refuse a literal key in
-        `perf.yml`
-  - [ ] B. `driftwatch doctor` — key present and from where, provider reachable, model exists, one
-        minimal call, typical cost
-  - [ ] C. cost estimate from M9's token model + optional `max_cost_per_run` that refuses rather
-        than surprises
-  - [ ] D. named provider errors with stanzas: 401, 402 (hit ourselves), 429, unknown model
-  - [ ] E. disclosure — README "what leaves your machine" generated from the golden contexts, plus
-        the secret-withholding list
+user's own key.** BYOK was the design from day one; it was not yet clean.
+  - [x] step 1 — the contract and the audit (`0bcbfb3`): feature matrix as code (`src/core/tier.ts`)
+        read by every surface and pinned to the README by a test; ten paths audited with every key
+        variable scrubbed. Five findings fixed, the root one a **contract conflation** — "nothing to
+        explain" was reported as `skipped`, the same outcome as "we tried and it failed", so every
+        clean run named the tier. Split into `not_applicable` (silent for humans, still in the JSON)
+        vs `skipped`. `tests/keyless.test.ts` holds the strong form: not "it works without a key"
+        but **"it does not mention the tier at all"**.
+  - [x] A. key handling (`316947b`): three sources ordered by explicitness (env → `key_command` →
+        per-provider fallback), a literal key in `perf.yml` **refused, never warned**, and a
+        configured-but-failing source distinguished from the free tier.
+  - [x] B. `driftwatch doctor` (`8ddeb00`): key + source, provider, served-vs-requested model, one
+        minimal call, cost ceiling. **Exit 0 with no key** — the free tier is not a degraded state.
+        One call, several facts; a reachable-but-unparseable reply warns rather than fails.
+  - [x] C. cost (`70bba0a`): projection before the first call from M9's token model, `max_cost_per_run`
+        that **refuses rather than truncating or downgrading** (its own outcome, `cost_capped`), and
+        **actual reported beside projected on every analysed run** so the model is audited by reality.
+        Cumulative spend is deliberately NOT tracked — we do not know your provider bill.
+  - [x] D. named provider errors (`9d53697`): one table, two consumers. 401/402/429/unknown-model,
+        each with the exact remedy; the default carries the provider's own words because **a wrong
+        name is worse than no name**. Detection is per-vendor (DeepSeek's 402 and OpenAI's
+        `insufficient_quota` are the same fact), the names are not.
+  - [x] E. disclosure: README "What leaves your machine" **generated** from the context sections,
+        the secret patterns and the destination table, with a test that fails if docs and code
+        disagree; the same one line in the PR comment and `doctor`; the destination named honestly,
+        jurisdiction included; a canary planted in every secret family proves the filter.
 
 **Later:** launch planning (npm publish, name/license/visibility, onboarding). Pre-launch items:
 Pages leg (visibility); verdict-line length cap watch-item; LCP/TBT CI quanta values revisit as

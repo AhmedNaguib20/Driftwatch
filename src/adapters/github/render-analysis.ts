@@ -1,4 +1,4 @@
-import { AI_KEY_ENV, tierMention } from '../../core/index.js'
+import { AI_KEY_ENV, disclosureLine, tierMention } from '../../core/index.js'
 import type { AnalysisReport, ResultJson } from '../../core/index.js'
 import { confidenceLabel, formatTokens, formatValue } from './format.js'
 
@@ -56,7 +56,11 @@ export function renderAnalysisSection(result: ResultJson, fromFork = false): str
         '_That is the model\'s own conclusion after reading the patches — likely places to look: dependencies, configuration, build environment._',
       ]
     case 'analysed':
-      return renderAnalysed(analysis, result.verification)
+      return [
+        ...renderAnalysed(analysis, result.verification),
+        '',
+        `<sub>${disclosureLine(analysis.stages.deep.provider)}</sub>`,
+      ]
   }
 }
 

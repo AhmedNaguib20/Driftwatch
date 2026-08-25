@@ -1,3 +1,4 @@
+import { disclosureLine } from './disclosure.js'
 import { describeKeySource } from './key.js'
 import type { ResolvedKey } from './key.js'
 import { AI_KEY_ENV, capabilitiesOf } from './tier.js'
@@ -100,6 +101,15 @@ export function keyChecks(resolved: ResolvedKey, provider: string): DoctorCheck[
       label: 'API key',
       state: 'ok',
       detail: `found, from ${describeKeySource(resolved.source, { redactCommand: true })} (provider: ${provider})`,
+    },
+    {
+      // A privacy claim only a README reader ever sees is not a disclosure. Someone checking
+      // whether the tier works is exactly the reader who should be told where their diff goes.
+      id: 'destination',
+      label: 'destination',
+      state: 'info',
+      detail: disclosureLine(provider),
+      fix: 'README, "What leaves your machine", lists every field that travels and every one that never does.',
     },
   ]
 }

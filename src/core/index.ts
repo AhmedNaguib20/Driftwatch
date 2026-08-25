@@ -34,6 +34,8 @@ export {
   tierMention,
 } from './tier.js'
 export type { Capability, Tier, TierMention } from './tier.js'
+export { DESTINATIONS, destinationOf, disclosureLine } from './disclosure.js'
+export type { Destination } from './disclosure.js'
 export { keyChecks, reportFrom } from './doctor.js'
 export type { CheckState, DoctorCheck, DoctorReport } from './doctor.js'
 export { recordRun } from './record.js'

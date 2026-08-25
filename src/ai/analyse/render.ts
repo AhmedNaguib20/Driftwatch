@@ -1,3 +1,4 @@
+import { CONTEXT_SECTIONS } from './sections.js'
 import type { MetricComparison, ResultJson } from '../../core/index.js'
 import type { DiffFile, LockfileSummary } from './types.js'
 
@@ -10,19 +11,19 @@ import type { DiffFile, LockfileSummary } from './types.js'
 export function renderMeasurement(result: ResultJson): string {
   const lines: string[] = []
 
-  lines.push('## Measured verdict')
+  lines.push(headingOf('## Measured verdict'))
   lines.push(`verdict: ${result.verdict}`)
   lines.push(`noise floor: ${result.config.noiseFloorPercent}% | threshold: ${result.config.thresholdPercent}%`)
   lines.push(`dependencies changed: ${String(result.comparison.dependenciesChanged)}`)
   lines.push('')
 
-  lines.push('## Metrics')
+  lines.push(headingOf('## Metrics'))
   for (const m of result.comparison.metrics) {
     lines.push(renderMetric(m))
   }
   lines.push('')
 
-  lines.push('## Raw samples (medians are reported; judge the spread yourself)')
+  lines.push(headingOf('## Raw samples (medians are reported; judge the spread yourself)'))
   for (const side of ['base', 'current'] as const) {
     const report = result[side]
     if (!('metrics' in report)) continue
@@ -34,7 +35,7 @@ export function renderMeasurement(result: ResultJson): string {
   }
   lines.push('')
 
-  lines.push('## Measurement protocols')
+  lines.push(headingOf('## Measurement protocols'))
   for (const side of ['base', 'current'] as const) {
     const report = result[side]
     if (!('protocol' in report)) continue
@@ -46,7 +47,7 @@ export function renderMeasurement(result: ResultJson): string {
   }
   lines.push('')
 
-  lines.push('## Detection evidence (how the tool knows what it knows)')
+  lines.push(headingOf('## Detection evidence (how the tool knows what it knows)'))
   for (const item of result.project.evidence) {
     lines.push(`- ${item.fact} [${item.source}]${item.detail ? ` — ${item.detail}` : ''}`)
   }
@@ -63,7 +64,7 @@ function renderMetric(m: MetricComparison): string {
 }
 
 export function renderDiffstat(files: readonly DiffFile[]): string {
-  const lines = ['## Diffstat (every changed file, base → working tree)']
+  const lines = [headingOf('## Diffstat (every changed file, base → working tree)')]
   if (files.length === 0) {
     lines.push('(no changed files)')
     return lines.join('\n')
@@ -81,7 +82,7 @@ export function renderDiffstat(files: readonly DiffFile[]): string {
 
 export function renderLockfileSummaries(summaries: readonly LockfileSummary[]): string {
   if (summaries.length === 0) return ''
-  const lines = ['## Dependency changes (lockfile summary — raw lockfile patches are never sent)']
+  const lines = [headingOf('## Dependency changes (lockfile summary — raw lockfile patches are never sent)')]
   for (const s of summaries) {
     if (s.unparsed) {
       lines.push(`- ${s.unparsed}`)
@@ -96,4 +97,15 @@ export function renderLockfileSummaries(summaries: readonly LockfileSummary[]): 
     }
   }
   return lines.join('\n')
+}
+
+/**
+ * Every heading this renderer emits must be one the disclosure documents (sections.ts). Reading
+ * it back through this function is what makes "the README lists what we send" enforceable rather
+ * than aspirational — an undocumented section fails here, in the code that would have sent it.
+ */
+function headingOf(heading: string): string {
+  const known = CONTEXT_SECTIONS.find((s) => s.heading === heading)
+  if (!known) throw new Error(`context section "${heading}" is not documented in sections.ts`)
+  return known.heading
 }

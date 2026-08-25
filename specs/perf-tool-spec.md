@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 60 — 2026-08-24 — M11 step C: cost projection as an audited upper bound + refusing cap. Prior: M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 61 — 2026-08-24 — M11 step D: named provider conditions; a wrong name is worse than no name. Prior: M11 step C: cost projection as an audited upper bound + refusing cap. Prior: M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1392,6 +1392,31 @@ total we never measured is the same error as an estimate presented as a measurem
 *(Bug the suite caught: an absent cap field read as a configured ceiling — `undefined !== null` —
 refusing every analysis on any result written before the field existed. Ten tests went red at once,
 which is what made it obvious.)*
+
+*Step D — named provider errors (`9d53697`, 461 tests) — DONE.* Five provider-agnostic
+conditions; detection is not agnostic and stays inside `providers/` per §7.1:
+`invalid_key` (401/403); `no_credit` — **DeepSeek's 402 + "Insufficient Balance" and OpenAI's 429 +
+`insufficient_quota` are the same fact in different envelopes**; `rate_limited` (429, carrying
+`Retry-After`, and saying plainly that driftwatch does not queue or retry across runs);
+`unknown_model` — **detected from the payload, not the status**, because vendors phrase it four
+ways and disagree on 400 vs 404; and `unknown`, which carries the provider's words verbatim.
+
+**The default row is the principle: a wrong name is worse than no name** — it sends someone to
+their billing page over a proxy problem. The unclassifiable case says plainly that driftwatch has
+no named remedy, and keeps the generic stanza and the `DRIFTWATCH_DEBUG_WIRE` pointer.
+
+Stanzas name the exact page, not "check your account", and **say that measurement is unaffected** —
+for a keyless-tier product that is the thing the reader most needs to know. `invalid_key` names
+**where the key came from** (step A's resolution): *"the key from `DEEPSEEK_API_KEY` was rejected"*
+and *"your `key_command`'s output was rejected"* are different debugging sessions. The key is never
+printed, asserted including inside the serialised error.
+
+**One event, one description:** a test builds the expected stanza independently and asserts that
+doctor's check and a mid-run `analysis: skipped` both equal it for the same mocked 402 — a user who
+ran doctor yesterday and hits the failure today reads the same words. The measurement verdict is
+untouched in both: *a provider with no credit says nothing about the code that was measured.*
+(Two tests encoding pre-step-D behaviour were rewritten to the new contract rather than worked
+around.)
 
 **Scope:**
 1. **The contract & audit** — verify no non-AI path can fail, prompt, or warn because of a missing

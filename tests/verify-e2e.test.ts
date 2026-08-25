@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { cp, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -37,6 +38,7 @@ describe('fix verification — real end-to-end on the fixture', () => {
     // fs.cp elsewhere); this test copied the fast path without the guard. `-c` is an APFS
     // clone flag that GNU cp does not have, so this line failed outright on Linux — which is
     // why this test had never actually run in CI.
+    await ensureFixtureInstalled(path.join(repoRoot, 'fixtures', 'next-app'))
     await cloneNodeModules(path.join(repoRoot, 'fixtures', 'next-app', 'node_modules'), path.join(dir, 'node_modules'))
     await exec('git', ['init', '-q', '-b', 'main'], { cwd: dir })
     await exec('git', ['-C', dir, 'config', 'user.email', 't@t'])
@@ -124,6 +126,17 @@ describe('fix verification — real end-to-end on the fixture', () => {
     // tuned close to it.
   }, 1_200_000)
 })
+
+/**
+ * The fixture's dependencies are gitignored, so they exist only where someone has installed them.
+ * On a fresh checkout — which is what CI is — they are simply absent, and this test cannot run.
+ * It installs them rather than skipping: a test that quietly does nothing in the one environment
+ * that matters is the failure this whole sweep is about.
+ */
+async function ensureFixtureInstalled(fixture: string): Promise<void> {
+  if (existsSync(path.join(fixture, 'node_modules'))) return
+  await exec('npm', ['ci', '--no-audit', '--no-fund'], { cwd: fixture, timeout: 600_000 })
+}
 
 /** Mirrors src/core/measure/workspace.ts: clone on APFS, plain copy everywhere else. */
 async function cloneNodeModules(source: string, target: string): Promise<void> {

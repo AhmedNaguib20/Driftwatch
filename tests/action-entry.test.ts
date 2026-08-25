@@ -341,8 +341,8 @@ describe('action.yml runs the published package, not a second copy of it', () =>
   })
 
   it('passes the project-dir input through by name, since composite steps get no INPUT_ vars', () => {
-    const [step] = action.runs.steps
-    expect(step.env?.['DRIFTWATCH_PROJECT_DIR']).toBe('${{ inputs.project-dir }}')
+    const step = action.runs.steps.at(0)
+    expect(step?.env?.['DRIFTWATCH_PROJECT_DIR']).toBe('${{ inputs.project-dir }}')
     expect(Object.keys(action.inputs)).toContain('project-dir')
   })
 })

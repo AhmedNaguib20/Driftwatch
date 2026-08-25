@@ -326,7 +326,7 @@ describe('action.yml runs the published package, not a second copy of it', () =>
   it('is a composite action that installs the npm package', () => {
     expect(action.runs.using).toBe('composite')
     for (const step of action.runs.steps) expect(step.shell).toBe('bash')
-    expect(actionYml).toContain('npx --yes --package "@ahmednaguib/driftwatch@$VERSION"')
+    expect(actionYml).toContain('npx --yes --prefer-online --package "@ahmednaguib/driftwatch@$VERSION"')
     expect(actionYml).toContain('driftwatch-action')
     // The old mechanism, gone. Scoped to `runs:` — the comments above it describe what went
     // wrong and must be free to name `dist/`; what matters is that nothing EXECUTES from it.

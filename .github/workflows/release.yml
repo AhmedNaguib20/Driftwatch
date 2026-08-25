@@ -91,18 +91,27 @@ jobs:
           WORK=$(mktemp -d)
           cd "$WORK"   # empty: no repo, no node_modules, nothing to accidentally resolve against
 
-          PRINTED=$(npx --yes --package "$PACKAGE@$VERSION" driftwatch --version)
+          # --prefer-online on both: npm caches the package METADATA, and a cache written before
+          # this version was published answers "no such version" for a version the registry is
+          # serving. Reproduced locally minutes after publishing 0.6.2. Runner caches are cold, but
+          # self-hosted ones are not, so action.yml carries the same flag.
+          PRINTED=$(npx --yes --prefer-online --package "$PACKAGE@$VERSION" driftwatch --version)
           echo "driftwatch --version printed: $PRINTED"
-          if [ "$PRINTED" != "$VERSION" ]; then
-            echo "::error::the published CLI reports '$PRINTED', not '$VERSION'."
-            exit 1
-          fi
+          # `--version` prints the version followed by the build identity (spec v50: every output
+          # identifies the build that produced it), so this asserts the line BEGINS with it.
+          case "$PRINTED" in
+            "$VERSION"*) ;;
+            *)
+              echo "::error::the published CLI reports '$PRINTED', which does not start with '$VERSION'."
+              exit 1
+              ;;
+          esac
 
           # And the action bin, whose module graph is wider than the CLI's — the missing-dependency
           # failure was raised by an import the CLI path never reaches. An unrecognised event name
           # makes the entry report that there is nothing to do and exit 0, touching nothing.
           GITHUB_EVENT_NAME=release-guard-smoke-test \
-            npx --yes --package "$PACKAGE@$VERSION" driftwatch-action
+            npx --yes --prefer-online --package "$PACKAGE@$VERSION" driftwatch-action
           echo "the action entry loaded and ran"
 
       # The tag carries `action.yml` with the version substituted in, and nothing else that main

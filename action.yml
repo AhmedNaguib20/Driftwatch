@@ -59,4 +59,7 @@ runs:
             exit 1
             ;;
         esac
-        npx --yes --package "@ahmednaguib/driftwatch@$VERSION" driftwatch-action
+        # --prefer-online: npm caches package metadata, and a cache written before this version
+        # was published answers "no such version" for one the registry is serving. Hosted runners
+        # start cold; self-hosted ones do not.
+        npx --yes --prefer-online --package "@ahmednaguib/driftwatch@$VERSION" driftwatch-action

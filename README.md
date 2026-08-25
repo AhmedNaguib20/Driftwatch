@@ -327,8 +327,8 @@ because Chrome is not an input to your build.
 every individual step stayed under the threshold. It fires at 10% cumulative within one protocol
 segment, over at least 5 measured points, only for byte classes, and only when no single commit
 crossed the PR threshold on its own. That is twice the PR threshold, deliberately: an alert spends
-someone's attention, and it exists only for the case a review could not have caught. It fires once per
-condition and then stays quiet until the drift widens by another 10 points, retreats, or the
+someone's attention, and it exists only for the case a review could not have caught. It fires once
+per condition and then stays quiet until the drift widens by another 10 points, retreats, or the
 protocol segment breaks.
 
 **Replay** measures the last N mainline commits as they were, so a project gets history on day one

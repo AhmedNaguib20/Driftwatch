@@ -1,7 +1,7 @@
-name: 'Driftwatch'
-description: >-
-  Measures build performance on every pull request, compares against the base commit under an
-  identical protocol, and (with an API key) explains confirmed regressions.
+name: 'Driftwatch Performance'
+# Marketplace caps this at 125 characters, and the name must not collide with any existing
+# action, USER or ORGANIZATION — `github.com/driftwatch` is taken, which is why this is two words.
+description: 'Measures performance on every pull request under one protocol, and refuses to report a delta it cannot stand behind.'
 author: 'Ahmed Naguib'
 branding:
   # `activity` (the pulse line) says MEASURING, and says it without a direction: driftwatch

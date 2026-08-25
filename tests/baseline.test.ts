@@ -144,9 +144,15 @@ describe('protocol hash — §5.1 third instance', () => {
   })
 
   it('changes when the node version, arch, sample count, or install state changes', () => {
+    // Derived from the host, never literal: the fixture takes `process.arch`, so hardcoding
+    // 'x64' made this a no-op on an x64 runner while passing on the arm64 machine it was written
+    // on. A test whose assertion evaporates on someone else's hardware is not a test there.
+    const otherArch = process.arch === 'x64' ? 'arm64' : 'x64'
+    const otherNode = process.version === 'v22.0.0' ? 'v18.0.0' : 'v22.0.0'
+
     const base = protocolHash(fakeProtocol(), 'app')
-    expect(protocolHash(fakeProtocol({ nodeVersion: 'v22.0.0' }), 'app')).not.toBe(base)
-    expect(protocolHash(fakeProtocol({ arch: 'x64' }), 'app')).not.toBe(base)
+    expect(protocolHash(fakeProtocol({ nodeVersion: otherNode }), 'app')).not.toBe(base)
+    expect(protocolHash(fakeProtocol({ arch: otherArch }), 'app')).not.toBe(base)
     expect(protocolHash(fakeProtocol({ buildSamples: 5 }), 'app')).not.toBe(base)
     expect(protocolHash(fakeProtocol({ nodeModules: 'fresh-install' }), 'app')).not.toBe(base)
   })

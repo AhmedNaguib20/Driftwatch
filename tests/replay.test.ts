@@ -186,8 +186,10 @@ describe('replayHistory — the real loop (measure, skip, batch, one segment)', 
       direction: 'down',
       gap: { commits: 1, unbuildable: 1 },
     })
-    const line = renderMovements(report, read.index.entries.length)
-    expect(line).toContain('bundle size moved at 2 commits')
+    // Strip ANSI: picocolors emits colour on CI and not through a local non-TTY pipe, so a raw
+    // substring assertion passes here and fails there. The test is about the words.
+    const line = renderMovements(report, read.index.entries.length).replace(/\u001b\[[0-9;]*m/g, '')
+    expect(line).toContain('client bundle size moved at 2 commits')
     expect(line).toContain('somewhere across 1 commit, 1 unbuildable')
     // Doctrine (spec §10): wall-clock classes are named, never attributed.
     // Both byte classes carry the attribution licence, so both report the same movements.

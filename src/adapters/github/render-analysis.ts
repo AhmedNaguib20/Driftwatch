@@ -30,6 +30,14 @@ export function renderAnalysisSection(result: ResultJson, fromFork = false): str
     }
     case 'skipped':
       return ['', `_AI analysis skipped: ${analysis.reason.split('\n')[0]}_`]
+    case 'cost_capped':
+      return [
+        '',
+        `_AI analysis was not run: projected **${analysis.projectedUsd === null ? 'unpriced' : `$${analysis.projectedUsd.toFixed(4)}`}** ` +
+          `against this repository's \`max_cost_per_run\` of **$${analysis.capUsd.toFixed(4)}**. The projection is an upper bound ` +
+          `(${analysis.basis}), so driftwatch refused early rather than overspending. Raise the cap in perf.yml, or analyse a ` +
+          `narrower diff. The measurement above is unaffected._`,
+      ]
     case 'inconclusive':
       return [
         '',

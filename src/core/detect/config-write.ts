@@ -65,6 +65,12 @@ model: ${config.model}
 # NEVER put the key itself in this file — it is committed, and driftwatch refuses to run if it
 # finds one here. A command is fine:
 # key_command: op read op://vault/ai/key
+
+# Hard ceiling on what ONE analysed regression may cost. Unset by default. When the projected
+# cost exceeds it, driftwatch refuses the analysis rather than truncating it or switching models
+# — the measurement and verdict are unaffected. Per-run only: driftwatch does not know your
+# provider bill and does not track a running total.
+# max_cost_per_run: 0.05
 `
 }
 

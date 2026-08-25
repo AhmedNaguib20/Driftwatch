@@ -1,6 +1,4 @@
-import { DEEP_BUDGET_TOKENS, TRIAGE_BUDGET_TOKENS } from './analyse/budget.js'
-import { DEEP_MAX_OUTPUT, TRIAGE_MAX_OUTPUT } from './analyse/run-analysis.js'
-import { estimateCostUsd } from './providers/pricing.js'
+import { analysisCostCeiling, actualCost, formatUsd } from './cost.js'
 import { createProvider } from './providers/index.js'
 import { ProviderError } from './providers/index.js'
 import type { DoctorCheck } from '../core/index.js'
@@ -63,8 +61,8 @@ export async function providerChecks(options: ProviderCheckOptions): Promise<Doc
         id: 'call',
         label: 'minimal call',
         state: 'ok',
-        detail: `succeeded — ${response.tokens.input} in / ${response.tokens.output} out, ${money(
-          estimateCostUsd(provider, response.model, response.tokens),
+        detail: `succeeded — ${response.tokens.input} in / ${response.tokens.output} out, ${formatUsd(
+          actualCost(provider, response.model, response.tokens).usd,
         )}`,
       },
       typicalCostCheck(provider, response.model),
@@ -94,24 +92,20 @@ function servedModelCheck(requested: string, served: string): DoctorCheck {
 }
 
 /**
- * What a real analysis costs, stated as a ceiling from the constants that actually bound it —
- * the two context budgets and the two output caps (spec §9e). Not a guessed "typical": a bound
- * the code enforces, plus the largest figure the eval set has actually measured.
+ * What a real analysis costs, as a ceiling from the constants that bound it. The arithmetic lives
+ * in cost.ts because the per-run projection and `max_cost_per_run` use the same numbers — two
+ * copies would let the cap refuse on figures the diagnostic never quoted.
  */
 function typicalCostCheck(provider: string, model: string): DoctorCheck {
-  const ceiling = estimateCostUsd(provider, model, {
-    input: TRIAGE_BUDGET_TOKENS + DEEP_BUDGET_TOKENS,
-    output: TRIAGE_MAX_OUTPUT + DEEP_MAX_OUTPUT,
-  })
-  const basis = `context budgets ${TRIAGE_BUDGET_TOKENS.toLocaleString()} + ${DEEP_BUDGET_TOKENS.toLocaleString()} in, output caps ${TRIAGE_MAX_OUTPUT.toLocaleString()} + ${DEEP_MAX_OUTPUT.toLocaleString()} out`
+  const ceiling = analysisCostCeiling(provider, model)
   return {
     id: 'cost',
     label: 'analysis cost',
     state: 'info',
     detail:
-      ceiling === null
+      ceiling.usd === null
         ? `unknown for ${model} — driftwatch has no published price for it, and will report "cost unknown" rather than a guess`
-        : `at most ${money(ceiling)} per analysed regression (${basis}); the largest eval case, a 31-file diff, measured $0.0130`,
+        : `at most ${formatUsd(ceiling.usd)} per analysed regression (${ceiling.basis}); the largest eval case, a 31-file diff, measured $0.0130`,
   }
 }
 
@@ -148,11 +142,4 @@ function failureFrom(error: unknown, provider: string): DoctorCheck {
       'DRIFTWATCH_DEBUG_WIRE=1 prints what crossed the wire, with the key never among it.',
     ].join('\n'),
   }
-}
-
-/** A real charge below the displayed precision reads as free at $0.0000, which it is not. */
-function money(usd: number | null): string {
-  if (usd === null) return 'cost unknown'
-  if (usd > 0 && usd < 0.0001) return 'under $0.0001'
-  return `$${usd.toFixed(4)}`
 }

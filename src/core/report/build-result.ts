@@ -77,6 +77,7 @@ export function buildResult(input: BuildResultInput): ResultJson {
       base: plan.available ? plan.baseRef : config.base,
       block_merge: config.block_merge,
       auto_fix: config.auto_fix,
+      maxCostPerRunUsd: config.maxCostPerRunUsd,
       sourcePath: config.sourcePath,
     },
     base:

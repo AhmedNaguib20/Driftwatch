@@ -46,6 +46,15 @@ export interface PerfConfig {
   readonly base: string
   readonly provider: string
   readonly model: string
+  /**
+   * Ceiling on what ONE analysed regression may cost, e.g. `0.05` or `$0.05`. Unset by default:
+   * a cap the user did not choose is a surprise of a different kind. When set and the projection
+   * exceeds it, analysis is REFUSED rather than truncated or quietly downgraded — a cheaper
+   * answer to a question you did not ask is worse than no answer (spec §9e step C).
+   *
+   * Per-run only. Driftwatch does not know your provider bill and never pretends to.
+   */
+  readonly max_cost_per_run: string | null
 }
 
 export const DEFAULT_CONFIG: PerfConfig = {
@@ -63,10 +72,13 @@ export const DEFAULT_CONFIG: PerfConfig = {
   base: 'main',
   provider: 'deepseek',
   model: 'deepseek-chat',
+  max_cost_per_run: null,
 }
 
 /** Config as the rest of the tool consumes it: percentages parsed, defaults filled in. */
 export interface ResolvedConfig extends PerfConfig {
+  /** Parsed `max_cost_per_run` in USD; null when unset — the default, and not a cap of zero. */
+  readonly maxCostPerRunUsd: number | null
   readonly thresholdPercent: number
   readonly noiseFloorPercent: number
   /** Absolute path the config was read from, or null when running on defaults. */
@@ -93,4 +105,11 @@ export function parsePercent(value: string): number | null {
   if (!match?.[1]) return null
   const n = Number(match[1])
   return Number.isFinite(n) ? n : null
+}
+
+/** `0.05` or `$0.05` → 0.05. Null for anything that is not a positive amount of money. */
+export function parseUsd(value: string | null): number | null {
+  if (value === null) return null
+  const parsed = Number(value.trim().replace(/^\$/, ''))
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
 }

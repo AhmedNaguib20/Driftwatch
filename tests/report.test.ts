@@ -75,6 +75,8 @@ function config(overrides: Partial<ResolvedConfig> = {}): ResolvedConfig {
     base: 'main',
     provider: 'deepseek',
     model: 'deepseek-chat',
+    max_cost_per_run: null,
+    maxCostPerRunUsd: null,
     thresholdPercent: 5,
     noiseFloorPercent: 2,
     sourcePath: null,

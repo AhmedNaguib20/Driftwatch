@@ -3,6 +3,7 @@ import type { ResultJson } from '../../core/index.js'
 import { ProviderError, jsonCall } from '../providers/index.js'
 import type { Provider } from '../providers/index.js'
 import type { Analysis, AnalysisFix, StageStats } from './analysis-types.js'
+import { actualCost, projectAnalysisCost } from '../cost.js'
 import { assembleDeepContext, assembleTriageContext } from './assemble.js'
 import type { ContextInput } from './assemble.js'
 import { DEEP_SYSTEM, PROMPT_VERSION, TRIAGE_SYSTEM, deepUser, triageUser } from './prompts.js'
@@ -61,6 +62,24 @@ export async function runAnalysis(
 
   const input: ContextInput = { result, ...diffData }
   const triageContext = assembleTriageContext(input)
+
+  // Projected BEFORE the first call — the only moment a cost ceiling can still be honoured.
+  // Triage input is exact here (the context is assembled); the rest is bounded by the constants
+  // the code enforces, so the projection overstates rather than understates (cost.ts).
+  const projection = projectAnalysisCost({
+    provider: provider.name,
+    model: provider.model,
+    triageContextTokens: triageContext.manifest.estimatedTokens,
+    changedFiles: triageContext.manifest.files.length,
+  })
+  // `?? null` on purpose: an ABSENT field is no cap. Treating undefined as a configured ceiling
+  // would refuse every analysis on any result written before the field existed.
+  const cap = result.config.maxCostPerRunUsd ?? null
+  if (cap !== null && (projection.usd === null || projection.usd > cap)) {
+    // Refused, not truncated and not downgraded: a cheaper answer to a question the user did not
+    // ask is worse than no answer. The measurement verdict is untouched either way.
+    return { outcome: 'cost_capped', projectedUsd: projection.usd, capUsd: cap, basis: projection.basis }
+  }
 
   let triage
   try {
@@ -138,14 +157,25 @@ export async function runAnalysis(
     }
   }
 
+  const deepStats = stats(provider, deep)
+  const spent = {
+    input: triageStats.tokens.input + deepStats.tokens.input,
+    output: triageStats.tokens.output + deepStats.tokens.output,
+  }
   return {
     outcome: 'analysed',
+    cost: {
+      projectedUsd: projection.usd,
+      actualUsd: actualCost(provider.name, deepStats.model, spent).usd,
+      projectedTokens: projection.tokens,
+      actualTokens: spent,
+    },
     cause: value.cause,
     confidence: value.confidence,
     evidence: value.evidence,
     fix: enforceFixRules(value, filesShown(deepContext.manifest)),
     suspects,
-    stages: { triage: triageStats, deep: stats(provider, deep) },
+    stages: { triage: triageStats, deep: deepStats },
     context: { triage: triageContext.manifest, deep: deepContext.manifest },
   }
 }

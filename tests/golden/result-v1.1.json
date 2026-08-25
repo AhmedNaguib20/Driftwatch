@@ -45,6 +45,7 @@
     "base": "main",
     "block_merge": false,
     "auto_fix": "off",
+    "maxCostPerRunUsd": null,
     "sourcePath": "/repo/app/perf.yml"
   },
   "base": {

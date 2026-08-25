@@ -57,6 +57,35 @@ shared with everyone who can read the repository — driftwatch refuses to run i
 and tells you to rotate it. Provider and model are set in `perf.yml` (`provider: deepseek`,
 `model: deepseek-chat`). Token counts and an estimated cost are printed with every analysis.
 
+### Cost, and what driftwatch does not know
+
+Every analysed regression reports what it cost **and what it was projected to cost**, so the
+estimate is audited by reality on every run rather than trusted:
+
+```
+projected $0.0262 (upper bound) · actual $0.0130 · 11000→2295 tok vs 32000→7457 projected
+```
+
+The projection is deliberately an upper bound: triage input is measured exactly, and everything
+else is bounded by the limits the code enforces. `driftwatch doctor` prints the same arithmetic as
+a ceiling before you ever run one.
+
+To put a hard limit on a single run, set a ceiling in `perf.yml`:
+
+```yaml
+max_cost_per_run: 0.05    # unset by default
+```
+
+When the projection exceeds it, driftwatch **refuses the analysis** rather than truncating it or
+quietly switching to a cheaper model — a cheaper answer to a question you did not ask is worse
+than no answer. The measurement, verdict and PR comment are unaffected; only the explanation is
+withheld, and the comment says so once with both numbers.
+
+**Cumulative spend is not tracked.** Driftwatch does not know your provider bill, has no access to
+it, and will not pretend otherwise — a running total we never measured would be a number in the
+same category as an estimate presented as a measurement. Per-run is what can be honestly bounded,
+so per-run is what is offered.
+
 ## What leaves your machine
 
 **Nothing, unless AI analysis actually runs.** It runs only when: a regression was confirmed,

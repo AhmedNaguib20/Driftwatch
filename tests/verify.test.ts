@@ -157,6 +157,7 @@ function regressionResult(
   const config = {
     detect: 'nextjs' as const, app: null, package_manager: null, key_command: null, measure: ['client_bundle_size'], serve: true, browser: true, verify: true, auto_fix: 'off' as const,
     threshold: '5%', block_merge: false, base: 'main', provider: 'deepseek', model: 'm',
+    max_cost_per_run: null, maxCostPerRunUsd: null,
     thresholdPercent: 5, noiseFloorPercent: 2, sourcePath: null, warnings: [],
   }
   const profile = {

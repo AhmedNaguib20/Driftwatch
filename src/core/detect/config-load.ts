@@ -5,6 +5,7 @@ import {
   DEFAULT_CONFIG,
   NOISE_FLOOR_PERCENT,
   parsePercent,
+  parseUsd,
 } from './config-schema.js'
 import type { PerfConfig, ResolvedConfig } from './config-schema.js'
 import type { Framework } from './types.js'
@@ -59,6 +60,7 @@ export async function loadConfig(
     app: pickOptionalString(record.app, fallback.app, 'app', warnings),
     package_manager: pickOptionalString(record.package_manager, fallback.package_manager, 'package_manager', warnings),
     key_command: pickOptionalString(record.key_command, fallback.key_command, 'key_command', warnings),
+    max_cost_per_run: pickOptionalString(record.max_cost_per_run, fallback.max_cost_per_run, 'max_cost_per_run', warnings),
     measure: pickMetrics(record.measure, fallback.measure, warnings),
     serve: pickBoolean(record.serve, fallback.serve, 'serve', warnings),
     browser: pickBoolean(record.browser, fallback.browser, 'browser', warnings),
@@ -92,8 +94,18 @@ function resolve(
     )
   }
 
+  // A cap that cannot be parsed is REFUSED as a cap rather than silently ignored: the user asked
+  // for a ceiling, and running without one because of a typo is the surprise it exists to prevent.
+  const maxCostPerRunUsd = parseUsd(config.max_cost_per_run)
+  if (config.max_cost_per_run !== null && maxCostPerRunUsd === null) {
+    warnings.push(
+      `${CONFIG_FILENAME}: max_cost_per_run "${config.max_cost_per_run}" is not an amount like 0.05 — no cap is applied.`,
+    )
+  }
+
   return {
     ...config,
+    maxCostPerRunUsd,
     thresholdPercent: parsedThreshold ?? parsePercent(DEFAULT_CONFIG.threshold)!,
     noiseFloorPercent: NOISE_FLOOR_PERCENT,
     sourcePath,

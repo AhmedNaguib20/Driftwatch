@@ -8,6 +8,7 @@
  */
 
 export * from './detect/index.js'
+export { parseUsd } from './detect/config-schema.js'
 export * from './measure/index.js'
 export * from './baseline/index.js'
 export * from './report/index.js'

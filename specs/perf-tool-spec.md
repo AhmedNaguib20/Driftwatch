@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 58 — 2026-08-24 — test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 59 — 2026-08-24 — M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1342,6 +1342,30 @@ fixture is not a fix** — it lowers the probability, costs test time, and leave
 the loaded worst case**, not tuned near it (600s → 1200s for a 152s-unloaded test running parallel
 with real builds). *And a filtered command that captures a FAIL without its assertion text is how a
 red commit happens* — keep full output on failure.
+
+*Step B — `driftwatch doctor` (`8ddeb00`, 442 tests) — DONE.* Reports, never fixes, never writes;
+reads step A's resolver so no second answer to "is the tier on?" can appear. **No key exits 0** and
+reads *"measurement is ready. The AI tier is off, which is a choice, not a fault"* — with the
+capability list rendered from `tier.ts`, not maintained twice. Decisions worth keeping:
+- **One call, several facts** — reachability, served model, and a real token count come from a
+  single completion, not three probes: the cheapest honest way, and every number reported was
+  measured rather than assumed.
+- **A reply that arrives but won't parse is a warn, not a fail** — it proves reachability; calling
+  it a connectivity problem sends someone to their firewall over a chatty model.
+- **Cost is a ceiling, not a guess** — computed from the four constants that actually bound a run
+  (both context budgets, both output caps), the line names them, and cites the one figure the eval
+  set measured. An unpriced model says "cost unknown"; a real charge below display precision says
+  `under $0.0001`, because `$0.0000` reads as free.
+- **Served-vs-requested model is surfaced** (deepseek-chat → deepseek-v4-flash), the M6 lesson made
+  visible at diagnosis time.
+- Redaction goes one step past step A: doctor prints neither the key **nor the `key_command`** — a
+  vault path names where the secret lives, and a diagnostic is the output most likely to be pasted
+  into an issue. Added as an explicit option rather than changing step A's accepted behaviour.
+- *Found and deleted:* `registry.ts` still exported its own `resolveApiKey` reading only
+  `DRIFTWATCH_API_KEY` — dead at runtime but wrong (it returned `null` for a user with
+  `DEEPSEEK_API_KEY` set), **with a test still pinning the pre-step-A contract as if correct.**
+  Same disease as `aiKeyPresent`, same one the M10 audit caught: **a superseded implementation with
+  a passing test is worse than no test.**
 
 **Scope:**
 1. **The contract & audit** — verify no non-AI path can fail, prompt, or warn because of a missing

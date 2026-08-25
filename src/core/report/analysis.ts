@@ -67,6 +67,9 @@ export function machineDiff(fix: AnalysisFix): string | null {
  *    did not ask for on every clean run (spec §9e).
  *  - skipped: a provider or transport failure, with the reason. This one IS reported: we tried,
  *    it cost something, and hiding it would be rule 3 in reverse.
+ *  - cost_capped: the projected cost exceeded `max_cost_per_run`, so nothing was sent. A refusal
+ *    the user configured — distinct from `skipped` (something went wrong) and from
+ *    `not_applicable` (nothing to do), because distinct facts get distinct names.
  *  - no_key: a regression was found but DRIFTWATCH_API_KEY is not set. Not an error.
  *  - disabled: --no-ai / DRIFTWATCH_NO_AI — the ai module graph was never loaded.
  */
@@ -80,6 +83,17 @@ export type AnalysisReport =
       readonly suspects: readonly { readonly path: string; readonly reason: string }[]
       readonly stages: { readonly triage: StageStats; readonly deep: StageStats }
       readonly context: { readonly triage: ContextManifest; readonly deep: ContextManifest }
+      /**
+       * What it was projected to cost, beside what it did. Reported on every analysed run so the
+       * token model is audited by reality rather than by argument — if it is systematically off,
+       * that shows up in the field instead of being assumed away.
+       */
+      readonly cost?: {
+        readonly projectedUsd: number | null
+        readonly actualUsd: number | null
+        readonly projectedTokens: { readonly input: number; readonly output: number }
+        readonly actualTokens: { readonly input: number; readonly output: number }
+      }
     }
   | {
       readonly outcome: 'inconclusive'
@@ -103,6 +117,18 @@ export type AnalysisReport =
         readonly promptVersion: number
         readonly tokens: { readonly input: number; readonly output: number }
       }
+    }
+  | {
+      readonly outcome: 'cost_capped'
+      /**
+       * Both numbers, so the reader can see how far over it was. Null when the model has no
+       * published price: an unpriced projection cannot be SHOWN to be under the cap, and a cap
+       * that cannot be honoured is not quietly ignored (spec §9e step C).
+       */
+      readonly projectedUsd: number | null
+      readonly capUsd: number
+      /** The arithmetic behind the projection, in words. */
+      readonly basis: string
     }
   | { readonly outcome: 'not_applicable' }
   | { readonly outcome: 'no_key' }

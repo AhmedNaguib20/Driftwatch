@@ -66,6 +66,7 @@ export function buildRecordResult(input: BuildRecordInput): ResultJson {
       base: config.base,
       block_merge: config.block_merge,
       auto_fix: config.auto_fix,
+      maxCostPerRunUsd: config.maxCostPerRunUsd,
       sourcePath: config.sourcePath,
     },
     base: { available: false, reason: 'record mode — this run measures one commit; there is no baseline comparison' },

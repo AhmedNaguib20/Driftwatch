@@ -33,6 +33,16 @@ export function renderAnalysis(
     }
     case 'skipped':
       return `\n${pc.dim(`AI analysis skipped: ${analysis.reason}`)}`
+    case 'cost_capped':
+      return [
+        '',
+        pc.yellow('AI analysis was not run: it would have cost more than this repository allows.'),
+        pc.dim(`  projected  ${money(analysis.projectedUsd)}   ·   cap  $${analysis.capUsd.toFixed(4)}   (max_cost_per_run, perf.yml)`),
+        pc.dim(`  ${analysis.basis}`),
+        pc.dim('  The projection is an upper bound, so this refuses early rather than overspending.'),
+        pc.dim('  Either raise the cap, or narrow the diff this run analyses'),
+        pc.dim('  (a smaller changeset costs proportionally less). The measurement above is unaffected.'),
+      ].join('\n')
     case 'inconclusive':
       return [
         '',
@@ -50,6 +60,11 @@ export function renderAnalysis(
     case 'analysed':
       return renderAnalysed(analysis, estimateCost)
   }
+}
+
+/** A projection that could not be priced is stated as such, never as a number. */
+function money(usd: number | null): string {
+  return usd === null ? 'could not be priced for this model' : `$${usd.toFixed(4)}`
 }
 
 function renderAnalysed(
@@ -74,6 +89,16 @@ function renderAnalysed(
   lines.push(renderFixContent(analysis.fix.kind, analysis.fix.content))
 
   lines.push(statsFooter([analysis.stages.triage, analysis.stages.deep], estimateCost))
+  // Projected beside actual, every run: the token model gets audited by reality rather than by
+  // argument, and a user watching both learns what an analysis actually costs them (spec §9e).
+  if (analysis.cost) {
+    lines.push(
+      pc.dim(
+        `  projected ${money(analysis.cost.projectedUsd)} (upper bound) · actual ${money(analysis.cost.actualUsd)}` +
+          ` · ${analysis.cost.actualTokens.input}→${analysis.cost.actualTokens.output} tok vs ${analysis.cost.projectedTokens.input}→${analysis.cost.projectedTokens.output} projected`,
+      ),
+    )
+  }
   return lines.join('\n')
 }
 
@@ -119,7 +144,7 @@ function statsFooter(
     return cost === null || sum === null ? null : sum + cost
   }, 0 as number | null)
   const first = stages[0]!
-  const costText = total !== null ? ` · est. cost $${total.toFixed(4)}` : ''
+  const costText = total !== null ? ` · cost $${total.toFixed(4)}` : ''
   return pc.dim(
     `  ${first.provider} (${stages.map((s) => s.model).filter((v, i, a) => a.indexOf(v) === i).join(', ')}) · prompts v${first.promptVersion} · ${parts.join(' · ')}${costText}`,
   )

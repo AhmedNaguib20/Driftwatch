@@ -102,6 +102,9 @@ export interface ConfigReport {
   readonly base: string
   readonly block_merge: boolean
   readonly auto_fix: 'off' | 'propose'
+  /** Per-run analysis cost ceiling in USD, or null when unset (the default). Recorded so a
+   *  `cost_capped` result can be read back without perf.yml in hand. */
+  readonly maxCostPerRunUsd: number | null
   readonly sourcePath: string | null
 }
 

@@ -145,6 +145,17 @@ describe('keyless paths say nothing about the tier', () => {
     }
   }, 120_000)
 
+  it('record mode says not_applicable too — it never attempts, so it never "skips"', async () => {
+    const dir = await tinyRepo()
+    const { stdout, code } = await cli(['record', '--cwd', dir, '--json', '--no-serve', '--no-browser'])
+
+    expect(code).toBe(0)
+    // `skipped` would tell a machine consumer that an attempt failed. Record mode measures one
+    // commit absolutely: there is no comparison, so there is nothing to explain and nothing was
+    // tried. Missed at M11 because both outcomes render silently for humans.
+    expect(JSON.parse(stdout).analysis).toEqual({ outcome: 'not_applicable' })
+  }, 120_000)
+
   it('the JSON contract still records that analysis did not apply — silence is for humans', async () => {
     const dir = await tinyRepo()
     const { stdout, code } = await cli(['run', '--cwd', dir, '--json', '--no-serve', '--no-browser'])

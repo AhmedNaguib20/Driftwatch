@@ -80,7 +80,12 @@ export function buildRecordResult(input: BuildRecordInput): ResultJson {
       metrics: [],
     },
     verdict: 'recorded',
-    analysis: { outcome: 'skipped', reason: 'record mode — no comparison to analyse' },
+    // Record mode measures one commit absolutely; there is no comparison, so there is nothing
+    // for analysis to explain. `not_applicable`, not `skipped` — the same distinction M11 drew
+    // for a clean run: `skipped` means an attempt was made and failed, and record mode never
+    // attempts. This one was missed at M11 because the human surfaces are silent either way; it
+    // only showed in the result JSON, where a machine consumer would read it as a failure.
+    analysis: { outcome: 'not_applicable' },
     warnings: [...config.warnings],
   }
 }

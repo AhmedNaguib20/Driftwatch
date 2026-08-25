@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 70 — 2026-08-25 — repo PUBLIC, Pages live, byte-identity proof closed; npm publish pending auth. Prior: push-first ordering catch; CI clean end to end; ready to flip. Prior: publish prep done (files bug caught, Next 16 works); LICENSE confirmed. Prior: README complete (520 lines) with a self-scoring demo; LICENSE next. Prior: warm-up/sampleValues precision (README verification); README §1–§5 drafted. Prior: workspace identifiers anonymised too; README shape agreed. Prior: audit clean on secrets; trial project anonymised, history kept. Prior: M12 launch opened: public + Apache-2.0 decided, name re-verified. Prior: **M11 CLOSED.** AI is a clean optional tier; disclosure generated from code. Next: launch. Prior: M11 step D: named provider conditions; a wrong name is worse than no name. Prior: M11 step C: cost projection as an audited upper bound + refusing cap. Prior: M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on the trial project (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (the trial project measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the the trial project real-world trial** (§9a):
+> Version 71 — 2026-08-25 — **SHIPPED.** @ahmednaguib/driftwatch@0.6.0 live, repo public, Pages live. Prior: repo PUBLIC, Pages live, byte-identity proof closed; npm publish pending auth. Prior: push-first ordering catch; CI clean end to end; ready to flip. Prior: publish prep done (files bug caught, Next 16 works); LICENSE confirmed. Prior: README complete (520 lines) with a self-scoring demo; LICENSE next. Prior: warm-up/sampleValues precision (README verification); README §1–§5 drafted. Prior: workspace identifiers anonymised too; README shape agreed. Prior: audit clean on secrets; trial project anonymised, history kept. Prior: M12 launch opened: public + Apache-2.0 decided, name re-verified. Prior: **M11 CLOSED.** AI is a clean optional tier; disclosure generated from code. Next: launch. Prior: M11 step D: named provider conditions; a wrong name is worse than no name. Prior: M11 step C: cost projection as an audited upper bound + refusing cap. Prior: M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on the trial project (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (the trial project measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the the trial project real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1577,6 +1577,33 @@ not check, which is precisely what the script was built to prevent. The first in
 a verification step, not by review** — the render check here, the error text there. The practice
 that follows: claim it *after* the check, never before. This is the project's own doctrine —
 measurement over assertion — applied to its own reporting.
+
+**PUBLISHED 2026-08-25 — `@ahmednaguib/driftwatch@0.6.0`.**
+Package https://www.npmjs.com/package/@ahmednaguib/driftwatch ·
+Repo https://github.com/AhmedNaguib20/Driftwatch ·
+Dashboard https://ahmednaguib20.github.io/Driftwatch/
+
+*The name:* `driftwatch` was free on every availability check and was still rejected at publish —
+npm's **similarity filter runs server-side at publish time only**, against `drift-watch` (9
+downloads, idle 5 months). No pre-check could have caught it: **some constraints have exactly one
+real test, which is the attempt.** `@driftwatch` turned out to belong to someone else, and every
+free org name was a compromised form of the product name (`-dev`, `js`, `get-`, `-ci`), so the
+choice became *personal scope with the exact product name* vs *org scope with a modified one* —
+the first preserves the brand better. **The bin is independent of the package name, so the command
+is still `driftwatch`**, which is where the brand actually lives (terminal, repo, Action, every
+line of output); the install line is read once.
+
+*Registry clean-room passed* — installed from the registry in `/tmp`, nothing from the working tree
+reachable: `--version`, keyless `doctor` (exit 0), and a full run against a fresh Next 16.3.2 app.
+The run reported build time **−10.3% on identical code** and still concluded *no significant
+change* — machine noise behaving exactly as §3 of the README says it does, with the deterministic
+byte metrics all flat. The launch verification demonstrated the product's central claim by
+accident.
+
+*Method note from the same session:* an npm 403 was read as "exists but hidden"; npm returns 403
+for **every** org page unauthenticated, including `nodejs`. **A status code means nothing until
+you have checked what it returns for a known-absent case** — the control, not the reading, is what
+makes it evidence.
 
 **Launch order: repo public first, npm second.** `npm publish` is the genuinely irreversible step
 (the name is claimed, the version immutable, unpublish limited to 72 hours and breaks anyone who

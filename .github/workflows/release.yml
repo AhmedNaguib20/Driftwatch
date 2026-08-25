@@ -1,0 +1,106 @@
+# Cuts a release. Run it from the Actions tab; it takes no arguments.
+#
+# WHY THIS IS A WORKFLOW AND NOT A CHECKLIST
+#
+# A GitHub Action executes from the REPOSITORY at the referenced ref, not from npm. `action.yml`
+# points at `dist/adapters/github/action-entry.js`, and `dist/` is gitignored — so a tag cut from
+# main contains no runnable action, and `uses: owner/repo@tag` fails for everyone who tries it.
+# v0.6.0 shipped that way, to the Marketplace, because "remember to build and commit dist before
+# tagging" is a step that fails once and fails silently.
+#
+# So the build, the commit of `dist/`, the tag and the release all happen here, and the guard below
+# refuses to publish a tag whose tree does not contain the file action.yml promises. That check is
+# the entire reason this file exists: its absence is what shipped a broken Action.
+#
+# `dist/` stays gitignored on main. It is force-added to a detached release commit that is
+# reachable only from the tag, so day-to-day history stays clean and the tag stays self-contained.
+
+name: release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # pushes the release tag and creates the release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Read the version from package.json
+        id: v
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION"   >> "$GITHUB_OUTPUT"
+          echo "Releasing v$VERSION"
+
+      # package.json is the single source of the version: DRIFTWATCH_VERSION feeds the protocol
+      # hash, so a tag that disagreed with it would make two paths report different versions of
+      # the same measurement instrument.
+      - name: Refuse to reuse a tag
+        run: |
+          if git rev-parse "${{ steps.v.outputs.tag }}" >/dev/null 2>&1; then
+            echo "::error::${{ steps.v.outputs.tag }} already exists. Bump the version in package.json first."
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - name: The suite must pass before anything is tagged
+        run: npm test
+
+      - run: npm run build
+
+      - name: Build the release commit with dist/ in it
+        run: |
+          git config user.name  "driftwatch release"
+          git config user.email "driftwatch@users.noreply.github.com"
+          git checkout --detach
+          git add -f dist
+          git commit -q -m "release ${{ steps.v.outputs.tag }}: built action
+
+          dist/ is gitignored on main and force-added here, so this commit — reachable
+          only from the tag — carries a runnable action. See .github/workflows/release.yml."
+          git tag -a "${{ steps.v.outputs.tag }}" -m "${{ steps.v.outputs.tag }}"
+
+      # THE GUARD. Reads runs.main out of action.yml and proves that path exists in the TAGGED
+      # TREE — not in the working directory, which is where the mistake hides: a local build makes
+      # the file present on disk while the tag ships without it.
+      - name: The tag must contain the file action.yml promises
+        run: |
+          MAIN=$(node -e "
+            const fs=require('fs');
+            const m=fs.readFileSync('action.yml','utf8').match(/^\s*main:\s*['\"]?([^'\"\n]+)/m);
+            if(!m){console.error('action.yml has no runs.main');process.exit(1)}
+            process.stdout.write(m[1].trim());
+          ")
+          echo "action.yml runs.main = $MAIN"
+          if ! git cat-file -e "${{ steps.v.outputs.tag }}:$MAIN" 2>/dev/null; then
+            echo "::error::$MAIN is not in the tree for ${{ steps.v.outputs.tag }} — the published Action would fail to start."
+            exit 1
+          fi
+          echo "present in the tagged tree"
+
+      - name: Push the tag
+        run: git push origin "${{ steps.v.outputs.tag }}"
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.v.outputs.tag }}" \
+            --title "Driftwatch ${{ steps.v.outputs.tag }}" \
+            --notes-file .github/release-notes.md \
+            --draft
+          echo "Draft release created. Publish it from the Releases tab — the Marketplace tick"
+          echo "and its terms acceptance are a human step."

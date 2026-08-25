@@ -2,10 +2,15 @@ name: 'Driftwatch'
 description: >-
   Measures build performance on every pull request, compares against the base commit under an
   identical protocol, and (with an API key) explains confirmed regressions.
-author: 'Driftwatch'
+author: 'Ahmed Naguib'
 branding:
-  icon: 'trending-up'
-  color: 'orange'
+  # `activity` (the pulse line) says MEASURING, and says it without a direction: driftwatch
+  # reports improvements in the same table as regressions. `trending-up` would imply growth, and
+  # in performance terms up is the bad direction — ambiguous at best.
+  # Blue over orange for the same reason the tool exists: most runs are quiet, and an alarm colour
+  # would misrepresent the normal outcome.
+  icon: 'activity'
+  color: 'blue'
 
 # No inputs carry secrets. GITHUB_TOKEN and DRIFTWATCH_API_KEY arrive as env from the workflow's
 # secrets block — a secret with an input default would end up in logs and forks.

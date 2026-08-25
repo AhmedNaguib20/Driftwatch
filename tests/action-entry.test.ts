@@ -336,8 +336,12 @@ describe('action.yml runs the published package, not a second copy of it', () =>
   it('carries a placeholder on main, never a written-out version', () => {
     // A hand-written version can drift from package.json; the release workflow substitutes this
     // one. If someone replaces it with a literal, tag and package can disagree again.
-    expect(actionYml).toContain('__DRIFTWATCH_VERSION__')
-    expect(actionYml).not.toMatch(/@ahmednaguib\/driftwatch@\d+\.\d+\.\d+/)
+    // Asserted against the VERSION assignment, which is where the release workflow substitutes.
+    // The first form of this checked that no literal `@…/driftwatch@1.2.3` appeared anywhere —
+    // which is true of every possible file, since the npx line interpolates $VERSION. A negative
+    // assertion that nothing could ever violate is not a test.
+    expect(actionYml).toContain("VERSION='__DRIFTWATCH_VERSION__'")
+    expect(actionYml).not.toMatch(/VERSION='\d+\.\d+\.\d+'/)
   })
 
   it('passes the project-dir input through by name, since composite steps get no INPUT_ vars', () => {

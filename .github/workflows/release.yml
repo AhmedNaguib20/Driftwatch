@@ -146,16 +146,24 @@ jobs:
         run: |
           set -euo pipefail
           VERSION='${{ steps.v.outputs.version }}'
-          TAGGED=$(git show "${{ steps.v.outputs.tag }}:action.yml")
-          if ! printf '%s' "$TAGGED" | grep -q "@ahmednaguib/driftwatch@$VERSION"; then
-            echo "::error::the tagged action.yml does not name $PACKAGE@$VERSION"
-            exit 1
-          fi
-          if printf '%s' "$TAGGED" | grep -q '__DRIFTWATCH_VERSION__'; then
-            echo "::error::the tagged action.yml still carries the placeholder"
-            exit 1
-          fi
-          echo "tagged action.yml pins $VERSION"
+          git show "${{ steps.v.outputs.tag }}:action.yml" > /tmp/tagged-action.yml
+          # Reads the version OUT of the tagged file and compares it, rather than grepping for a
+          # string the file is not required to contain. The first version of this check looked for
+          # "@ahmednaguib/driftwatch@$VERSION" — which never appears, because the npx line
+          # interpolates a shell variable — and refused a release that was correct.
+          node -e "
+            const fs=require('fs');
+            const want=process.argv[1];
+            const text=fs.readFileSync('/tmp/tagged-action.yml','utf8');
+            if (text.includes('__DRIFTWATCH_VERSION__')) {
+              console.error('::error::the tagged action.yml still carries the placeholder');
+              process.exit(1);
+            }
+            const m=text.match(/VERSION='([^']+)'/);
+            if(!m){ console.error('::error::the tagged action.yml has no VERSION assignment'); process.exit(1) }
+            if(m[1]!==want){ console.error(\"::error::the tagged action.yml pins \"+m[1]+\", not \"+want); process.exit(1) }
+            console.log('tagged action.yml pins '+m[1]);
+          " "$VERSION"
 
       - name: Push the tag
         run: git push origin "${{ steps.v.outputs.tag }}"

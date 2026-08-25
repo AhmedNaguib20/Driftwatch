@@ -43,6 +43,8 @@ export interface Provider {
   chat(request: ChatRequest): Promise<ChatResponse>
 }
 
+import type { NamedCondition } from './conditions.js'
+
 export type ProviderErrorKind = 'auth' | 'http' | 'network' | 'timeout' | 'malformed' | 'truncated'
 
 /**
@@ -60,6 +62,12 @@ export class ProviderError extends Error {
      */
     readonly tokens?: TokenUsage,
     readonly model?: string,
+    /**
+     * The named condition, when the transport could recognise one (step D). Both consumers —
+     * `doctor` and a run that fails mid-analysis — report it with the same words and the same
+     * remedy, so the two are recognisably the same event.
+     */
+    readonly named?: NamedCondition,
   ) {
     super(message)
     this.name = 'ProviderError'

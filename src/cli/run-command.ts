@@ -1,6 +1,6 @@
 import pc from 'picocolors'
 import { SelectionRefused } from '../core/index.js'
-import { resolveAiKey, attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, runDriftwatch, verifyFix } from '../core/index.js'
+import { describeKeySource, resolveAiKey, attachAnalysis, attachVerification, detectProject, loadConfig, configFromProfile, runDriftwatch, verifyFix } from '../core/index.js'
 import type { AnalysisReport, ResultJson, StageStats } from '../core/index.js'
 import { renderAnalysis } from './render-analysis.js'
 import { renderVerification, verificationEligible } from './render-verification.js'
@@ -111,7 +111,7 @@ async function resolveAnalysis(
   // The ONLY entry into the ai/ module graph. The key travels as an argument: resolution belongs
   // to core so that --no-ai and the keyless path never load this module (hard rule 6).
   const ai = await import('../ai/index.js')
-  return ai.analyseRegression(result, progress, resolved.key)
+  return ai.analyseRegression(result, progress, resolved.key, describeKeySource(resolved.source, { redactCommand: true }))
 }
 
 /**

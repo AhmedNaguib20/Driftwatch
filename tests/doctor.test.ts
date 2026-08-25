@@ -130,14 +130,25 @@ describe('the provider checks — one minimal call, several facts', () => {
     expect(reportFrom(checks, true).exitCode).toBe(0)
   })
 
-  it('an auth failure fails, quoting the provider and pointing at the wire flag', async () => {
+  it('an auth failure fails with the NAMED condition and its remedy (step D)', async () => {
     const checks = await runProvider(fakeFetch({ error: 'nope' }, 401))
     const provider = checks.find((c) => c.id === 'provider')!
 
     expect(provider.state).toBe('fail')
-    expect(provider.detail).toMatch(/auth/)
-    expect(provider.fix).toContain('DRIFTWATCH_DEBUG_WIRE=1')
+    expect(provider.detail).toContain('rejected the API key')
+    // The remedy is the exact one, not advice: where to get a new key, and where to put it.
+    expect(provider.fix).toContain('platform.deepseek.com/api_keys')
+    expect(provider.fix).toContain('export DRIFTWATCH_API_KEY=')
     expect(reportFrom(checks, true).exitCode).toBe(1)
+  })
+
+  it('an unclassifiable failure still fails, with the provider\'s words and the wire flag', async () => {
+    const checks = await runProvider(fakeFetch({ error: { message: 'gateway exploded' } }, 503))
+    const provider = checks.find((c) => c.id === 'provider')!
+
+    expect(provider.state).toBe('fail')
+    expect(provider.detail).toContain('gateway exploded')
+    expect(provider.fix).toContain('DRIFTWATCH_DEBUG_WIRE=1')
   })
 
   it('a reachable provider with an unparseable reply WARNS — it is not a connectivity problem', async () => {

@@ -32,7 +32,13 @@ export function renderAnalysis(
       ].join('\n')
     }
     case 'skipped':
-      return `\n${pc.dim(`AI analysis skipped: ${analysis.reason}`)}`
+      // Every failure carries its own fix (spec §9a) — including this one, when the provider
+      // failure was one driftwatch has a name for (step D).
+      return [
+        '',
+        pc.dim(`AI analysis skipped: ${analysis.reason}`),
+        ...(analysis.fix ? ['', ...analysis.fix.split('\n').map((l) => pc.dim(`  ${l}`))] : []),
+      ].join('\n')
     case 'cost_capped':
       return [
         '',

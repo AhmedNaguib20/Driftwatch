@@ -1,6 +1,5 @@
 import { analysisCostCeiling, actualCost, formatUsd } from './cost.js'
-import { createProvider } from './providers/index.js'
-import { ProviderError } from './providers/index.js'
+import { conditionStanza, createProvider, ProviderError } from './providers/index.js'
 import type { DoctorCheck } from '../core/index.js'
 
 /**
@@ -27,6 +26,8 @@ export interface ProviderCheckOptions {
   readonly provider: string
   readonly model: string
   readonly key: string
+  /** Where the key came from, in words — core resolved it, this layer never reads it. */
+  readonly keySourceLabel?: string
   readonly fetchImpl?: typeof fetch
 }
 
@@ -68,7 +69,10 @@ export async function providerChecks(options: ProviderCheckOptions): Promise<Doc
       typicalCostCheck(provider, response.model),
     ]
   } catch (error) {
-    return [failureFrom(error, provider), typicalCostCheck(provider, model)]
+    return [
+      failureFrom(error, { provider, model, keySourceLabel: options.keySourceLabel ?? null }),
+      typicalCostCheck(provider, model),
+    ]
   }
 }
 
@@ -109,7 +113,7 @@ function typicalCostCheck(provider: string, model: string): DoctorCheck {
   }
 }
 
-function failureFrom(error: unknown, provider: string): DoctorCheck {
+function failureFrom(error: unknown, context: { provider: string; model: string; keySourceLabel: string | null }): DoctorCheck {
   const kind = error instanceof ProviderError ? error.kind : 'http'
   const message = error instanceof Error ? error.message.split('\n')[0]! : String(error)
 
@@ -121,7 +125,19 @@ function failureFrom(error: unknown, provider: string): DoctorCheck {
       id: 'provider',
       label: 'provider',
       state: 'warn',
-      detail: `${provider} reachable and the key was accepted, but the health-check reply was not clean JSON (${message})`,
+      detail: `${context.provider} reachable and the key was accepted, but the health-check reply was not clean JSON (${message})`,
+    }
+  }
+
+  // A named condition means doctor and a mid-run failure say the same thing about the same event.
+  const named = error instanceof ProviderError ? error.named : undefined
+  if (named) {
+    return {
+      id: 'provider',
+      label: 'provider',
+      state: 'fail',
+      detail: named.providerText ? `${named.summary} — "${named.providerText}"` : named.summary,
+      fix: conditionStanza(named, context),
     }
   }
 
@@ -129,9 +145,7 @@ function failureFrom(error: unknown, provider: string): DoctorCheck {
     id: 'provider',
     label: 'provider',
     state: 'fail',
-    detail: `${provider} call failed (${kind}): ${message}`,
-    // Named errors with their own stanzas are step D; until then the provider's own words plus
-    // where to look beats a stanza that guesses which failure this was.
+    detail: `${context.provider} call failed (${kind}): ${message}`,
     fix: [
       'The message above is the provider\'s own. Check, in this order:',
       '',

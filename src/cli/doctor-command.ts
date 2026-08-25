@@ -2,6 +2,7 @@ import pc from 'picocolors'
 import {
   buildStamp,
   configFromProfile,
+  describeKeySource,
   detectProject,
   keyChecks,
   loadConfig,
@@ -31,7 +32,12 @@ export async function doctorCommand(flags: { json: boolean; cwd: string }): Prom
   if (resolved.key) {
     const { providerChecks } = await import('../ai/doctor.js')
     checks.push(
-      ...(await providerChecks({ provider: config.provider, model: config.model, key: resolved.key })),
+      ...(await providerChecks({
+        provider: config.provider,
+        model: config.model,
+        key: resolved.key,
+        keySourceLabel: describeKeySource(resolved.source, { redactCommand: true }),
+      })),
     )
   }
 

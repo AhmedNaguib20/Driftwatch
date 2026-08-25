@@ -29,7 +29,15 @@ export function renderAnalysisSection(result: ResultJson, fromFork = false): str
       ]
     }
     case 'skipped':
-      return ['', `_AI analysis skipped: ${analysis.reason.split('\n')[0]}_`]
+      return [
+        '',
+        `_AI analysis skipped: ${analysis.reason.split('\n')[0]}_`,
+        // The remedy, when there is one, in the same collapsed shape the comment uses for every
+        // other fix stanza — the words are identical to what `driftwatch doctor` prints.
+        ...(analysis.fix
+          ? ['', '<details>', '<summary>What to do about it</summary>', '', '```', ...analysis.fix.split('\n'), '```', '', '</details>']
+          : []),
+      ]
     case 'cost_capped':
       return [
         '',

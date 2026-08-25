@@ -105,6 +105,8 @@ export type AnalysisReport =
   | {
       readonly outcome: 'skipped'
       readonly reason: string
+      /** The remedy, when the failure was one driftwatch has a name for (step D). */
+      readonly fix?: string
       /**
        * What the failed attempt cost, when it reached the provider at all (spec v50). A failed
        * call still spent tokens and still used a prompt version — dropping them hides the spend

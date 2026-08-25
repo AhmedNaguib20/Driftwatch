@@ -13,6 +13,8 @@ export async function analyseRegression(
   progress: (message: string) => void = () => {},
   /** Resolved by core (env / key_command / provider fallback) — this module never reads it. */
   apiKey?: string,
+  /** Where that key came from, in words — for the stanza when a provider rejects it. */
+  keySourceLabel?: string,
 ): Promise<AnalysisReport> {
   const key = apiKey?.trim()
   if (!key) return { outcome: 'no_key' }
@@ -35,7 +37,7 @@ export async function analyseRegression(
   }
 
   progress(`triage: asking ${provider.name} whether the diff explains the regression…`)
-  const analysis = await runAnalysis(result, diffData, provider, progress)
+  const analysis = await runAnalysis(result, diffData, provider, progress, keySourceLabel)
   return analysis
 }
 

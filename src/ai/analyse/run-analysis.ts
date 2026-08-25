@@ -1,6 +1,6 @@
 import { performance } from 'node:perf_hooks'
 import type { ResultJson } from '../../core/index.js'
-import { ProviderError, jsonCall } from '../providers/index.js'
+import { ProviderError, conditionStanza, jsonCall } from '../providers/index.js'
 import type { Provider } from '../providers/index.js'
 import type { Analysis, AnalysisFix, StageStats } from './analysis-types.js'
 import { actualCost, projectAnalysisCost } from '../cost.js'
@@ -55,6 +55,7 @@ export async function runAnalysis(
   diffData: Omit<ContextInput, 'result'>,
   provider: Provider,
   progress: (message: string) => void = () => {},
+  keySourceLabel?: string,
 ): Promise<Analysis> {
   if (result.verdict !== 'regression') {
     return { outcome: 'not_applicable' }
@@ -100,6 +101,7 @@ export async function runAnalysis(
     return {
       outcome: 'skipped',
       reason: `triage failed: ${describeError(error)}`,
+      ...stanzaOf(error, provider, keySourceLabel),
       ...spendOf('triage', provider, error),
     }
   }
@@ -141,6 +143,7 @@ export async function runAnalysis(
     return {
       outcome: 'skipped',
       reason: `deep analysis failed: ${describeError(error)}`,
+      ...stanzaOf(error, provider, keySourceLabel),
       ...spendOf('deep', provider, error),
     }
   }
@@ -267,6 +270,22 @@ function spendOf(
       promptVersion: PROMPT_VERSION,
       tokens: error.tokens,
     },
+  }
+}
+
+/**
+ * A run that hits a named provider condition degrades to `skipped` carrying the SAME remedy
+ * `doctor` would have printed (step D). The measurement verdict is untouched, as always — a
+ * provider with no credit says nothing about the code that was measured.
+ */
+function stanzaOf(error: unknown, provider: Provider, keySourceLabel?: string): { fix?: string } {
+  if (!(error instanceof ProviderError) || !error.named) return {}
+  return {
+    fix: conditionStanza(error.named, {
+      provider: provider.name,
+      model: provider.model,
+      keySourceLabel: keySourceLabel ?? null,
+    }),
   }
 }
 

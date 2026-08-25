@@ -1,3 +1,4 @@
+import { classifyFailure } from './conditions.js'
 import { ProviderError } from './types.js'
 import type { ChatRequest, ChatResponse, Provider } from './types.js'
 
@@ -71,12 +72,25 @@ export function openAiCompatibleProvider(options: OpenAiCompatibleOptions): Prov
         clearTimeout(timer)
       }
 
-      if (response.status === 401 || response.status === 403) {
-        throw new ProviderError('auth', `${options.name} rejected the API key (HTTP ${response.status})`)
-      }
       if (!response.ok) {
-        const body = (await response.text().catch(() => '')).slice(0, 300)
-        throw new ProviderError('http', `${options.name} returned HTTP ${response.status}${body ? `: ${body}` : ''}`)
+        // Classified once, here at the boundary: the payload shape is vendor detail, and above
+        // this line everything speaks named conditions (conditions.ts, §7.1).
+        const body = await response.text().catch(() => '')
+        const named = classifyFailure({
+          provider: options.name,
+          status: response.status,
+          body,
+          model: options.model,
+          retryAfter: response.headers.get('retry-after'),
+        })
+        const detail = named.providerText ? `: ${named.providerText}` : ''
+        throw new ProviderError(
+          named.condition === 'invalid_key' ? 'auth' : 'http',
+          `${named.summary}${detail}`,
+          undefined,
+          options.model,
+          named,
+        )
       }
 
       const payload = (await response.json().catch(() => null)) as CompletionsPayload | null

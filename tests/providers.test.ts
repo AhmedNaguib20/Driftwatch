@@ -96,14 +96,17 @@ describe('openai-compatible client', () => {
     expect((error as ProviderError).message).toMatch(/50ms/)
   })
 
-  it('reports HTTP errors with a body snippet', async () => {
+  it('names the condition and keeps the provider\'s own words', async () => {
     const fetchImpl = vi.fn(async () => new Response('{"error":"rate limited"}', { status: 429 })) as unknown as typeof fetch
 
-    const error = await providerWith(fetchImpl).chat(REQUEST).catch((e: ProviderError) => e)
+    const error = (await providerWith(fetchImpl).chat(REQUEST).catch((e: ProviderError) => e)) as ProviderError
 
-    expect((error as ProviderError).kind).toBe('http')
-    expect((error as ProviderError).message).toMatch(/429/)
-    expect((error as ProviderError).message).toMatch(/rate limited/)
+    expect(error.kind).toBe('http')
+    // Step D: the transport classifies once, at the boundary. The message is the named summary
+    // plus the vendor's text verbatim — never a category driftwatch invented.
+    expect(error.named?.condition).toBe('rate_limited')
+    expect(error.message).toMatch(/rate limiting this key/)
+    expect(error.message).toMatch(/rate limited/)
   })
 
   it('flags an empty completion as malformed', async () => {

@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 59 — 2026-08-24 — M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 60 — 2026-08-24 — M11 step C: cost projection as an audited upper bound + refusing cap. Prior: M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -1366,6 +1366,32 @@ capability list rendered from `tier.ts`, not maintained twice. Decisions worth k
   `DEEPSEEK_API_KEY` set), **with a test still pinning the pre-step-A contract as if correct.**
   Same disease as `aiKeyPresent`, same one the M10 audit caught: **a superseded implementation with
   a passing test is worse than no test.**
+
+*Step C — cost projection + cap (`70bba0a`, 451 tests) — DONE.* `ai/cost.ts` holds the arithmetic
+once: doctor prints the ceiling, the run projects the specific diff, and **a test asserts the two
+cannot drift** (a projection's worst case is exactly doctor's ceiling). **An upper bound by
+construction** — triage input is exact (the context is already assembled), its output scales at
+M9's measured ~47 tok/changed file; deep is bounded by budget and cap because what deep is shown
+depends on suspects triage hasn't named yet. **Overstating is the safe direction for a ceiling.**
+Audited against the run it was modelled on: the 31-file case measured $0.0130, the projection
+brackets it above within 4×, and *both bounds are asserted — if the model stops bracketing reality
+the suite says so.*
+
+`max_cost_per_run` (unset by default) **refuses — never truncates, never downgrades the model** —
+with its own outcome `cost_capped`, following the step-1 lesson that distinct facts get distinct
+names (it is neither `skipped` nor `not_applicable`). Reports projection, cap, the arithmetic, and
+both remedies, once per surface, never as an error. **An unpriced model with a cap set is also
+refused** — a projection that cannot be priced cannot be shown to be under the cap, and it says so
+rather than inventing a number: *a ceiling that can't be honoured isn't quietly ignored.*
+
+**Actual beside projected on every analysed run** — the token model is audited by reality in the
+field, on every run, instead of by argument. **Cumulative spend is not tracked, and the README says
+so in those words**: driftwatch doesn't know your provider bill and won't pretend to — a running
+total we never measured is the same error as an estimate presented as a measurement.
+
+*(Bug the suite caught: an absent cap field read as a configured ceiling — `undefined !== null` —
+refusing every analysis on any result written before the field existed. Ten tests went red at once,
+which is what made it obvious.)*
 
 **Scope:**
 1. **The contract & audit** — verify no non-AI path can fail, prompt, or warn because of a missing

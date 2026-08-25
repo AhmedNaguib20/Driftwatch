@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 2,
+  "schemaMinorVersion": 3,
+  "driftwatchVersion": "0.6.1",
+  "build": {
+    "version": "0.6.1",
+    "entry": "dist",
+    "builtAt": "2026-08-25T16:42:49.475Z"
+  },
+  "mode": "record",
+  "createdAt": "2026-08-25T16:43:11.399Z",
+  "project": {
+    "root": "/home/runner/work/Driftwatch/Driftwatch",
+    "gitRoot": "/home/runner/work/Driftwatch/Driftwatch",
+    "pathInRepo": ".",
+    "framework": "unknown",
+    "frameworkVersion": null,
+    "packageManager": "npm",
+    "lockfile": "package-lock.json",
+    "routes": [],
+    "evidence": [
+      {
+        "fact": "language: javascript",
+        "source": "package.json",
+        "detail": "package \"@ahmednaguib/driftwatch\""
+      },
+      {
+        "fact": "git repository: /home/runner/work/Driftwatch/Driftwatch",
+        "source": "git",
+        "detail": "project sits at the repo root"
+      },
+      {
+        "fact": "package manager: npm",
+        "source": "package-lock.json"
+      },
+      {
+        "fact": "build command: npm run build",
+        "source": "package.json",
+        "detail": "scripts.build = \"tsc -p tsconfig.build.json\""
+      },
+      {
+        "fact": "recorded: main @ 674dd0856fc3",
+        "source": "git"
+      }
+    ],
+    "warnings": [
+      "No supported framework detected here. Driftwatch measures Next.js projects today; build and bundle metrics need one, so they will be skipped.",
+      "build_time and the byte metrics are unavailable: `npm run build` was found, but no known build output directory — driftwatch weighs what a recognised framework produces, and none was detected here."
+    ]
+  },
+  "config": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "thresholdPercent": 5,
+    "noiseFloorPercent": 2,
+    "base": "main",
+    "block_merge": false,
+    "auto_fix": "off",
+    "maxCostPerRunUsd": null,
+    "sourcePath": "/home/runner/work/Driftwatch/Driftwatch/perf.yml"
+  },
+  "base": {
+    "available": false,
+    "reason": "record mode — this run measures one commit; there is no baseline comparison"
+  },
+  "current": {
+    "workingTree": true,
+    "metrics": [
+      {
+        "id": "install_time",
+        "status": "skipped",
+        "label": "install time",
+        "reason": "dependencies provided by cloning the existing node_modules — install not measured"
+      },
+      {
+        "id": "build_time",
+        "status": "measured",
+        "value": 3450,
+        "unit": "ms",
+        "label": "build time (cold)",
+        "collectedBy": "median of 3 cold builds after 1 discarded warm-up, wall clock around `npm run build` in a measurement copy",
+        "samples": 3,
+        "sampleValues": [
+          3450,
+          3441,
+          3472
+        ]
+      },
+      {
+        "id": "client_bundle_size",
+        "status": "skipped",
+        "label": "client bundle size",
+        "reason": "this framework has no separately weighable shipped to browsers — driftwatch will not guess which files a browser receives",
+        "excluded": true
+      },
+      {
+        "id": "build_output_size",
+        "status": "skipped",
+        "label": "build output size",
+        "reason": "this framework has no separately weighable all build output, server code included — driftwatch will not guess which files a browser receives",
+        "excluded": true
+      }
+    ],
+    "protocol": {
+      "version": 1,
+      "workspace": "copy",
+      "cacheState": "cold",
+      "nodeModules": "copied",
+      "gitMetadata": "absent",
+      "nodeVersion": "v24.18.0",
+      "platform": "linux",
+      "arch": "x64",
+      "buildCommand": "npm run build",
+      "buildSamples": 3,
+      "warmupSamples": 1,
+      "routeSamples": 5,
+      "routeWarmupSamples": 1,
+      "browser": "none",
+      "lighthouseProfile": "none",
+      "hostLabels": [
+        "arch:X64",
+        "env:github-hosted",
+        "image:ubuntu24",
+        "os:Linux"
+      ],
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      }
+    },
+    "warnings": [
+      "node_modules was copied file-by-file (copy-on-write clone unavailable on this filesystem) — first run may be slow."
+    ],
+    "elapsedMs": 14116,
+    "layer2aElapsedMs": 0,
+    "benchmarkIndex": null
+  },
+  "comparison": {
+    "measurementPath": "fresh",
+    "dependenciesChanged": null,
+    "lockfileStatus": null,
+    "protocolsMatch": true,
+    "protocolMismatches": [],
+    "metrics": []
+  },
+  "verdict": "recorded",
+  "analysis": {
+    "outcome": "not_applicable"
+  },
+  "warnings": []
+}

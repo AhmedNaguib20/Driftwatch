@@ -5,7 +5,8 @@ import { formatCommand } from './run-command.js'
  * Fix stanzas for measurement failures (spec §9a: *every failure carries its own fix*).
  *
  * The M3/M6 error stanzas ship the exact YAML or command to paste; the measurement path shipped
- * nothing. These are the failures the jinni trial actually hit, each answered with a command or a
+ * nothing. These are the failures the real-world trial actually hit, each answered with a
+ * command or a
  * config line — never advice. A remedy we cannot name is omitted rather than padded with
  * "check your setup" (fabricated helpfulness is rule 3 in reverse).
  */
@@ -14,7 +15,7 @@ import { formatCommand } from './run-command.js'
 export function installFixHint(profile: ProjectProfile, errorTail: string): string | undefined {
   const command = profile.commands.install ? formatCommand(profile.commands.install) : 'the install command'
 
-  // The jinni case: npm cannot resolve pnpm/yarn workspace: protocol deps.
+  // The trial case: npm cannot resolve pnpm/yarn workspace: protocol deps.
   if (/EUNSUPPORTEDPROTOCOL|Unsupported URL Type "workspace:"/i.test(errorTail)) {
     return [
       `\`${command}\` cannot resolve \`workspace:*\` dependencies — those exist only inside a`,

@@ -3,7 +3,7 @@
 *Working name. CLI command: `npx driftwatch run`*
 
 > Living document. Update it whenever a decision is made or changed.
-> Version 61 — 2026-08-24 — M11 step D: named provider conditions; a wrong name is worse than no name. Prior: M11 step C: cost projection as an audited upper bound + refusing cap. Prior: M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on jinni (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (jinni measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the jinni real-world trial** (§9a):
+> Version 64 — 2026-08-24 — audit clean on secrets; trial project anonymised, history kept. Prior: M12 launch opened: public + Apache-2.0 decided, name re-verified. Prior: **M11 CLOSED.** AI is a clean optional tier; disclosure generated from code. Next: launch. Prior: M11 step D: named provider conditions; a wrong name is worse than no name. Prior: M11 step C: cost projection as an audited upper bound + refusing cap. Prior: M11 step B: doctor (no key exits 0, cost as a named ceiling). Prior: test doctrine applied and swept; timeout reasoning. Prior: M11 step A: key resolution + literal-key refusal; test doctrine on timing assertions. Prior: M11 step 1 done: tier contract + keyless audit (five findings fixed). Prior: M11 opened: AI as a clean optional BYOK tier (pre-launch). Prior: **M10 CLOSED** (391 tests). Product thesis complete. Next: launch. Prior: decision audit (two slips fixed, now a periodic practice); per-class relevance live. Prior: M10 step 1: alert thresholds + per-class causal protocol relevance. Prior: guards closed (schema 2.1, build identity everywhere); M10 drift alerting next. Prior: **M9 CLOSED, eval 4/4.** Stale-build trap → every output identifies its build. Prior: M9 implemented: output caps sized from measurement, truncation named via finish_reason. Prior: **M8 CLOSED** (334 tests; eval 3/4, run-a = TRIAGE_MAX_OUTPUT truncation, promoted to next work). Prior: M8 validated live on the trial project (inconclusive-context + staging detection); live eval outstanding. Prior: M8 step 4: metric split (schema 2.0), verdict licensing, byte classes exempt from the relative floor. Prior: M8 step 3 done (the trial project measured!); five trial findings decided. Prior: M8 step 2 done: failure legibility, fix stanzas. Prior: M8 step 1 done: three uninvited writes closed, consent doctrine. Prior: M1–M7 closed; **M8 opened from the the trial project real-world trial** (§9a):
 > rule-2 fix, monorepo support, failure legibility. Prior: Version 41 — **M1–M7 all CLOSED.
 > 293 tests.**
 > M1 measurement · M2 AI analysis · M3 GitHub Action · M4 Layer 2a · M5 trends+dashboard ·
@@ -244,7 +244,7 @@ Anything below a ~2% delta is treated as noise and not reported — **except the
 classes** (`client_bundle_size`, `build_output_size`, `transfer_size:*`), which are exempt from the
 relative floor and gated by their 1KB quantum alone (decided M8 step 4). *Why:* the floor is a
 **noise** rule, and bytes carry no noise (±2 bytes observed). Keeping it would have made the tool
-blind to its own canonical case — on jinni's 9.6 MB client bundle, 2% is ~197KB, so the 140KB
+blind to its own canonical case — on a 9.6 MB client bundle, 2% is ~197KB, so the 140KB
 lodash regression that M2 and M6 were built around scores 1.42% and reports "no change". A rule
 that hides the founding example on any large app is mis-scoped, not conservative. (Related
 correction: that "~140KB of lodash" was ~70KB client + ~70KB server — the old all-of-`.next`
@@ -924,7 +924,7 @@ recurring opinion into a number, permanently.
 
 ---
 
-## 9a. Real-world trial (jinni, 2026-08-20) — the findings that became M8
+## 9a. Real-world trial (a real 12-package pnpm monorepo, 2026-08-20) — the findings that became M8
 
 First contact with a codebase we didn't build. Nothing measured (8/8 metrics skipped in 8.3s) — and
 the trial was worth more than any green run.
@@ -940,7 +940,7 @@ announces every file it writes.** Absent config → run on defaults and say so i
 one); `replay --harvest` → `eval/candidates/` at repo root (same sin, unreported → moved to
 `.perf/eval-candidates/`); and `record`/`replay` → **creating the `perf-data` orphan branch**
 uninvited — the worst of the three, since a branch is harder to notice and harder to undo than an
-untracked file. The jinni run only escaped the last two because it died at install first.
+untracked file. The trial run only escaped the last two because it died at install first.
 
 **Consent doctrine (decided):** *creating* the perf-data branch requires explicit consent
 (`--write-perf-data`); *appending* to a branch that already exists was consented when it was
@@ -986,9 +986,9 @@ no-build-output, no-server — deduplicated, grouped by remedy, and **emitted on
 knowable: fabricated helpfulness is rule 3 in reverse.** Asymmetric failures keep their
 `base:`/`current:` prefix — which side failed is the reader's first question (a test caught the
 first attempt hiding it). Golden diff near-empty: every healthy path byte-identical, one new file
-`comment-nothing-measured.md` preserving the jinni failure as a permanent contract.
+`comment-nothing-measured.md` preserving the trial failure as a permanent contract.
 
-*Step 3 (monorepo support) — DONE. The jinni project measured for the first time:* pnpm detected
+*Step 3 (monorepo support) — DONE. The trial project measured for the first time:* pnpm detected
 from the root `packageManager` pin, root lockfile read, whole workspace copied, install at the root,
 build in the app. 189s total, base 92s / current 94s — near-perfect symmetry on a 12-package
 monorepo. `install time … not comparable` fired correctly (§5.1 sixth) on a real project.
@@ -1014,9 +1014,9 @@ would be an upgrade to a stronger word. Eval captures renamed to `build_output_s
 `client_bundle_size`: those 2.3 MB numbers weighed all of `.next`, and calling them a client payload
 would assert something never measured.
 
-*Live validation on jinni (M8 close):* `inconclusive-context` fired on a real stale-base
+*Live validation on the trial project (M8 close):* `inconclusive-context` fired on a real stale-base
 comparison — both conditions, numbers in full, and **integration-target detection found `staging`
-on real data**, which is exactly the branch jinni's own CLAUDE.md names. Verdict wording:
+on real data**, which is exactly the branch the project's own CLAUDE.md names. Verdict wording:
 *"measured, but not attributable — the numbers below are measured and stand; what they cannot do is
 name this change as the cause."* `measurementPath: confirmed` also fired unprompted on someone
 else's repo (cached base → floor crossed → both sides re-measured fresh, §5.1 fifth).
@@ -1254,7 +1254,7 @@ perf-data branch. **Fabricating evidence to complete a proof is the one thing th
 never do**; the firing path is proven on real git data in a scratch repo instead, and the real
 first fire will be a real one.
 
-## 9e. M11 — AI as a clean optional tier (opened 2026-08-24, pre-launch)
+## 9e. M11 — AI as a clean optional tier — CLOSED (`cf7f107`, 463 tests)
 
 **The product promise, stated plainly: Driftwatch measures for free and forever without any API
 key. AI explanation is an optional tier the user turns on with their own key.** BYOK has been the
@@ -1418,7 +1418,37 @@ untouched in both: *a provider with no credit says nothing about the code that w
 (Two tests encoding pre-step-D behaviour were rewritten to the new contract rather than worked
 around.)
 
-**Scope:**
+*Step E — disclosure (`cf7f107`) — DONE, M11 CLOSED.* **Generated, not written**, and three
+refactors were needed to make that true rather than decorative: context headings moved out of the
+renderer into `sections.ts`, each paired with the line that discloses it — *so an undocumented
+section throws in the code that would have sent it, rather than silently shipping*; secret patterns
+became `{pattern, label}` pairs, because a regex and the words the README uses for it cannot drift
+when they are the same object; the destination table moved to `core`.
+
+**A near-miss worth keeping:** the first version had the PR comment importing `ai/disclosure.ts`,
+which would have dragged the AI module graph into a keyless comment render — exactly what hard rule
+6 exists to prevent, and something the `--no-ai` module test watches on the CLI path and might not
+have caught. Caught before shipping, but only just.
+
+**The destination is named plainly, jurisdiction included** (DeepSeek — a Chinese company; OpenAI
+and Anthropic — US), stated neutrally so the reader decides. Nothing leaves without a key; with a
+key, only on a confirmed regression; then the eight things that travel, the seven secret families
+that never do, and the four never sent under any setting (the key, the `key_command` and its
+output, absolute paths, anything outside the diff). The `contextManifest` is named as the receipt:
+**the docs say what we do, the manifest says what we did on your run.** The same sentence appears in
+the PR comment and in doctor, **present tense on purpose — printed both before anything is sent and
+after it was, and one claim has to be true in both places.**
+
+Tests: docs-vs-code equality; golden contexts contain exactly the documented sections and no others;
+every pattern carries the label the README shows; and a canary planted in *every* documented secret
+family cannot appear in either assembled context **even when the file is named as a suspect** —
+*being asked for is not a reason to send it.*
+
+*Unplanned live proof:* a fake key produced a real DeepSeek 401 that came back through step D's map
+correctly — real vendor payload, named condition, right stanza, key source identified, and DeepSeek
+masked the key in its own message, which was passed through verbatim without ever printing ours.
+
+**Scope (as planned):**
 1. **The contract & audit** — verify no non-AI path can fail, prompt, or warn because of a missing
    key; the one mention appears only on a regression. `auto_fix` with no key must be a clean,
    explained no-op, not an error.
@@ -1436,6 +1466,44 @@ around.)
    429 rate limit, unknown model. Each with its stanza, per the failure-legibility rule.
 6. **Disclosure** — README section on exactly what is sent (generated from the golden contexts),
    the secret-withholding list, and the per-run `contextManifest`.
+
+## 9f. Launch (M12, opened 2026-08-24)
+
+**Decided:** repo goes **public** — the product's claim is "trust my measurement discipline", and a
+tool that says that while hiding its code asks for faith rather than trust; inspectable methodology
+is the strongest sales argument, and it unblocks the Pages leg deferred at M5. **License:
+Apache-2.0** — explicit patent grant, the form corporate legal teams are comfortable adopting into
+CI. Neither choice blocks a hosted paid tier later (M5 roadmap). Restrictive licences were rejected:
+at zero users, adoption outweighs protection.
+
+**Name confirmed:** `driftwatch` still free on npm, `@driftwatch` scope free (re-verified
+2026-08-24). Note `drift-watch` (hyphenated) is taken by someone else.
+
+**Order:** pre-public audit → README → LICENSE + repo metadata → publish prep + clean-room `npx`
+smoke test → flip visibility, Pages on → `npm publish` → Marketplace listing → announce.
+
+**Audit outcome (step 0):** secrets — **clean across all 155 commits and 5 refs**; the only real
+finding was a *profile* of a private personal project (name, monorepo shape, build scale, staleness,
+failure modes) across 16 files at HEAD, 25 commits' contents, and **8 commit bodies** — caught only
+because the first pass checked subjects and had to be corrected. **Decision: scrub HEAD, keep
+history.** No third party and no secrets are involved, the 155-commit trail is the strongest
+evidence for the methodology the README will claim, and a rewrite would dangle ~40 SHA citations
+plus the perf-data index. **Anonymise anyway, because anonymising is reversible and publishing a
+name is not** — the identity goes, every technical lesson stays. Also: the two `perf/lodash-*`
+acceptance branches are deleted (147 commits of experiment, documented already in this spec);
+`.npmrc` and the `sk-…` fixtures are non-findings.
+
+**Step 0 is a pre-public audit, and it is not a formality.** Going public exposes the entire git
+history at once and irreversibly. Three things to sweep: (a) any secret ever committed, in *any*
+commit, not just HEAD; (b) references to **the trial project** — a real project of Ahmed's — in fixtures, tests,
+eval candidates, scratch paths, or commit messages; (c) absolute paths carrying a username, which
+the tool already refuses to send to a provider and should not publish either.
+
+**The README is the product's face and the biggest gap.** Nobody outside this repo can currently
+tell Driftwatch from `github-action-benchmark`. It must *show* the philosophy rather than lecture
+it — the "measured, but not attributable" output argues the whole case in one block — and it must
+be honest about what the tool does not do: production monitoring, cross-machine comparison, and
+timing attribution (which stays unlicensed until Layer 3).
 
 ## 10. Git History Replay — M7, CLOSED (2026-08-20)
 

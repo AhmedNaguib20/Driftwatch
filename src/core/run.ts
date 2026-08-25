@@ -58,7 +58,7 @@ export async function runDriftwatch(options: RunOptions = {}): Promise<ResultJso
   if (selection.refusal) throw new SelectionRefused(selection.refusal)
   const profile = selection.profile
 
-  // `run` NEVER writes to the user's tree (spec §9a — the jinni trial's headline finding).
+  // `run` NEVER writes to the user's tree (spec §9a — the real-world trial's headline finding).
   // Config generation belongs to `init` alone, which announces every file it writes. Absent
   // config means run on defaults and say so, once.
   const config = await loadConfig(profile.projectRoot, configFromProfile(profile))

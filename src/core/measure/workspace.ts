@@ -158,7 +158,8 @@ export async function cloneDirectory(
  * A pnpm workspace stores real packages once under `<root>/node_modules/.pnpm` and links to them
  * from each package's own `node_modules` with RELATIVE symlinks. Copy the whole forest verbatim
  * and those links keep resolving inside the copy; copy only the app's and every link dangles —
- * which is exactly how the jinni trial failed. On APFS each clone is copy-on-write, so the cost
+ * which is exactly how the real-world trial failed. On APFS each clone is copy-on-write,
+ * so the cost
  * is bounded even for a large monorepo.
  *
  * Shared by both sides (working-tree copy and base worktree) so dependencies arrive identically —

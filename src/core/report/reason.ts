@@ -2,7 +2,8 @@
  * Rendering a skip reason (spec §9a — failure legibility).
  *
  * Reasons are multi-line by convention: the first line summarises, the last line is the most
- * specific thing the failing tool said. The jinni trial showed why that ordering matters — the
+ * specific thing the failing tool said. The real-world trial showed why that ordering
+ * matters — the
  * terminal rendered the FIRST line, which was *"install exited with code 1; last output:"*: a
  * sentence that promises content and then delivers none, while the actual error
  * (`EUNSUPPORTEDPROTOCOL`) sat unread in the JSON.
@@ -24,7 +25,7 @@ export interface RenderedReason {
 /**
  * A line that carries a failure signal. The last line is usually the most specific — npm and pnpm
  * print their error last — but a build tool often prints a normal SUMMARY after the thing that
- * killed it: the jinni re-run rendered *"ƒ (Dynamic) server-rendered on demand"*, Next's route
+ * killed it: the trial re-run rendered *"ƒ (Dynamic) server-rendered on demand"*, Next's route
  * legend, as the reason a build failed. So: the last line that looks like a failure, else our own
  * summary line (the first), which is written to stand alone.
  */
@@ -53,7 +54,8 @@ export function summariseReasonWith(reason: string, where: string): string {
 /**
  * The short form a policy-skip cell shows: the first clause, before the elaboration. Also the
  * GROUPING key — rows that display identically must group together, or the reader sees two rows
- * saying "dynamic segment" with different counts (observed on jinni: 19 + 5, split only because
+ * saying "dynamic segment" with different counts (observed on the trial project: 19 + 5,
+ * split only because
  * five routes were new on the branch and carried "(not present at base)").
  */
 export function shortReason(reason: string): string {

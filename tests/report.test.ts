@@ -595,7 +595,7 @@ describe('verdict licensing — attribution needs a base worth comparing to (spe
 
 describe('reason rendering — the shown line must be the informative one (spec §9a)', () => {
   it('picks the failure line even when the tool prints a normal summary after it', () => {
-    // Verbatim from the jinni re-run: the build died, then Next printed its route legend, and the
+    // Verbatim from the trial re-run: the build died, then Next printed its route legend, and the
     // terminal rendered the LEGEND as the reason. The last line is not always the specific one.
     const reason = [
       'build sample 2/3 failed (exit code 1):',

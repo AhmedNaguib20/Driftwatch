@@ -124,7 +124,8 @@ async function scenario(name: string): Promise<ResultJson> {
         },
       }
     case 'nothing-measured': {
-      // The jinni shape (spec §9a): every metric skipped, the real error multi-line, a fix known.
+      // The trial's shape (spec §9a): every metric skipped, the real error multi-line,
+      // a fix known.
       const npmError = [
         'install failed (code 1):',
         'npm error code EUNSUPPORTEDPROTOCOL',
@@ -344,7 +345,7 @@ describe('PR comment renderer — golden contract', () => {
 
 describe('policy-skip grouping keys on what the reader SEES', () => {
   it('rows that display identically group together, however their reasons differ downstream', async () => {
-    // The jinni re-run split "dynamic segment" into two rows (19 + 5): five routes were new on
+    // The trial re-run split "dynamic segment" into two rows (19 + 5): five routes were new on
     // the branch, so their reason carried "(not present at base)" and hashed differently. Two
     // rows with the same visible label and different counts is exactly what grouping prevents.
     const base = await baseResult()

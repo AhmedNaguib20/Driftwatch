@@ -25,7 +25,7 @@ const WORKSPACE_LOCKFILES: readonly { readonly file: string; readonly manager: P
 ]
 
 export interface WorkspacePackage {
-  /** Path relative to the workspace root, e.g. "apps/storefront-web". */
+  /** Path relative to the workspace root, e.g. "apps/web". */
   readonly path: string
   readonly name: string | null
   /** True when the package declares a build script — the ones driftwatch can measure. */

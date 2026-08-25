@@ -36,7 +36,7 @@ export { DRIFTWATCH_VERSION }
  *
  * `scope` is the measured project's path in the repo. A single-app repo has one project per SHA,
  * which is why the key was (sha, protocol) for M1–M7 — but a MONOREPO has many, and without the
- * scope `--app apps/admin` would hit the entry `--app apps/storefront` wrote and report one app's
+ * scope `--app apps/admin` would hit the entry `--app apps/web` wrote and report one app's
  * numbers as the other's. Reporting a number measured somewhere else is rule 3 exactly.
  */
 export function protocolHashInput(

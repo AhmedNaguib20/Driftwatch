@@ -79,7 +79,7 @@ specs/            # design docs — the source of truth
   it. Deterministic byte classes may be asserted directly; wall-clock may only be bounded in the
   direction load can't move it. A coarser fixture is not a fix: it lowers the probability and
   costs test time while leaving the flaw. Named after the third instance (verify-e2e at M8, the
-  jinni 72-minute run, escalation at M11).
+  the trial's 72-minute run, escalation at M11).
 - Errors never abort a run. A failed metric is marked `skipped` with a reason; the rest continue.
 - Config file is `perf.yml` at repo root, fully optional — sensible defaults without it.
 
@@ -229,14 +229,14 @@ commit topology/date, not append order.
         bundle only + not-judged captions, exactly 3 harvest folders, constructed history retired
         (unit tests encode its lessons in ~7s vs 8min). M7 CLOSED (`a61a1c0` lineage).
 
-**M8 — Real-world readiness — CLOSED (334 tests; jinni measures cleanly, eval 3/4).** Opened by the jinni trial (spec §9a). In order:
+**M8 — Real-world readiness — CLOSED (334 tests; the trial project measures cleanly, eval 3/4).** Opened by the real-world trial (spec §9a). In order:
 1. **Rule-2 fix — DONE (`b278014`, 299 tests).** Audit found three uninvited writes: `perf.yml`
    (removed), `eval/candidates/` (→ `.perf/eval-candidates/`), and perf-data branch creation (now
    `--write-perf-data`). Consent doctrine: creating needs consent, appending doesn't; CI keeps
    implicit consent (installing the workflow is the consent). Refusal shape: do the work, refuse
    the write, say how to keep it — nothing re-measured on retry.
 2. **Monorepo support — DONE (321 tests).** pnpm/npm/yarn workspace detection, root install,
-   app-scoped build, explicit multi-app refusal. jinni measured: 189s, symmetric, real numbers.
+   app-scoped build, explicit multi-app refusal. The trial project measured: 189s, symmetric, real numbers.
    Cache-key bug fixed in-step (`066cd08`): the key now includes the measured project — a one-app
    assumption had been hiding inside a protocol rule.
 3. **Failure legibility — DONE (`a6b4a46`, 304 tests).** Shared `summariseReason`; colon-ending
@@ -250,7 +250,7 @@ commit topology/date, not append order.
    stand, attribution withheld, remedy names the likely integration branch; `ok` softens too, a
    measurement failure does not. DECIDED: **deterministic byte classes are exempt from the 2%
    relative floor** (bytes carry no noise; the floor was hiding the 140KB lodash case on a 9.6MB
-   bundle). Awaiting: jinni re-run output; live eval needs the API key.
+   bundle). Awaiting: trial re-run output; live eval needs the API key.
    *Superseded plan text:* From the trial (spec §9a decision table):
    split `bundle_size` → `client_bundle_size` (headline) + `build_output_size`; stale base and
    changed lockfile become **verdict-softening conditions** (`inconclusive-context`), not

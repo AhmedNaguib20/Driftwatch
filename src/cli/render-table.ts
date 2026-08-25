@@ -107,7 +107,7 @@ function recordTable(result: ResultJson): string[] {
 
 /**
  * Identical-reason POLICY skips collapse into one row, exactly as the PR comment does — one rule,
- * both surfaces (spec §9a decision 3). The jinni run printed 24 dynamic-route rows around 4 rows
+ * both surfaces (spec §9a decision 3). The trial run printed 24 dynamic-route rows around 4 rows
  * of signal; they are one fact, not 24.
  */
 function groupPolicySkips(metrics: MetricComparison[]): {

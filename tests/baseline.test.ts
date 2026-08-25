@@ -136,10 +136,10 @@ describe('protocol hash — §5.1 third instance', () => {
   })
 
   it('changes with the measured PROJECT — one commit holds many apps in a monorepo', () => {
-    // Without this, `--app apps/admin` would read the entry `--app apps/storefront` wrote and
-    // report one app's build time as the other's (rule 3). Found in the jinni re-run.
-    expect(protocolHash(fakeProtocol(), 'apps/storefront-web')).not.toBe(
-      protocolHash(fakeProtocol(), 'apps/admin-web'),
+    // Without this, `--app apps/admin` would read the entry `--app apps/web` wrote and
+    // report one app's build time as the other's (rule 3). Found in the trial re-run.
+    expect(protocolHash(fakeProtocol(), 'apps/web')).not.toBe(
+      protocolHash(fakeProtocol(), 'apps/admin'),
     )
   })
 

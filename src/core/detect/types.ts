@@ -89,7 +89,7 @@ export interface ProjectProfile {
 
   /**
    * The subset of the build output that is SHIPPED TO BROWSERS — where client_bundle_size is
-   * weighed (spec §9a decision 1). On the jinni storefront the full output was 69 MB, of which
+   * weighed (spec §9a decision 1). On the trial project the full output was 69 MB, of which
    * ~9.6 MB was client JS: a server-only change moved the old headline metric though nothing a
    * user downloads had changed. Empty when the framework has no separable client output.
    */

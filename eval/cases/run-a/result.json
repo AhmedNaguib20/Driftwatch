@@ -4,8 +4,8 @@
   "driftwatchVersion": "0.2.0",
   "createdAt": "2026-08-18T23:32:45.953Z",
   "project": {
-    "root": "/Users/ahmednaguib/Driftwatch/fixtures/next-app",
-    "gitRoot": "/Users/ahmednaguib/Driftwatch",
+    "root": "/repo/fixtures/next-app",
+    "gitRoot": "/repo",
     "pathInRepo": "fixtures/next-app",
     "framework": "nextjs",
     "frameworkVersion": "15.1.3",
@@ -55,7 +55,7 @@
         "detail": "package \"driftwatch-fixture-next-app\""
       },
       {
-        "fact": "git repository: /Users/ahmednaguib/Driftwatch",
+        "fact": "git repository: /repo",
         "source": "git",
         "detail": "project sits at fixtures/next-app"
       },
@@ -106,7 +106,7 @@
     "thresholdPercent": 5,
     "noiseFloorPercent": 2,
     "base": "main",
-    "sourcePath": "/Users/ahmednaguib/Driftwatch/fixtures/next-app/perf.yml"
+    "sourcePath": "/repo/fixtures/next-app/perf.yml"
   },
   "base": {
     "available": true,

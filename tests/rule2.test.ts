@@ -15,7 +15,7 @@ afterEach(async () => {
 })
 
 /**
- * Rule 2, enforced (spec §9a): driftwatch never writes to the user's working tree. The jinni
+ * Rule 2, enforced (spec §9a): driftwatch never writes to the user's working tree. The trial
  * trial caught `run` creating perf.yml uninvited and never saying so — these tests are the
  * regression guard, phrased exactly as the user experiences it: `git status --porcelain`.
  */

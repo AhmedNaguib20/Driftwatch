@@ -13,7 +13,8 @@ import type { Workspace } from './workspace.js'
  *  - `build_output_size` — everything the build emitted, server code included. Informational:
  *    it moves for reasons that never reach a browser.
  *
- * They were one metric until the jinni trial, where "bundle size" read 69 MB across 3,224 files —
+ * They were one metric until the real-world trial, where "bundle size" read 69 MB across
+ * 3,224 files —
  * mostly server chunks — while the client payload was ~9.6 MB. The old label oversold what it
  * measured; splitting it costs a schema break and buys a headline that means what it says.
  */

@@ -157,7 +157,7 @@ async function measureStaleness(
 /**
  * A branch that is closer to this HEAD than the configured base is the likelier integration
  * target — teams that merge into `staging` or `develop` leave `main` behind, which is exactly the
- * jinni case. Only named when it is genuinely closer, never as a guess.
+ * the trial case. Only named when it is genuinely closer, never as a guess.
  */
 async function findIntegrationTarget(
   gitRoot: string,

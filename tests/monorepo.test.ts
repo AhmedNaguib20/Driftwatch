@@ -22,7 +22,7 @@ afterEach(async () => {
 })
 
 /**
- * Monorepo support (spec §9a, M8 step 3) — the jinni blocker.
+ * Monorepo support (spec §9a, M8 step 3) — the trial's blocker.
  *
  * Fixtures are built for the three workspace shapes the JS ecosystem actually uses, each with TWO
  * buildable apps so the "never guess which app" rule has something to refuse. Nothing here is
@@ -120,7 +120,7 @@ describe('package manager — evidence in priority order, never a guess', () => 
 
   it('workspace:* deps with NO evidence is an error carrying its fix, never an attempt', async () => {
     // A workspace declaration with no lockfile and no packageManager field: npm would be a guess,
-    // and npm cannot resolve workspace:* at all — the jinni failure, refused before it runs.
+    // and npm cannot resolve workspace:* at all — the trial failure, refused before it runs.
     const dir = await mkdtemp(path.join(tmpdir(), 'driftwatch-noevidence-'))
     temps.push(dir)
     await mkdir(path.join(dir, 'apps/web'), { recursive: true })
@@ -206,7 +206,8 @@ describe('measuring one app of a workspace', () => {
       expect(await exists(path.join(copy.installDir, 'pnpm-workspace.yaml'))).toBe(true)
 
       // The node_modules forest is cloned, and the app's RELATIVE symlink still resolves inside
-      // the copy — copying only the app dir is exactly how the jinni trial dangled every link.
+      // the copy — copying only the app dir is exactly how the real-world trial dangled
+      // every link.
       expect(await exists(path.join(copy.installDir, 'node_modules/.pnpm'))).toBe(true)
       expect(await exists(path.join(copy.dir, 'node_modules/next/index.js'))).toBe(true)
     } finally {

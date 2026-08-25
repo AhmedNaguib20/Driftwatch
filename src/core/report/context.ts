@@ -7,7 +7,8 @@ import type { BaselinePlan } from '../baseline/plan.js'
  * licence, exactly as movement does against drift (§10): the numbers are measured either way, but
  * naming this change as their cause requires that nothing ELSE plausibly explains them.
  *
- * Two conditions void that licence, and the jinni trial had both at once: a base 143 commits and
+ * Two conditions void that licence, and the real-world trial had both at once: a base 143
+ * commits and
  * two months behind, and a lockfile differing by 395 lines. The old output still said
  * "regression +6.5%" with the dependency change as a footnote under the table. It should have
  * said: here are the numbers, and here is why they are not this branch's fault to claim.

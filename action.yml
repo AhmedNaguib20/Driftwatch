@@ -20,6 +20,43 @@ inputs:
     required: false
     default: '.'
 
+# A COMPOSITE action that runs the PUBLISHED npm package, rather than a JavaScript action running
+# a copy of `dist/` committed to this tag.
+#
+# Hard rule 7 says the CLI is the product and CI is one consumer of it. A tag carrying its own
+# build made CI consume a SECOND artefact, one that could disagree with the package everyone else
+# installs — and it did, twice: v0.6.0 tagged without `dist/` at all, then v0.6.1 with `dist/` but
+# no `node_modules`, because GitHub never installs dependencies for a JavaScript action. Measured
+# before deciding: vendoring the production tree instead would mean 181 MB and 13,665 files
+# downloaded on every consumer's every job.
+#
+# So the Action installs the same bytes a developer runs locally, pinned to one exact version.
 runs:
-  using: 'node20'
-  main: 'dist/adapters/github/action-entry.js'
+  using: 'composite'
+  steps:
+    - name: Run driftwatch
+      shell: bash
+      env:
+        # Composite actions receive no INPUT_<NAME> variables, so the input is passed by name.
+        DRIFTWATCH_PROJECT_DIR: ${{ inputs.project-dir }}
+        # These three are set by the caller's step. They would be inherited anyway; naming them
+        # makes the whole contract between workflow and action readable in one place.
+        CHROME_PATH: ${{ env.CHROME_PATH }}
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+        DRIFTWATCH_API_KEY: ${{ env.DRIFTWATCH_API_KEY }}
+      run: |
+        set -euo pipefail
+        VERSION='__DRIFTWATCH_VERSION__'
+        # On `main` this file carries a placeholder: the release workflow substitutes the version
+        # from package.json when it cuts the tag, so the tag and the npm package can never name
+        # different versions of the measurement instrument. A hand-written version could drift.
+        case "$VERSION" in
+          [0-9]*.[0-9]*.[0-9]*) ;;
+          *)
+            echo "::error::This action.yml is the development copy from the default branch, which"
+            echo "::error::carries a version placeholder rather than a version. Reference a release"
+            echo "::error::tag instead: uses: AhmedNaguib20/Driftwatch@v<version>"
+            exit 1
+            ;;
+        esac
+        npx --yes --package "@ahmednaguib/driftwatch@$VERSION" driftwatch-action

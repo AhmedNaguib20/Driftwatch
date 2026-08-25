@@ -1,7 +1,7 @@
 {
   "name": "@ahmednaguib/driftwatch",
-  "version": "0.6.1",
-  "description": "Performance regression testing for pull requests \u2014 both sides measured under an identical protocol, with optional AI explanation on your own key.",
+  "version": "0.6.2",
+  "description": "Performance regression testing for pull requests — both sides measured under an identical protocol, with optional AI explanation on your own key.",
   "keywords": [
     "performance",
     "performance-testing",
@@ -28,7 +28,8 @@
     "node": ">=20"
   },
   "bin": {
-    "driftwatch": "./dist/cli/index.js"
+    "driftwatch": "./dist/cli/index.js",
+    "driftwatch-action": "./dist/adapters/github/action-bin.js"
   },
   "main": "./dist/core/index.js",
   "exports": {

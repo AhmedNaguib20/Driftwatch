@@ -36,9 +36,12 @@ export async function main(): Promise<void> {
     await runDriftAlerts(workspace, event.owner, event.repo)
     return
   }
-  // Actions passes inputs as INPUT_<NAME>; detection walks UP from cwd, never down, so a nested
-  // project (monorepo, fixtures) must be pointed at explicitly.
-  const projectDir = process.env['INPUT_PROJECT-DIR']?.trim() || '.'
+  // Detection walks UP from cwd, never down, so a nested project (monorepo, fixtures) must be
+  // pointed at explicitly. A COMPOSITE action receives no INPUT_<NAME> variables — those exist
+  // only for JavaScript and Docker actions — so action.yml passes the input through under its
+  // own name. INPUT_PROJECT-DIR is still read second, for anyone invoking the entry the old way.
+  const projectDir =
+    process.env.DRIFTWATCH_PROJECT_DIR?.trim() || process.env['INPUT_PROJECT-DIR']?.trim() || '.'
   const projectCwd = path.resolve(workspace, projectDir)
 
   const preflight = await preflightBase(workspace, event.baseSha)
@@ -337,15 +340,5 @@ async function runCli(
         resolve(null)
       }
     })
-  })
-}
-
-// action.yml invokes this file directly.
-const invokedDirectly =
-  process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-if (invokedDirectly) {
-  main().catch((error) => {
-    console.error(`driftwatch: unexpected failure: ${(error as Error).stack}`)
-    process.exitCode = 1
   })
 }

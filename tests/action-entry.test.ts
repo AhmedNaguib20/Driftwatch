@@ -1,9 +1,11 @@
 import { execFile } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
+import { parse } from 'yaml'
 
 import { exitCodeFor } from '../src/adapters/github/action-entry.js'
 import { parseActionEvent } from '../src/adapters/github/event.js'
@@ -303,5 +305,44 @@ describe('fork detection', () => {
     )
     expect(event.kind).toBe('pull-request')
     if (event.kind === 'pull-request') expect(event.fromFork).toBe(true)
+  })
+})
+
+describe('action.yml runs the published package, not a second copy of it', () => {
+  const actionYml = readFileSync(path.join(import.meta.dirname, '..', 'action.yml'), 'utf8')
+  const action = parse(actionYml) as {
+    runs: { using: string; steps: { shell?: string; run: string; env?: Record<string, string> }[] }
+    inputs: Record<string, unknown>
+  }
+
+  /**
+   * Two releases shipped an Action that could not execute, both because the tag carried a
+   * hand-built copy of the product: v0.6.0 without `dist/`, then v0.6.1 with `dist/` and no
+   * `node_modules/`. Neither was reachable from a unit test, because both were about what the
+   * TAG contained rather than what the source said. What IS testable is the property that
+   * removes the whole class: the Action installs the published package (hard rule 7) and names
+   * its version by substitution rather than by hand.
+   */
+  it('is a composite action that installs the npm package', () => {
+    expect(action.runs.using).toBe('composite')
+    for (const step of action.runs.steps) expect(step.shell).toBe('bash')
+    expect(actionYml).toContain('npx --yes --package "@ahmednaguib/driftwatch@$VERSION"')
+    expect(actionYml).toContain('driftwatch-action')
+    // The old mechanism, gone. Scoped to `runs:` — the comments above it describe what went
+    // wrong and must be free to name `dist/`; what matters is that nothing EXECUTES from it.
+    expect(JSON.stringify(action.runs)).not.toContain('dist/')
+  })
+
+  it('carries a placeholder on main, never a written-out version', () => {
+    // A hand-written version can drift from package.json; the release workflow substitutes this
+    // one. If someone replaces it with a literal, tag and package can disagree again.
+    expect(actionYml).toContain('__DRIFTWATCH_VERSION__')
+    expect(actionYml).not.toMatch(/@ahmednaguib\/driftwatch@\d+\.\d+\.\d+/)
+  })
+
+  it('passes the project-dir input through by name, since composite steps get no INPUT_ vars', () => {
+    const [step] = action.runs.steps
+    expect(step.env?.['DRIFTWATCH_PROJECT_DIR']).toBe('${{ inputs.project-dir }}')
+    expect(Object.keys(action.inputs)).toContain('project-dir')
   })
 })

@@ -34,20 +34,29 @@ The unscoped npm name is blocked by npm's similarity filter against an unrelated
 - **Repository** — https://github.com/AhmedNaguib20/Driftwatch
 - **Live dashboard** — https://ahmednaguib20.github.io/Driftwatch/
 
-## About v0.6.0
+## About v0.6.0 and v0.6.1
 
-v0.6.0 was published to npm and briefly tagged here. The tagged Action could not execute — the
-build output it points at was not committed to the tag — so that tag and release were removed. The
-npm 0.6.0 package is unaffected and works; this release fixes the Action path and the workflow that
-`driftwatch init --github` generates.
+Two earlier tags shipped an Action that could not run, and both are withdrawn. v0.6.0's tag had no
+build output in it at all. v0.6.1 had the build output and no dependencies with it — GitHub never
+installs dependencies for a JavaScript action — so it died on its first import. Neither tag exists
+any more. **The npm packages for both are unaffected and work**; only the GitHub Action was broken,
+and nothing was announced while it was.
 
-Releases are now cut by [a workflow](../blob/main/.github/workflows/release.yml) that refuses to
-publish a tag whose tree does not contain the file `action.yml` points at — the exact check whose
-absence caused this.
+The cause was structural rather than careless: the tag carried a second, hand-assembled copy of the
+product, which could disagree with the package everyone installs. It did, twice. So `action.yml` is
+now a composite action that runs the published npm package — the same bytes you get from
+`npx @ahmednaguib/driftwatch` — pinned to one exact version. The tag carries no build at all.
+Vendoring the dependency tree instead was measured first and rejected: 181 MB and 13,665 files
+downloaded on every job.
+
+Releases are cut by [a workflow](../blob/main/.github/workflows/release.yml) whose guard now
+**executes** the published package from an empty directory and reads what it prints, rather than
+checking that a file is present. The previous guard confirmed the file `action.yml` names was in
+the tag. It was. It still could not run.
 
 ## Status, honestly
 
-This is the first working release. Every capability above has an acceptance run behind it and the suite is 466 tests, including end-to-end runs against real builds — but the tool has had very few users.
+This is the first working release. Every capability above has an acceptance run behind it and the suite is 473 tests, including end-to-end runs against real builds — but the tool has had very few users.
 
 **Next.js is what is proven.** The detection layer is framework-agnostic in shape, but nothing else has acceptance runs behind it. There is no production monitoring, no cross-machine comparison, and timing attribution is deliberately unavailable until instruction counting replaces wall-clock measurement.
 

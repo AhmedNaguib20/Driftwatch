@@ -2,18 +2,18 @@
 #
 # WHY THIS IS A WORKFLOW AND NOT A CHECKLIST
 #
-# A GitHub Action executes from the REPOSITORY at the referenced ref, not from npm. `action.yml`
-# points at `dist/adapters/github/action-entry.js`, and `dist/` is gitignored — so a tag cut from
-# main contains no runnable action, and `uses: owner/repo@tag` fails for everyone who tries it.
-# v0.6.0 shipped that way, to the Marketplace, because "remember to build and commit dist before
-# tagging" is a step that fails once and fails silently.
+# Two releases shipped an Action that could not run, because the tag carried a SECOND copy of the
+# product built by hand: v0.6.0 had no `dist/` at all, and v0.6.1 had `dist/` but no
+# `node_modules/` — GitHub never installs dependencies for a JavaScript action. Vendoring the
+# production tree instead was measured and rejected at 181 MB and 13,665 files per consumer job.
 #
-# So the build, the commit of `dist/`, the tag and the release all happen here, and the guard below
-# refuses to publish a tag whose tree does not contain the file action.yml promises. That check is
-# the entire reason this file exists: its absence is what shipped a broken Action.
+# `action.yml` is now a COMPOSITE action that runs the published npm package (hard rule 7: the CLI
+# is the product, CI is one consumer of it), so the tag carries no build at all — only `action.yml`
+# with the version substituted in. Nothing here can disagree with what users install, because it is
+# what users install.
 #
-# `dist/` stays gitignored on main. It is force-added to a detached release commit that is
-# reachable only from the tag, so day-to-day history stays clean and the tag stays self-contained.
+# ORDER MATTERS AND IS ENFORCED: npm publish comes FIRST. A tag whose composite names a version the
+# registry does not serve is a broken Action, so this workflow refuses to cut one.
 
 name: release
 
@@ -22,6 +22,9 @@ on:
 
 permissions:
   contents: write   # pushes the release tag and creates the release
+
+env:
+  PACKAGE: '@ahmednaguib/driftwatch'
 
 jobs:
   release:
@@ -62,37 +65,88 @@ jobs:
       - name: Lint, typecheck and tests must all pass before anything is tagged
         run: npm run check
 
-      - run: npm run build
-
-      - name: Build the release commit with dist/ in it
+      # THE ORDERING GATE. The composite action embeds a version and installs it from npm, so the
+      # package must already be published. This is what makes "publish first" a mechanism rather
+      # than a remembered step: forget it, and no tag is created.
+      - name: The registry must already serve this version
         run: |
+          set -euo pipefail
+          VERSION='${{ steps.v.outputs.version }}'
+          SERVED=$(npm view "$PACKAGE@$VERSION" version 2>/dev/null || true)
+          if [ "$SERVED" != "$VERSION" ]; then
+            echo "::error::$PACKAGE@$VERSION is not on the registry (npm view returned '${SERVED:-nothing}')."
+            echo "::error::Publish it first — the tagged action installs this exact version and would fail for every user."
+            exit 1
+          fi
+          echo "registry serves $PACKAGE@$VERSION"
+
+      # THE GUARD, and the reason this release exists. Its predecessor asked whether the file
+      # `action.yml` names was PRESENT in the tagged tree. It was — and it still could not run,
+      # because its dependencies were not there. A guard that inspects an artefact proves only
+      # its spelling. This one EXECUTES it, from an empty directory, exactly as a consumer does.
+      - name: The published package must actually run
+        run: |
+          set -euo pipefail
+          VERSION='${{ steps.v.outputs.version }}'
+          WORK=$(mktemp -d)
+          cd "$WORK"   # empty: no repo, no node_modules, nothing to accidentally resolve against
+
+          PRINTED=$(npx --yes --package "$PACKAGE@$VERSION" driftwatch --version)
+          echo "driftwatch --version printed: $PRINTED"
+          if [ "$PRINTED" != "$VERSION" ]; then
+            echo "::error::the published CLI reports '$PRINTED', not '$VERSION'."
+            exit 1
+          fi
+
+          # And the action bin, whose module graph is wider than the CLI's — the missing-dependency
+          # failure was raised by an import the CLI path never reaches. An unrecognised event name
+          # makes the entry report that there is nothing to do and exit 0, touching nothing.
+          GITHUB_EVENT_NAME=release-guard-smoke-test \
+            npx --yes --package "$PACKAGE@$VERSION" driftwatch-action
+          echo "the action entry loaded and ran"
+
+      # The tag carries `action.yml` with the version substituted in, and nothing else that main
+      # does not have. Substituted rather than hand-written so the tag and the package cannot
+      # name different versions.
+      - name: Build the release commit
+        run: |
+          set -euo pipefail
+          VERSION='${{ steps.v.outputs.version }}'
+          node -e "
+            const fs=require('fs');
+            const before=fs.readFileSync('action.yml','utf8');
+            const after=before.replace('__DRIFTWATCH_VERSION__', process.argv[1]);
+            if (after === before) { console.error('action.yml has no __DRIFTWATCH_VERSION__ placeholder'); process.exit(1) }
+            fs.writeFileSync('action.yml', after);
+          " "$VERSION"
+          grep -n "@ahmednaguib/driftwatch@" action.yml
+
           git config user.name  "driftwatch release"
           git config user.email "driftwatch@users.noreply.github.com"
           git checkout --detach
-          git add -f dist
-          git commit -q -m "release ${{ steps.v.outputs.tag }}: built action
+          git add action.yml
+          git commit -q -m "release ${{ steps.v.outputs.tag }}: pin the composite action to $VERSION
 
-          dist/ is gitignored on main and force-added here, so this commit — reachable
-          only from the tag — carries a runnable action. See .github/workflows/release.yml."
+          action.yml carries a version placeholder on main and the real version here, so this
+          tag and the published npm package can never disagree. See .github/workflows/release.yml."
           git tag -a "${{ steps.v.outputs.tag }}" -m "${{ steps.v.outputs.tag }}"
 
-      # THE GUARD. Reads runs.main out of action.yml and proves that path exists in the TAGGED
-      # TREE — not in the working directory, which is where the mistake hides: a local build makes
-      # the file present on disk while the tag ships without it.
-      - name: The tag must contain the file action.yml promises
+      # A last look at the tree that is about to be pushed, not at the working directory — the
+      # distinction that hid the original mistake.
+      - name: The tagged action.yml must name this exact version
         run: |
-          MAIN=$(node -e "
-            const fs=require('fs');
-            const m=fs.readFileSync('action.yml','utf8').match(/^\s*main:\s*['\"]?([^'\"\n]+)/m);
-            if(!m){console.error('action.yml has no runs.main');process.exit(1)}
-            process.stdout.write(m[1].trim());
-          ")
-          echo "action.yml runs.main = $MAIN"
-          if ! git cat-file -e "${{ steps.v.outputs.tag }}:$MAIN" 2>/dev/null; then
-            echo "::error::$MAIN is not in the tree for ${{ steps.v.outputs.tag }} — the published Action would fail to start."
+          set -euo pipefail
+          VERSION='${{ steps.v.outputs.version }}'
+          TAGGED=$(git show "${{ steps.v.outputs.tag }}:action.yml")
+          if ! printf '%s' "$TAGGED" | grep -q "@ahmednaguib/driftwatch@$VERSION"; then
+            echo "::error::the tagged action.yml does not name $PACKAGE@$VERSION"
             exit 1
           fi
-          echo "present in the tagged tree"
+          if printf '%s' "$TAGGED" | grep -q '__DRIFTWATCH_VERSION__'; then
+            echo "::error::the tagged action.yml still carries the placeholder"
+            exit 1
+          fi
+          echo "tagged action.yml pins $VERSION"
 
       - name: Push the tag
         run: git push origin "${{ steps.v.outputs.tag }}"

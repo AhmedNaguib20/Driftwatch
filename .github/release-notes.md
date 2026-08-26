@@ -34,6 +34,20 @@ The unscoped npm name is blocked by npm's similarity filter against an unrelated
 - **Repository** — https://github.com/AhmedNaguib20/Driftwatch
 - **Live dashboard** — https://ahmednaguib20.github.io/Driftwatch/
 
+## Installing from the Marketplace
+
+The Marketplace snippet is two lines and carries no `fetch-depth`, no `env:` and no
+`permissions:` — so pasting it alone is not enough, and driftwatch now says so all at once. The
+first run checks every prerequisite before measuring and prints one complete workflow block that
+fixes all of them in a single edit. Before this release you found them one run at a time, and two
+of those runs finished green while posting nothing.
+
+Relatedly: a measurement that could not be delivered no longer leaves a green tick. A missing
+token or a read-only repository fails the run with the block that fixes it, because neither
+self-heals and both look exactly like "nothing regressed" to whoever reads the pull request.
+GitHub being down, rate-limiting, or dropping a connection still warns and passes — that is what
+warn-only was for.
+
 ## About v0.6.0, v0.6.1 and v0.6.2
 
 **v0.6.2 crashes on a pull request that adds a page.** A metric measured on one side only — which
@@ -60,7 +74,7 @@ guard confirmed the file `action.yml` names was present in the tag. It was. It s
 
 ## Status, honestly
 
-This is the first release with no known defect on the paths it advertises. Every capability above has an acceptance run behind it and the suite is 481 tests, including end-to-end runs against real builds — but the tool has had very few users.
+This is the first release with no known defect on the paths it advertises. Every capability above has an acceptance run behind it and the suite is 497 tests, including end-to-end runs against real builds — but the tool has had very few users.
 
 **Next.js is what is proven.** The detection layer is framework-agnostic in shape, but nothing else has acceptance runs behind it. There is no production monitoring, no cross-machine comparison, and timing attribution is deliberately unavailable until instruction counting replaces wall-clock measurement.
 

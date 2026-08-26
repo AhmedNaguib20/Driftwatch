@@ -73,7 +73,7 @@ jobs:
       # Pinned deliberately, like the Chrome version above. driftwatch's own version is part
       # of the measurement protocol, so upgrading it starts a new trend segment — that break
       # should be a dated decision you made, not something a floating tag did to your history.
-      - uses: AhmedNaguib20/Driftwatch@v0.6.3
+      - uses: AhmedNaguib20/Driftwatch@v0.6.4
         with:
           project-dir: .
         env:
@@ -104,6 +104,6 @@ jobs:
       # Pinned deliberately, like the Chrome version above. driftwatch's own version is part
       # of the measurement protocol, so upgrading it starts a new trend segment — that break
       # should be a dated decision you made, not something a floating tag did to your history.
-      - uses: AhmedNaguib20/Driftwatch@v0.6.3
+      - uses: AhmedNaguib20/Driftwatch@v0.6.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

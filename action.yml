@@ -46,7 +46,7 @@ runs:
         DRIFTWATCH_API_KEY: ${{ env.DRIFTWATCH_API_KEY }}
       run: |
         set -euo pipefail
-        VERSION='__DRIFTWATCH_VERSION__'
+        VERSION='0.6.5'
         # On `main` this file carries a placeholder: the release workflow substitutes the version
         # from package.json when it cuts the tag, so the tag and the npm package can never name
         # different versions of the measurement instrument. A hand-written version could drift.

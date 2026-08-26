@@ -365,3 +365,57 @@ describe('policy-skip grouping keys on what the reader SEES', () => {
     expect(rendered).toContain('route /a/[id], route /b/[id], route /c/[id]')
   })
 })
+
+describe('the renderer survives a broken contract', () => {
+  /**
+   * Defence in depth, added after a real crash. Core now guarantees that a `regressed` metric
+   * carries a finite percentage — but this renderer executes inside the USER'S CI, where a
+   * guarantee that breaks must degrade, not take their job down. It did: a metric measured on
+   * one side only produced an Infinity percentage, `JSON.stringify` wrote it as `null`, and
+   * `percent.toFixed()` failed a pull request that had been measured correctly.
+   *
+   * The contract is enforced where it is made (tests/report.test.ts). This asserts the blast
+   * radius if it ever breaks again: a missing number, never an exception.
+   */
+  const brokenRow = (m: MetricComparison): MetricComparison =>
+    ({ ...m, verdict: 'regressed', exceedsThreshold: true, delta: { absolute: 120, percent: null } }) as unknown as MetricComparison
+
+  it('renders a comment and a summary when a percentage is null', async () => {
+    const result = await baseResult()
+    const [first, ...rest] = result.comparison.metrics
+    const broken: ResultJson = {
+      ...result,
+      verdict: 'regression',
+      comparison: { ...result.comparison, metrics: [brokenRow(first!), ...rest] },
+    }
+
+    const comment = renderComment(broken)
+    const summary = renderSummary(broken, { commentUrl: null, checkUrl: null })
+
+    // Nothing threw, nothing invented a number, and the reader is still told there is a regression.
+    expect(comment).toContain('Performance regression detected')
+    expect(comment).not.toContain('NaN')
+    expect(comment).not.toContain('Infinity')
+    expect(comment).not.toContain('null%')
+    expect(summary.length).toBeGreaterThan(0)
+  })
+
+  it('still names the metrics whose percentages ARE intact', async () => {
+    const result = await baseResult()
+    const [first, ...rest] = result.comparison.metrics
+    const broken: ResultJson = {
+      ...result,
+      verdict: 'regression',
+      comparison: {
+        ...result.comparison,
+        metrics: [
+          brokenRow(first!),
+          { ...rest[0]!, verdict: 'regressed', exceedsThreshold: true, delta: { absolute: 500, percent: 12.5 } },
+          ...rest.slice(1),
+        ],
+      },
+    }
+    // One bad row does not silence the good ones — the headline still carries a real number.
+    expect(renderComment(broken)).toContain('+12.5%')
+  })
+})

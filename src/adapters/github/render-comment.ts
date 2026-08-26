@@ -76,10 +76,17 @@ export function renderCheckSummary(result: ResultJson): string {
 export function renderCheckTitle(result: ResultJson): string {
   switch (result.verdict) {
     case 'regression': {
+      // `delta` is filtered on rather than asserted with `!`. Core guarantees a regressed metric
+      // has one, but this renderer runs inside the user's CI: when that guarantee broke — a
+      // one-sided metric produced an Infinity percentage that JSON wrote as null — the `!` turned
+      // a contract violation into a crashed job on a correctly measured pull request. A missing
+      // number is now a row this line omits, not an exception.
       const worst = result.comparison.metrics
         .filter((m) => m.verdict === 'regressed' && m.exceedsThreshold)
+        .filter((m) => typeof m.delta?.percent === 'number' && Number.isFinite(m.delta.percent))
         .map((m) => `${m.label} ${formatPercent(m.delta!.percent)}`)
         .join(', ')
+      if (!worst) return `performance regression (threshold ${result.config.thresholdPercent}%)`
       return `${worst} (threshold ${result.config.thresholdPercent}%)`
     }
     case 'ok':
@@ -104,12 +111,15 @@ function verdictBanner(result: ResultJson): string[] {
     case 'regression': {
       const worst = result.comparison.metrics
         .filter((m) => m.verdict === 'regressed' && m.exceedsThreshold)
+        .filter((m) => Number.isFinite(m.delta?.percent))
         .map((m) => `**${m.label}** is up ${formatPercent(m.delta!.percent)}`)
         .join(', ')
       return [
         `### ⚠️ Performance regression detected`,
         '',
-        `${worst} against baseline ${baseline}. Threshold is ${result.config.thresholdPercent}%.`,
+        worst
+          ? `${worst} against baseline ${baseline}. Threshold is ${result.config.thresholdPercent}%.`
+          : `A regression was measured against baseline ${baseline}. Threshold is ${result.config.thresholdPercent}%; see the table below.`,
       ]
     }
     case 'ok':

@@ -169,8 +169,31 @@ function compareOne(
     }
   }
 
-  const baseValue = shell.base!
-  const currentValue = shell.current!
+  // A metric with a MEASURED row on only one side has no baseline, so it has no delta. Falling
+  // through to the arithmetic divides by a null base: the percentage becomes Infinity, which
+  // JSON.stringify writes as `null`, and the run reports a `regressed` metric whose percentage
+  // every consumer then crashes on. It also claims a regression nothing was measured against,
+  // which is rule 3 with the sign flipped.
+  //
+  // skippedReason() names this case exactly — "a route added on this branch, say" — but only
+  // covers it when the new row is SKIPPED. A route added on a branch and measured successfully
+  // is the common shape, and it reached production: it crashed the GitHub Action on the first
+  // pull request that added a page.
+  if (shell.base === null || shell.current === null) {
+    return {
+      ...shell,
+      delta: null,
+      verdict: 'not_comparable',
+      exceedsThreshold: false,
+      reason:
+        shell.base === null
+          ? 'not measured at base — this metric is new on this side, so there is nothing to compare it against'
+          : 'not measured on the current side — this metric exists only at base',
+    }
+  }
+
+  const baseValue = shell.base
+  const currentValue = shell.current
 
   if (baseValue === 0) {
     if (currentValue === 0) {

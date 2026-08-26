@@ -24,7 +24,17 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
 }
 
-export function formatPercent(percent: number): string {
+/**
+ * Total by design. Core guarantees that a metric carrying a delta carries a finite percentage,
+ * but this renderer runs inside the user's CI and a broken guarantee must not crash their job:
+ * a one-sided metric once produced an Infinity percentage, which JSON.stringify writes as `null`,
+ * and `percent.toFixed()` took down a correctly measured pull request.
+ *
+ * The fallback is an em dash — the same "no number to show" mark the tables already use. It never
+ * invents a figure, which is the only thing that would be worse than the crash.
+ */
+export function formatPercent(percent: number | null | undefined): string {
+  if (typeof percent !== 'number' || !Number.isFinite(percent)) return '—'
   return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}%`
 }
 

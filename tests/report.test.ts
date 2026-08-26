@@ -226,6 +226,76 @@ describe('metric verdicts', () => {
   })
 })
 
+describe('a metric measured on one side only', () => {
+  /**
+   * The bug this describes crashed the GitHub Action on the first pull request that added a page,
+   * and it was found by walking the Marketplace install path rather than by any test.
+   *
+   * A route added on a branch has a measured row on the current side and NO row at base. The
+   * comparison fell through to `current - null` over `null`, making the percentage Infinity — which
+   * `JSON.stringify` writes as `null` — and marked the metric `regressed` with `exceedsThreshold`.
+   * The adapter then called `.toFixed()` on null and took the job down after a correct measurement.
+   *
+   * Two things were wrong, and the deeper one is not the crash: a metric with no baseline was
+   * reported as a REGRESSION. Nothing was measured against, so there is nothing to regress from.
+   */
+  it('is not comparable, not a regression — there is no baseline to regress from', () => {
+    const [m] = compareMetrics(
+      [],
+      [measured('route_latency:/regions', 120, 'ms', 'route /regions')],
+      OPTS,
+    )
+    expect(m!.verdict).toBe('not_comparable')
+    expect(m!.delta).toBeNull()
+    expect(m!.exceedsThreshold).toBe(false)
+    expect(m!.reason).toMatch(/new on this side/)
+    // The values themselves still stand — §5.1's shape: report what was measured, refuse the delta.
+    expect(m!.current).toBe(120)
+    expect(m!.base).toBeNull()
+  })
+
+  it('says which side is missing when the metric existed only at base', () => {
+    const [m] = compareMetrics(
+      [measured('route_latency:/legacy', 90, 'ms', 'route /legacy')],
+      [],
+      OPTS,
+    )
+    expect(m!.verdict).toBe('not_comparable')
+    expect(m!.reason).toMatch(/only at base/)
+  })
+
+  it('NO comparison ever yields a percentage that is not a finite number', () => {
+    // The invariant rather than the instance. Every consumer formats this field, so one
+    // non-finite value anywhere is a crash somewhere — and Infinity survives typing (the field
+    // is `number`) only to become `null` at the JSON boundary, where the type no longer helps.
+    const values = [0, 1, 120, 9_600_000]
+    const ids = ['build_time', 'client_bundle_size', 'route_latency:/x', 'lcp:/'] as const
+    for (const id of ids) {
+      for (const base of [...values, null]) {
+        for (const current of [...values, null]) {
+          const unit = id === 'client_bundle_size' ? 'bytes' : 'ms'
+          const [m] = compareMetrics(
+            base === null ? [] : [measured(id, base, unit, id)],
+            current === null ? [] : [measured(id, current, unit, id)],
+            OPTS,
+          )
+          // Both sides absent produces no row at all — there is no metric to compare.
+          if (base === null && current === null) {
+            expect(m).toBeUndefined()
+            continue
+          }
+          if (m!.delta) {
+            expect(Number.isFinite(m!.delta.percent), `${id} ${base}→${current}`).toBe(true)
+            expect(Number.isFinite(m!.delta.absolute), `${id} ${base}→${current}`).toBe(true)
+          }
+          // And a metric with no delta is never presented as one that moved.
+          if (!m!.delta) expect(['no_change', 'not_comparable', 'skipped']).toContain(m!.verdict)
+        }
+      }
+    }
+  })
+})
+
 describe('protocol mismatch — the §5.1 enforcement point', () => {
   it('names the exact differing fields', () => {
     const diffs = protocolMismatches(

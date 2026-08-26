@@ -132,7 +132,25 @@ export async function main(): Promise<void> {
     if (outcome.checkUrl) console.log(`driftwatch: check ${outcome.checkUrl}`)
     for (const warning of outcome.warnings) console.error(`driftwatch: warning: ${warning}`)
   } else {
-    console.error('driftwatch: warning: GITHUB_TOKEN is not set — nothing was posted to the PR')
+    /**
+     * The remedy is knowable, so it is given (spec §9a: a fix stanza wherever a remedy IS
+     * knowable — withholding one that is exact is the same failure as fabricating one that is
+     * not). Only reachable from a hand-written workflow: `driftwatch init --github` always
+     * writes this env block, so the path belongs to someone who copied the step from the
+     * Marketplace listing, where the snippet carries no env at all.
+     */
+    console.error(
+      [
+        'driftwatch: warning: GITHUB_TOKEN is not set — the measurement below ran, but nothing',
+        'was posted to the pull request. Add it to the driftwatch step:',
+        '',
+        '        env:',
+        '          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}',
+        '',
+        'The token is provided by Actions; no secret needs creating. The job also needs',
+        '`pull-requests: write` if your repository defaults to read-only permissions.',
+      ].join('\n'),
+    )
   }
 
   // The summary is the accounting surface (the comment links here), not a mirror of the comment.

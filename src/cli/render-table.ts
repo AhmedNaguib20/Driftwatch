@@ -49,6 +49,7 @@ function verdictLine(result: ResultJson): string {
     case 'regression': {
       const worst = result.comparison.metrics
         .filter((m) => m.verdict === 'regressed' && m.exceedsThreshold)
+        .filter((m) => Number.isFinite(m.delta?.percent))
         .map((m) => `${m.label} ${formatPercent(m.delta!.percent)}`)
         .join(', ')
       return pc.red(

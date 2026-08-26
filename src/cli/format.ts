@@ -20,7 +20,14 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
 }
 
-export function formatPercent(percent: number): string {
+/**
+ * Total, for the same reason as the adapter's copy. In-process the CLI never crossed a JSON
+ * boundary, so the one-sided-metric bug reached here as Infinity rather than null and printed
+ * "+Infinity%" instead of throwing — wrong quietly rather than loudly, which is worse. Core no
+ * longer produces either, and this renders an em dash if anything ever does.
+ */
+export function formatPercent(percent: number | null | undefined): string {
+  if (typeof percent !== 'number' || !Number.isFinite(percent)) return '—'
   const sign = percent > 0 ? '+' : ''
   return `${sign}${percent.toFixed(1)}%`
 }

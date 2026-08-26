@@ -34,29 +34,33 @@ The unscoped npm name is blocked by npm's similarity filter against an unrelated
 - **Repository** — https://github.com/AhmedNaguib20/Driftwatch
 - **Live dashboard** — https://ahmednaguib20.github.io/Driftwatch/
 
-## About v0.6.0 and v0.6.1
+## About v0.6.0, v0.6.1 and v0.6.2
 
-Two earlier tags shipped an Action that could not run, and both are withdrawn. v0.6.0's tag had no
-build output in it at all. v0.6.1 had the build output and no dependencies with it — GitHub never
-installs dependencies for a JavaScript action — so it died on its first import. Neither tag exists
-any more. **The npm packages for both are unaffected and work**; only the GitHub Action was broken,
-and nothing was announced while it was.
+**v0.6.2 crashes on a pull request that adds a page.** A metric measured on one side only — which
+is what a new route is — had no baseline, and the comparison divided by it: the percentage became
+infinite, JSON wrote that as null, and the Action failed the job after measuring correctly. Worse
+than the crash, a metric with nothing to compare against was reported as a *regression*. Both are
+fixed here: a one-sided metric is now `not comparable`, with its value reported and its delta
+refused. Upgrade if you are on 0.6.2.
 
-The cause was structural rather than careless: the tag carried a second, hand-assembled copy of the
-product, which could disagree with the package everyone installs. It did, twice. So `action.yml` is
-now a composite action that runs the published npm package — the same bytes you get from
+Two earlier tags shipped an Action that could not run at all, and both are withdrawn. v0.6.0's tag
+had no build output in it. v0.6.1 had the build output and no dependencies with it — GitHub never
+installs dependencies for a JavaScript action. **The npm packages for all three work**; only the
+GitHub Action was affected, and nothing was announced while it was.
+
+The cause of the first two was structural: the tag carried a second, hand-assembled copy of the
+product, free to disagree with the package everyone installs. So `action.yml` is now a composite
+action that runs the published npm package — the same bytes you get from
 `npx @ahmednaguib/driftwatch` — pinned to one exact version. The tag carries no build at all.
-Vendoring the dependency tree instead was measured first and rejected: 181 MB and 13,665 files
-downloaded on every job.
+Vendoring the dependency tree instead was measured and rejected: 181 MB and 13,665 files per job.
 
-Releases are cut by [a workflow](../blob/main/.github/workflows/release.yml) whose guard now
-**executes** the published package from an empty directory and reads what it prints, rather than
-checking that a file is present. The previous guard confirmed the file `action.yml` names was in
-the tag. It was. It still could not run.
+Releases are cut by [a workflow](../blob/main/.github/workflows/release.yml) whose guard
+**executes** the published package from an empty directory and reads what it prints. The previous
+guard confirmed the file `action.yml` names was present in the tag. It was. It still could not run.
 
 ## Status, honestly
 
-This is the first working release. Every capability above has an acceptance run behind it and the suite is 473 tests, including end-to-end runs against real builds — but the tool has had very few users.
+This is the first release with no known defect on the paths it advertises. Every capability above has an acceptance run behind it and the suite is 481 tests, including end-to-end runs against real builds — but the tool has had very few users.
 
 **Next.js is what is proven.** The detection layer is framework-agnostic in shape, but nothing else has acceptance runs behind it. There is no production monitoring, no cross-machine comparison, and timing attribution is deliberately unavailable until instruction counting replaces wall-clock measurement.
 

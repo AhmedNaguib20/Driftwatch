@@ -196,6 +196,7 @@ describe('one preflight, every prerequisite, before measuring', () => {
     // One block that fixes everything, including the permissions it could not check.
     expect(report.stanza).toContain('fetch-depth: 0')
     expect(report.stanza).toContain('GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}')
+    expect(report.stanza).toContain('contents: read')
     expect(report.stanza).toContain('pull-requests: write')
     expect(report.stanza).toContain('checks: write')
     expect(report.stanza).toContain('statuses: write')
@@ -231,7 +232,11 @@ describe('one preflight, every prerequisite, before measuring', () => {
       .map((l) => l.slice(4))
     const parsed = parse(yamlLines.join('\n')) as Record<string, unknown>
     expect(Object.keys(parsed).sort()).toEqual(['jobs', 'permissions'])
+    // `contents: read` is the one that must not be forgotten: a permissions block sets every
+    // scope it does not name to none, so omitting it revokes actions/checkout's own access and
+    // the job fails to clone before driftwatch runs. Shipped broken once; asserted ever since.
     expect(parsed.permissions).toEqual({
+      'contents': 'read',
       'pull-requests': 'write',
       'checks': 'write',
       'statuses': 'write',

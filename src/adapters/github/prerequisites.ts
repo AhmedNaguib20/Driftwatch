@@ -141,6 +141,14 @@ export function renderPrerequisiteStanza(missing: readonly MissingPrerequisite[]
       : 'This one workflow fixes all of them. Replace your driftwatch job with it:',
     '',
     '    permissions:',
+    // `contents: read` is not optional and not decorative. Naming a `permissions:` block at all
+    // sets every scope NOT listed in it to none — so a block that lists only what driftwatch
+    // writes silently revokes the read access actions/checkout needs, and the job dies with
+    // "Repository not found" before driftwatch is ever reached. The first version of this block
+    // did exactly that, and the visitor gate caught it on the paste.
+    '      contents: read         # actions/checkout — a permissions block sets everything it',
+    '                             # does not name to none, so this must be listed. Record mode',
+    '                             # (pushing trend points to perf-data) needs write instead.',
     '      pull-requests: write   # the self-updating comment on the pull request',
     '      checks: write          # the check run carrying the verdict',
     '      statuses: write        # the commit-status fallback, used when checks are unavailable',

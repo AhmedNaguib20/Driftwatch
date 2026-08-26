@@ -116,7 +116,7 @@ describe('check conclusions (§6.2)', () => {
   })
 })
 
-describe('publishResult — never fails the run', () => {
+describe('publishResult — never throws, and fails the run only on configuration', () => {
   function happyRoutes() {
     return fakeGithub([
       [/GET .*\/comments\?/, () => []],
@@ -131,11 +131,12 @@ describe('publishResult — never fails the run', () => {
     ])
   }
 
-  async function publish(gh: ReturnType<typeof fakeGithub>, blockMerge = false) {
+  async function publish(gh: ReturnType<typeof fakeGithub>, blockMerge = false, fromFork = false) {
     return publishResult(await regressionResult(), {
       ...TARGET,
       headSha: 'abc123',
       blockMerge,
+      fromFork,
       token: TOKEN,
       fetchImpl: gh.fetchImpl,
       sleep: async () => {},
@@ -149,18 +150,55 @@ describe('publishResult — never fails the run', () => {
     expect(outcome.commentUrl).toBe('https://github.com/c/1')
     expect(outcome.checkUrl).toBe('https://github.com/checks/2')
     expect(outcome.warnings).toEqual([])
+    expect(outcome.blockers).toEqual([])
   })
 
-  it('comment 403 (fork PR) degrades to check-only with a warning', async () => {
+  it('comment 403 on a FORK PR degrades to check-only with a warning, and stays green', async () => {
+    // A fork's token is read-only by GitHub's design, not by the maintainer's mistake. It is the
+    // one configuration failure nobody can edit their way out of, so it keeps the old behaviour.
+    const gh = fakeGithub([
+      [/GET .*\/comments\?/, () => new Response('{"message":"Resource not accessible"}', { status: 403 })],
+      [/POST .*\/check-runs$/, () => ({ id: 2, html_url: 'https://github.com/checks/2' })],
+    ])
+    const outcome = await publish(gh, false, true)
+
+    expect(outcome.commentUrl).toBeNull()
+    expect(outcome.checkUrl).toBe('https://github.com/checks/2')
+    expect(outcome.warnings.join('\n')).toMatch(/comment could not be posted/)
+    expect(outcome.blockers).toEqual([])
+  })
+
+  it('the SAME 403 on a normal PR is a blocker carrying the fix, not a warning', async () => {
+    /**
+     * The run that motivated this printed raw GitHub JSON as a warning and finished green, on a
+     * pull request whose regression had been measured correctly. Nobody saw it. A read-only
+     * repository does not heal itself, so this is a setup failure — and M3 step 3 put setup
+     * failures outside warn-only.
+     */
     const gh = fakeGithub([
       [/GET .*\/comments\?/, () => new Response('{"message":"Resource not accessible"}', { status: 403 })],
       [/POST .*\/check-runs$/, () => ({ id: 2, html_url: 'https://github.com/checks/2' })],
     ])
     const outcome = await publish(gh)
 
-    expect(outcome.commentUrl).toBeNull()
-    expect(outcome.checkUrl).toBe('https://github.com/checks/2')
-    expect(outcome.warnings.join('\n')).toMatch(/could not post the PR comment/)
+    expect(outcome.warnings).toEqual([])
+    expect(outcome.blockers).toHaveLength(1)
+    expect(outcome.blockers[0]!.what).toMatch(/comment could not be posted/)
+    // GitHub's own words are kept, but they are no longer the whole message.
+    expect(outcome.blockers[0]!.cause).toMatch(/403/)
+    expect(outcome.blockers[0]!.stanza).toContain('pull-requests: write')
+    expect(outcome.blockers[0]!.stanza).toContain('statuses: write')
+  })
+
+  it('a 503 on the same call stays a warning — GitHub having a bad minute is not configuration', async () => {
+    const gh = fakeGithub([
+      [/GET .*\/comments\?/, () => new Response('upstream', { status: 503 })],
+      [/POST .*\/check-runs$/, () => ({ id: 2, html_url: 'https://github.com/checks/2' })],
+    ])
+    const outcome = await publish(gh)
+
+    expect(outcome.blockers).toEqual([])
+    expect(outcome.warnings).toHaveLength(1)
   })
 
   it('checks:write 403 falls back to a commit status; warn-only regression maps to success + truthful description', async () => {
@@ -182,7 +220,8 @@ describe('publishResult — never fails the run', () => {
     expect(outcome.warnings.join('\n')).toMatch(/commit status instead/)
   })
 
-  it('neither surface available → warnings only, nothing thrown', async () => {
+  it('neither surface available → two blockers, nothing thrown', async () => {
+    // This is the run that finished green while delivering nothing at all.
     const gh = fakeGithub([
       [/GET .*\/comments\?/, () => new Response('x', { status: 403 })],
       [/POST .*\/check-runs$/, () => new Response('x', { status: 403 })],
@@ -192,7 +231,8 @@ describe('publishResult — never fails the run', () => {
 
     expect(outcome.commentUrl).toBeNull()
     expect(outcome.checkUrl).toBeNull()
-    expect(outcome.warnings).toHaveLength(2)
+    expect(outcome.blockers).toHaveLength(2)
+    expect(outcome.warnings).toEqual([])
   })
 
   it('block_merge:true turns the regression check into a failure', async () => {

@@ -4,7 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AlertAssessment, AlertState, ResultJson } from '../../core/index.js'
 import { parseActionEvent } from './event.js'
-import { preflightBase } from './preflight.js'
+import { checkPrerequisites, renderPrerequisiteStanza } from './prerequisites.js'
 import { createGithubClient } from './api-client.js'
 import { proposeFixPr } from './fix-pr.js'
 import { publishResult } from './publish.js'
@@ -44,9 +44,19 @@ export async function main(): Promise<void> {
     process.env.DRIFTWATCH_PROJECT_DIR?.trim() || process.env['INPUT_PROJECT-DIR']?.trim() || '.'
   const projectCwd = path.resolve(workspace, projectDir)
 
-  const preflight = await preflightBase(workspace, event.baseSha)
-  if (!preflight.ok) {
-    console.error(`driftwatch: ${preflight.fix}`)
+  // Everything the workflow must provide, asked ONCE, before spending three minutes measuring.
+  // A visitor pasting the Marketplace snippet is missing all three; discovering them one run at
+  // a time cost four round trips (§9f).
+  const prerequisites = await checkPrerequisites({
+    cwd: workspace,
+    baseSha: event.baseSha,
+    token: process.env.GITHUB_TOKEN ?? null,
+    owner: event.owner,
+    repo: event.repo,
+    prNumber: event.prNumber,
+  })
+  if (!prerequisites.ok) {
+    console.error(`driftwatch: ${prerequisites.stanza}`)
     process.exitCode = 1
     return
   }
@@ -67,6 +77,9 @@ export async function main(): Promise<void> {
   }
 
   console.log(`driftwatch: verdict ${result.verdict}`)
+
+  /** Set when a measured verdict could not be delivered for a reason a workflow edit fixes. */
+  let publishBlocked = false
 
   const runUrl =
     process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID
@@ -131,26 +144,22 @@ export async function main(): Promise<void> {
     if (outcome.commentUrl) console.log(`driftwatch: comment ${outcome.commentUrl}`)
     if (outcome.checkUrl) console.log(`driftwatch: check ${outcome.checkUrl}`)
     for (const warning of outcome.warnings) console.error(`driftwatch: warning: ${warning}`)
+
+    // A measured verdict that reached nobody must not leave a green tick behind it (§9f).
+    for (const blocker of outcome.blockers) {
+      console.error(`driftwatch: ${blocker.what} — ${blocker.cause}`)
+      console.error(`driftwatch: ${blocker.stanza}`)
+    }
+    if (outcome.blockers.length > 0) publishBlocked = true
   } else {
-    /**
-     * The remedy is knowable, so it is given (spec §9a: a fix stanza wherever a remedy IS
-     * knowable — withholding one that is exact is the same failure as fabricating one that is
-     * not). Only reachable from a hand-written workflow: `driftwatch init --github` always
-     * writes this env block, so the path belongs to someone who copied the step from the
-     * Marketplace listing, where the snippet carries no env at all.
-     */
+    // Unreachable from the Action, whose preflight refuses to measure without a token — this
+    // covers anyone driving the entry directly. Same block, same outcome: not green.
     console.error(
-      [
-        'driftwatch: warning: GITHUB_TOKEN is not set — the measurement below ran, but nothing',
-        'was posted to the pull request. Add it to the driftwatch step:',
-        '',
-        '        env:',
-        '          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}',
-        '',
-        'The token is provided by Actions; no secret needs creating. The job also needs',
-        '`pull-requests: write` if your repository defaults to read-only permissions.',
-      ].join('\n'),
+      `driftwatch: ${renderPrerequisiteStanza([
+        { id: 'token', detail: 'GITHUB_TOKEN is not set, so the measurement below reached nobody.' },
+      ])}`,
     )
+    publishBlocked = true
   }
 
   // The summary is the accounting surface (the comment links here), not a mirror of the comment.
@@ -162,7 +171,9 @@ export async function main(): Promise<void> {
     )
   }
 
-  process.exitCode = exitCodeFor(result)
+  // A configuration failure is a setup failure, and M3 step 3 put setup failures outside
+  // warn-only: warn-only covers what we MEASURED, not whether the workflow was able to run.
+  process.exitCode = publishBlocked ? 1 : exitCodeFor(result)
 }
 
 /**

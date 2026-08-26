@@ -9,7 +9,8 @@ import { parse } from 'yaml'
 
 import { exitCodeFor } from '../src/adapters/github/action-entry.js'
 import { parseActionEvent } from '../src/adapters/github/event.js'
-import { preflightBase } from '../src/adapters/github/preflight.js'
+import { GithubError } from '../src/adapters/github/api-client.js'
+import { checkPrerequisites, renderPrerequisiteStanza } from '../src/adapters/github/prerequisites.js'
 import { PUBLISHED_ACTION, renderWorkflow } from '../src/adapters/github/workflow-template.js'
 import { writeGithubWorkflow } from '../src/cli/init-command.js'
 import { detectProject, hostLabelsFromEnv, protocolMismatches } from '../src/core/index.js'
@@ -147,8 +148,22 @@ describe('event parsing', () => {
   })
 })
 
-describe('base preflight', () => {
-  it('passes when the base commit is present', async () => {
+describe('one preflight, every prerequisite, before measuring', () => {
+  /**
+   * The Marketplace listing hands a visitor two lines with no fetch-depth, no env and no
+   * permissions — so a visitor is missing all three, and used to find them one run at a time:
+   * one failure, then two GREEN runs that posted nothing, then a fourth. Four round trips, two
+   * of them looking like success (§9f).
+   */
+  const client = (behaviour: 'granted' | 'denied' | 'down') => ({
+    async request() {
+      if (behaviour === 'granted') return { status: 200, json: [] }
+      if (behaviour === 'denied') throw new GithubError('auth', 'HTTP 403', 403)
+      throw new GithubError('network', 'could not reach GitHub')
+    },
+  })
+
+  async function repoWithCommit(): Promise<{ dir: string; sha: string }> {
     const dir = await scratch()
     await exec('git', ['init', '-q'], { cwd: dir })
     await exec('git', ['-C', dir, 'config', 'user.email', 't@t'])
@@ -156,22 +171,71 @@ describe('base preflight', () => {
     await writeFile(path.join(dir, 'a.txt'), 'x')
     await exec('git', ['-C', dir, 'add', '-A'])
     await exec('git', ['-C', dir, 'commit', '-q', '-m', 'c'])
-    const sha = (await exec('git', ['-C', dir, 'rev-parse', 'HEAD'])).stdout.trim()
+    return { dir, sha: (await exec('git', ['-C', dir, 'rev-parse', 'HEAD'])).stdout.trim() }
+  }
 
-    expect(await preflightBase(dir, sha)).toEqual({ ok: true })
+  const input = (over: Record<string, unknown>) => ({
+    cwd: '.', baseSha: 'f'.repeat(40), token: 'tok', owner: 'o', repo: 'r', prNumber: 1, ...over,
+  }) as Parameters<typeof checkPrerequisites>[0]
+
+  it('passes when everything is in place', async () => {
+    const { dir, sha } = await repoWithCommit()
+    const report = await checkPrerequisites(input({ cwd: dir, baseSha: sha, client: client('granted') }))
+    expect(report.ok).toBe(true)
+    expect(report.missing).toEqual([])
+    expect(report.stanza).toBe('')
   })
 
-  it('a missing base fails with the exact fix, not a description', async () => {
+  it('reports ALL THREE at once — the visitor case', async () => {
     const dir = await scratch()
     await exec('git', ['init', '-q'], { cwd: dir })
+    const report = await checkPrerequisites(input({ cwd: dir, token: null }))
 
-    const result = await preflightBase(dir, 'f'.repeat(40))
+    // Token is missing, so permissions could NOT be probed and must not be claimed as a finding.
+    expect(report.missing.map((m) => m.id)).toEqual(['base', 'token'])
+    // One block that fixes everything, including the permissions it could not check.
+    expect(report.stanza).toContain('fetch-depth: 0')
+    expect(report.stanza).toContain('GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}')
+    expect(report.stanza).toContain('pull-requests: write')
+    expect(report.stanza).toContain('checks: write')
+    expect(report.stanza).toContain('statuses: write')
+    expect(report.stanza).toContain('Permissions could not be checked without a token')
+  })
 
-    expect(result.ok).toBe(false)
-    if (!result.ok) {
-      expect(result.fix).toContain('fetch-depth: 0')
-      expect(result.fix).toContain('actions/checkout')
-    }
+  it('names a read-only repository when the token cannot see the pull request', async () => {
+    const { dir, sha } = await repoWithCommit()
+    const report = await checkPrerequisites(input({ cwd: dir, baseSha: sha, client: client('denied') }))
+    expect(report.missing.map((m) => m.id)).toEqual(['permissions'])
+    expect(report.missing[0]!.detail).toMatch(/read-only/)
+  })
+
+  it('never reports a prerequisite it could not check', async () => {
+    // GitHub unreachable is not evidence that permissions are wrong. Claiming it would be a
+    // finding we did not measure — rule 3, in the surface that exists to explain failures.
+    const { dir, sha } = await repoWithCommit()
+    const report = await checkPrerequisites(input({ cwd: dir, baseSha: sha, client: client('down') }))
+    expect(report.ok).toBe(true)
+    expect(report.missing).toEqual([])
+  })
+
+  it('the block is paste-able: one permissions key, one job, valid YAML', () => {
+    const stanza = renderPrerequisiteStanza([
+      { id: 'base', detail: 'x' },
+      { id: 'token', detail: 'y' },
+      { id: 'permissions', detail: 'z' },
+    ])
+    // The indented block is a workflow fragment; de-indent it and it must parse.
+    const yamlLines = stanza
+      .split('\n')
+      .filter((l) => l.startsWith('    '))
+      .map((l) => l.slice(4))
+    const parsed = parse(yamlLines.join('\n')) as Record<string, unknown>
+    expect(Object.keys(parsed).sort()).toEqual(['jobs', 'permissions'])
+    expect(parsed.permissions).toEqual({
+      'pull-requests': 'write',
+      'checks': 'write',
+      'statuses': 'write',
+    })
   })
 })
 

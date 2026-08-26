@@ -70,6 +70,9 @@ permissions:
 # Without it, GitHub returns 403 on PR creation; the run still succeeds and the comment says
 # a verified fix exists but the PR could not be opened.
   checks: write          # the non-blocking check run
+  statuses: write        # the commit-status fallback, used when checks:write is unavailable
+                         # (fine-grained tokens, forks). Without it the fallback 403s too, and
+                         # the verdict reaches nobody.
   issues: write          # drift alerts open ONE issue per condition and maintain it in place
 
 jobs:

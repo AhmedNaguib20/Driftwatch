@@ -3,12 +3,20 @@ import { createGithubClient } from './api-client.js'
 import type { GithubClientOptions } from './api-client.js'
 import { publishCheck } from './checks.js'
 import { upsertComment } from './comments.js'
+import { classifyFailure } from './failure-class.js'
+import { renderPrerequisiteStanza } from './prerequisites.js'
 import { renderCheckSummary, renderCheckTitle, renderComment } from './render-comment.js'
 
 /**
  * The one call the Action entry makes: render, upsert the comment, publish the check. Pure
- * wiring — no rendering logic here. Nothing in this function throws: every failure becomes a
- * warning, because a broken publish must never fail the user's CI run (warn-only, §6.2).
+ * wiring — no rendering logic here. Nothing in this function throws.
+ *
+ * Failures split two ways (§9f). TRANSIENT ones — GitHub down, rate limited, a dropped socket —
+ * stay warnings on a green run, which is what warn-only (§6.2) was written for. CONFIGURATION
+ * ones become BLOCKERS: a missing token or an unwritable repository does not self-heal, and a
+ * green tick with no comment is indistinguishable from "nothing regressed" to whoever reads the
+ * pull request. The caller fails the run on those, carrying the same paste-able block the
+ * preflight uses.
  */
 
 export interface PublishContext {
@@ -28,10 +36,22 @@ export interface PublishContext {
   readonly sleep?: (ms: number) => Promise<void>
 }
 
+export interface PublishBlocker {
+  /** What could not be delivered, in the reader's terms. */
+  readonly what: string
+  /** The underlying error, kept so the log still carries GitHub's own words. */
+  readonly cause: string
+  /** The complete workflow block that fixes it. */
+  readonly stanza: string
+}
+
 export interface PublishOutcome {
   readonly commentUrl: string | null
   readonly checkUrl: string | null
+  /** Transient only. Anything here is compatible with a green run. */
   readonly warnings: readonly string[]
+  /** Configuration. Non-empty means the run must not be green. */
+  readonly blockers: readonly PublishBlocker[]
 }
 
 export async function publishResult(
@@ -39,6 +59,7 @@ export async function publishResult(
   ctx: PublishContext,
 ): Promise<PublishOutcome> {
   const warnings: string[] = []
+  const blockers: PublishBlocker[] = []
   const clientOptions: GithubClientOptions = {
     token: ctx.token,
     fetchImpl: ctx.fetchImpl,
@@ -61,8 +82,7 @@ export async function publishResult(
     commentUrl = url
     if (healed > 0) warnings.push(`removed ${healed} duplicate driftwatch comment(s)`)
   } catch (error) {
-    // Fork-PR tokens often cannot write comments — the check still carries the verdict + table.
-    warnings.push(`could not post the PR comment: ${(error as Error).message}`)
+    record(error, 'the pull request comment could not be posted', 'permissions')
   }
 
   let checkUrl: string | null = null
@@ -82,8 +102,22 @@ export async function publishResult(
       warnings.push('checks:write unavailable — published a commit status instead')
     }
   } catch (error) {
-    warnings.push(`could not publish the check: ${(error as Error).message}`)
+    record(error, 'the check reporting the verdict could not be published', 'permissions')
   }
 
-  return { commentUrl, checkUrl, warnings }
+  return { commentUrl, checkUrl, warnings, blockers }
+
+  /**
+   * One place decides green-or-not, so the two call sites cannot drift apart. Fork PRs are the
+   * one configuration failure that is NOT the user's to fix — their tokens are read-only by
+   * design — so they stay a warning.
+   */
+  function record(error: unknown, what: string, id: 'token' | 'permissions'): void {
+    const cause = (error as Error).message
+    if (ctx.fromFork || classifyFailure(error) === 'transient') {
+      warnings.push(`${what}: ${cause}`)
+      return
+    }
+    blockers.push({ what, cause, stanza: renderPrerequisiteStanza([{ id, detail: `${what}.` }]) })
+  }
 }
